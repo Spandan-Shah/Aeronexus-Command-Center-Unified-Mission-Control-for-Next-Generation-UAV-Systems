@@ -23,8 +23,8 @@ export function MetricCard({
   status = "info",
 }: MetricCardProps) {
   return (
-    <div className="bg-[var(--panel)] border border-[var(--border)] rounded p-3">
-      <div className="flex items-center justify-between text-hud text-[10px] text-[var(--muted)]">
+    <div className="bg-[(--panel)] border border-[(--border)] rounded p-3">
+      <div className="flex items-center justify-between text-hud text-[10px] text-[(--muted)]">
         <span className="flex items-center gap-1.5">
           <Icon size={13} />
           {label}
@@ -38,7 +38,7 @@ export function MetricCard({
           {value}
         </span>
         {unit && (
-          <span className="text-hud text-[10px] text-[var(--muted)]">
+          <span className="text-hud text-[10px] text-[(--muted)]">
             {unit}
           </span>
         )}
