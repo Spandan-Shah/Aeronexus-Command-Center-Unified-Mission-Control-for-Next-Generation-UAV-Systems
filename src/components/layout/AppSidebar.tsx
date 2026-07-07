@@ -31,16 +31,16 @@ const menuItems = [
 
 export function AppSidebar() {
   return (
-    <aside className="w-64 shrink-0 border-r border-[var(--border)] bg-[#050d18]">
-      <div className="h-16 border-b border-[var(--border)] px-4 flex items-center gap-3">
-        <div className="relative h-9 w-9 rounded border border-[var(--primary)] bg-[rgba(246,178,60,0.08)] flex items-center justify-center text-[var(--primary)]">
+    <aside className="w-64 shrink-0 border-r border-[ (--border)] bg-[#050d18]">
+      <div className="h-16 border-b border-[ (--border)] px-4 flex items-center gap-3">
+        <div className="relative h-9 w-9 rounded border border-[(--primary)] bg-[rgba(246,178,60,0.08)] flex items-center justify-center text-[(--primary)]">
           <Activity size={18} />
-          <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-[var(--nominal)]" />
+          <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-[(--nominal)]" />
         </div>
 
         <div>
           <div className="text-hud text-sm font-bold">AeroNexus</div>
-          <div className="text-hud text-[10px] text-[var(--muted)]">
+          <div className="text-hud text-[10px] text-[(--muted)]">
             Drone Ecosystem
           </div>
         </div>
@@ -56,8 +56,8 @@ export function AppSidebar() {
               key={item.title}
               className={`w-full flex items-center gap-3 px-3 py-2 rounded text-left text-sm transition ${
                 active
-                  ? "bg-[rgba(246,178,60,0.12)] text-[var(--primary)] border-l-2 border-[var(--primary)]"
-                  : "text-[var(--muted)] hover:bg-[var(--panel)] hover:text-[var(--foreground)]"
+                  ? "bg-[rgba(246,178,60,0.12)] text-[(--primary)] border-l-2 border-[(--primary)]"
+                  : "text-[(--muted)] hover:bg-[(--panel)] hover:text-[(--foreground)]"
               }`}
             >
               <Icon size={16} />
@@ -67,12 +67,12 @@ export function AppSidebar() {
         })}
       </nav>
 
-      <div className="absolute bottom-0 w-64 border-t border-[var(--border)] p-3 text-hud text-[10px]">
-        <div className="flex justify-between text-[var(--muted)]">
+      <div className="absolute bottom-0 w-64 border-t border-[(--border)] p-3 text-hud text-[10px]">
+        <div className="flex justify-between text-[(--muted)]">
           <span>Mode</span>
-          <span className="text-[var(--nominal)]">Simulation</span>
+          <span className="text-[(--nominal)]">Simulation</span>
         </div>
-        <div className="mt-1 flex justify-between text-[var(--muted)]">
+        <div className="mt-1 flex justify-between text-[(--muted)]">
           <span>Version</span>
           <span>v0.1.0</span>
         </div>
