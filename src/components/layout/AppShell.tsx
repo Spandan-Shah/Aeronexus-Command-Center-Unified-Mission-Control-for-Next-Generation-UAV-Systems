@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 import { AppSidebar } from "./AppSidebar";
 import { StatusBar } from "./StatusBar";
 
