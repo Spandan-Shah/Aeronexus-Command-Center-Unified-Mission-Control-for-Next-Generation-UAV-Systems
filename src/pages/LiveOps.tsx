@@ -18,24 +18,24 @@ export function LiveOps() {
 
           <TelemetryGrid />
 
-          <div className="rounded border border-[var(--border)] bg-[var(--panel)] p-3">
+          <div className="rounded border border-[ (--border)] bg-[ (--panel)] p-3">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-hud text-xs">Mission Progress</h2>
-                <p className="mt-1 text-xs text-[var(--muted)]">
+                <p className="mt-1 text-xs text-[ (--muted)]">
                   Current waypoint {telemetry.currentWaypoint} of{" "}
                   {telemetry.totalWaypoints}
                 </p>
               </div>
 
               <div className="text-right">
-                <div className="text-hud text-xl text-[var(--primary)]">
+                <div className="text-hud text-xl text-[ (--primary)]">
                   {Math.round(
                     (telemetry.currentWaypoint / telemetry.totalWaypoints) * 100
                   )}
                   %
                 </div>
-                <div className="text-hud text-[10px] text-[var(--muted)]">
+                <div className="text-hud text-[10px] text-[ (--muted)]">
                   Completed
                 </div>
               </div>
@@ -43,7 +43,7 @@ export function LiveOps() {
 
             <div className="mt-3 h-2 overflow-hidden rounded bg-[#07111f]">
               <div
-                className="h-full bg-[var(--primary)]"
+                className="h-full bg-[ (--primary)]"
                 style={{
                   width: `${
                     (telemetry.currentWaypoint / telemetry.totalWaypoints) * 100
@@ -53,7 +53,7 @@ export function LiveOps() {
             </div>
           </div>
 
-          <div className="min-h-[190px] flex-1">
+          <div className="min-h-47.5 flex-1">
             <AlertsPanel />
           </div>
 
