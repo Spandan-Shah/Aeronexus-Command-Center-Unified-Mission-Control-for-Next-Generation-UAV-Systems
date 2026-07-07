@@ -2,6 +2,7 @@ import { useState } from "react";
 import { AppShell } from "./components/layout/AppShell";
 import type { PageId } from "./data/navigation";
 import { LiveOps } from "./pages/LiveOps";
+import { MissionPlanner } from "./pages/MissionPlanner";
 import {
   BatteryPower,
   CameraAI,
@@ -11,7 +12,6 @@ import {
   Inventory,
   LogsDebrief,
   Maintenance,
-  MissionPlanner,
   PreFlight,
   Security,
 } from "./pages/PlaceholderPages";
