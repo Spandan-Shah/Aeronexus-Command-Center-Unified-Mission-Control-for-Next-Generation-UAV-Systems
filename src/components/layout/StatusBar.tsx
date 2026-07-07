@@ -14,34 +14,34 @@ export function StatusBar() {
   }, []);
 
   return (
-    <header className="h-14 border-b border-[var(--border)] bg-[var(--panel)] px-4 flex items-center gap-4">
+    <header className="h-14 border-b border-[(--border)] bg-[(--panel)] px-4 flex items-center gap-4">
       <div>
-        <h1 className="text-hud text-sm font-bold text-[var(--foreground)]">
+        <h1 className="text-hud text-sm font-bold text-[(--foreground)]">
           AeroNexus Live Ops
         </h1>
-        <p className="text-hud text-[10px] text-[var(--muted)]">
+        <p className="text-hud text-[10px] text-[(--muted)]">
           {telemetry.droneId} · {telemetry.model} · {telemetry.mission}
         </p>
       </div>
 
       <div className="ml-auto flex items-center gap-5 text-hud text-[10px]">
-        <span className="flex items-center gap-1 text-[var(--nominal)]">
+        <span className="flex items-center gap-1 text-[(--nominal)]">
           <ShieldCheck size={14} /> Secure
         </span>
 
-        <span className="flex items-center gap-1 text-[var(--nominal)]">
+        <span className="flex items-center gap-1 text-[(--nominal)]">
           <Satellite size={14} /> GPS {telemetry.gpsSatellites}
         </span>
 
-        <span className="flex items-center gap-1 text-[var(--caution)]">
+        <span className="flex items-center gap-1 text-[(--caution)]">
           <Radio size={14} /> Link {telemetry.linkQuality}%
         </span>
 
-        <span className="flex items-center gap-1 text-[var(--primary)]">
+        <span className="flex items-center gap-1 text-[(--primary)]">
           <Battery size={14} /> {telemetry.battery}%
         </span>
 
-        <span className="flex items-center gap-1 text-[var(--muted)]">
+        <span className="flex items-center gap-1 text-[(--muted)]">
           <Clock size={14} /> {time}
         </span>
       </div>
