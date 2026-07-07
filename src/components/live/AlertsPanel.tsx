@@ -17,10 +17,10 @@ const colorMap = {
 
 export function AlertsPanel() {
   return (
-    <div className="h-full rounded border border-[var(--border)] bg-[var(--panel)] flex flex-col">
-      <div className="h-9 border-b border-[var(--border)] px-3 flex items-center justify-between">
+    <div className="h-full rounded border border-[(--border)] bg-[(--panel)] flex flex-col">
+      <div className="h-9 border-b border-[(--border)] px-3 flex items-center justify-between">
         <h2 className="text-hud text-xs">Alert Stream</h2>
-        <span className="text-hud text-[10px] text-[var(--muted)]">
+        <span className="text-hud text-[10px] text-[(--muted)]">
           {alerts.length} Active
         </span>
       </div>
@@ -32,21 +32,21 @@ export function AlertsPanel() {
           return (
             <div
               key={alert.id}
-              className={`border-l-2 border-b border-[var(--border)] px-3 py-2 ${colorMap[alert.severity]}`}
+              className={`border-l-2 border-b border-[(--border)] px-3 py-2 ${colorMap[alert.severity]}`}
             >
               <div className="flex gap-2">
                 <Icon size={15} className="mt-0.5 shrink-0" />
 
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 text-hud text-[9px]">
-                    <span className="text-[var(--muted)]">{alert.time}</span>
+                    <span className="text-[(--muted)]">{alert.time}</span>
                     <span className="font-bold">{alert.code}</span>
-                    <span className="ml-auto text-[var(--muted)]">
+                    <span className="ml-auto text-[(--muted)]">
                       {alert.source}
                     </span>
                   </div>
 
-                  <p className="mt-1 text-xs text-[var(--foreground)]">
+                  <p className="mt-1 text-xs text-[(--foreground)]">
                     {alert.message}
                   </p>
                 </div>
