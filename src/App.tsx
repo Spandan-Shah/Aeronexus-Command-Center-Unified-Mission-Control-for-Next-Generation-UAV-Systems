@@ -6,8 +6,8 @@ import { DroneHealth } from "./pages/DroneHealth";
 import { LiveOps } from "./pages/LiveOps";
 import { BatteryPower } from "./pages/BatteryPower";
 import { MissionPlanner } from "./pages/MissionPlanner";
+import { CameraAI } from "./pages/CameraAI";
 import {
-  CameraAI,
   DashboardSettings,
   Inventory,
   LogsDebrief,
