@@ -2,13 +2,13 @@ import { useState } from "react";
 import { AppShell } from "./components/layout/AppShell";
 import type { PageId } from "./data/navigation";
 import { Fleet } from "./pages/Fleet";
+import { DroneHealth } from "./pages/DroneHealth";
 import { LiveOps } from "./pages/LiveOps";
 import { MissionPlanner } from "./pages/MissionPlanner";
 import {
   BatteryPower,
   CameraAI,
   DashboardSettings,
-  DroneHealth,
   Inventory,
   LogsDebrief,
   Maintenance,
