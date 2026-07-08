@@ -12,9 +12,7 @@ import { LogsDebrief } from "./pages/LogsDebrief";
 import { Maintenance } from "./pages/Maintenance";
 import { Inventory } from "./pages/Inventory";
 import { Security } from "./pages/Security";
-import {
-  DashboardSettings,
-} from "./pages/PlaceholderPages";
+import { DashboardSettings } from "./pages/DashboardSettings";
 
 function renderPage(activePage: PageId) {
   switch (activePage) {
