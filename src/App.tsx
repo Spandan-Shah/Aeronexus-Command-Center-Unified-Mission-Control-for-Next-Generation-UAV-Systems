@@ -4,9 +4,9 @@ import type { PageId } from "./data/navigation";
 import { Fleet } from "./pages/Fleet";
 import { DroneHealth } from "./pages/DroneHealth";
 import { LiveOps } from "./pages/LiveOps";
+import { BatteryPower } from "./pages/BatteryPower";
 import { MissionPlanner } from "./pages/MissionPlanner";
 import {
-  BatteryPower,
   CameraAI,
   DashboardSettings,
   Inventory,
