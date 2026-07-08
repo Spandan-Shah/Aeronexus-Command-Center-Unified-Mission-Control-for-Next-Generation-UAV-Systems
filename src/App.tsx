@@ -11,9 +11,9 @@ import { PreFlight } from "./pages/PreFlight";
 import { LogsDebrief } from "./pages/LogsDebrief";
 import { Maintenance } from "./pages/Maintenance";
 import { Inventory } from "./pages/Inventory";
+import { Security } from "./pages/Security";
 import {
   DashboardSettings,
-  Security,
 } from "./pages/PlaceholderPages";
 
 function renderPage(activePage: PageId) {
