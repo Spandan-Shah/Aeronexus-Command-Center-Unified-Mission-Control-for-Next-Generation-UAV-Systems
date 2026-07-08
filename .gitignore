@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Allow AeroNexus Logs & Debrief React components
+!src/components/logs/
+!src/components/logs/**
