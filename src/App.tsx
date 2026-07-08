@@ -9,10 +9,10 @@ import { MissionPlanner } from "./pages/MissionPlanner";
 import { CameraAI } from "./pages/CameraAI";
 import { PreFlight } from "./pages/PreFlight";
 import { LogsDebrief } from "./pages/LogsDebrief";
+import { Maintenance } from "./pages/Maintenance";
 import {
   DashboardSettings,
   Inventory,
-  Maintenance,
   Security,
 } from "./pages/PlaceholderPages";
 
