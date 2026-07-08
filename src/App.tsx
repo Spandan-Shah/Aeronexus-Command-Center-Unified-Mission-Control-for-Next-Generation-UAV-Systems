@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { AppShell } from "./components/layout/AppShell";
 import type { PageId } from "./data/navigation";
+import { Fleet } from "./pages/Fleet";
 import { LiveOps } from "./pages/LiveOps";
 import { MissionPlanner } from "./pages/MissionPlanner";
 import {
@@ -8,7 +9,6 @@ import {
   CameraAI,
   DashboardSettings,
   DroneHealth,
-  Fleet,
   Inventory,
   LogsDebrief,
   Maintenance,
