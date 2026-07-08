@@ -41,7 +41,7 @@ export function DroneHealth() {
           <MotorHealthGrid />
         </section>
 
-        <section className="min-h-[320px] xl:col-span-12">
+        <section className="min-h-80 xl:col-span-12">
           <SensorStatusTable />
         </section>
       </div>
