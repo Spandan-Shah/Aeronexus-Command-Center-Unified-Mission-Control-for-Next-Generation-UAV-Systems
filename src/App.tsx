@@ -14,6 +14,8 @@ import { Inventory } from "./pages/Inventory";
 import { Security } from "./pages/Security";
 import { DashboardSettings } from "./pages/DashboardSettings";
 
+import { SimulatorControlDock } from "./components/simulator/SimulatorControlDock";
+
 function renderPage(activePage: PageId) {
   switch (activePage) {
     case "live-ops":
@@ -49,10 +51,14 @@ function App() {
   const [activePage, setActivePage] = useState<PageId>("live-ops");
 
   return (
+  <>
     <AppShell activePage={activePage} onPageChange={setActivePage}>
       {renderPage(activePage)}
     </AppShell>
-  );
+
+    <SimulatorControlDock />
+  </>
+);
 }
 
 export default App;
