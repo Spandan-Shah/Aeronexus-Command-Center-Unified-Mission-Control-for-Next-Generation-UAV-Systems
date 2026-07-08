@@ -10,9 +10,9 @@ import { CameraAI } from "./pages/CameraAI";
 import { PreFlight } from "./pages/PreFlight";
 import { LogsDebrief } from "./pages/LogsDebrief";
 import { Maintenance } from "./pages/Maintenance";
+import { Inventory } from "./pages/Inventory";
 import {
   DashboardSettings,
-  Inventory,
   Security,
 } from "./pages/PlaceholderPages";
 
