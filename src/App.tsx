@@ -7,12 +7,12 @@ import { LiveOps } from "./pages/LiveOps";
 import { BatteryPower } from "./pages/BatteryPower";
 import { MissionPlanner } from "./pages/MissionPlanner";
 import { CameraAI } from "./pages/CameraAI";
+import { PreFlight } from "./pages/PreFlight";
 import {
   DashboardSettings,
   Inventory,
   LogsDebrief,
   Maintenance,
-  PreFlight,
   Security,
 } from "./pages/PlaceholderPages";
 
