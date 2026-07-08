@@ -8,10 +8,10 @@ import { BatteryPower } from "./pages/BatteryPower";
 import { MissionPlanner } from "./pages/MissionPlanner";
 import { CameraAI } from "./pages/CameraAI";
 import { PreFlight } from "./pages/PreFlight";
+import { LogsDebrief } from "./pages/LogsDebrief";
 import {
   DashboardSettings,
   Inventory,
-  LogsDebrief,
   Maintenance,
   Security,
 } from "./pages/PlaceholderPages";
