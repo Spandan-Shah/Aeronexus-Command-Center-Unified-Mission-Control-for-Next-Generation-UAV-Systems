@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { AppShell } from "./components/layout/AppShell";
-import { SimulatorControlDock } from "./components/simulator/SimulatorControlDock";
 import type { PageId } from "./data/navigation";
 import { BatteryPower } from "./pages/BatteryPower";
 import { CameraAI } from "./pages/CameraAI";
