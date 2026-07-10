@@ -29,15 +29,30 @@ export type InfrastructureBounds = {
 
 const OVERPASS_URL = "https://overpass-api.de/api/interpreter";
 
+const POLICE_NAME_REGEX =
+  "police|police station|police chowki|police chowky|police headquarters|police headquarter|commissioner of police|traffic police|mahila police|women police|crime branch|cyber crime|sog|special operations group|special branch|control room|wireless police|motor transport police";
+
 function createOverpassQuery(bounds: InfrastructureBounds) {
   const bbox = `${bounds.south},${bounds.west},${bounds.north},${bounds.east}`;
 
   return `
-[out:json][timeout:25];
+[out:json][timeout:35];
 (
-  node["amenity"~"^(hospital|clinic|doctors|police|fire_station|courthouse|townhall|school|college|university)$"](${bbox});
-  way["amenity"~"^(hospital|clinic|doctors|police|fire_station|courthouse|townhall|school|college|university)$"](${bbox});
-  relation["amenity"~"^(hospital|clinic|doctors|police|fire_station|courthouse|townhall|school|college|university)$"](${bbox});
+  node["amenity"="police"](${bbox});
+  way["amenity"="police"](${bbox});
+  relation["amenity"="police"](${bbox});
+
+  node["police"](${bbox});
+  way["police"](${bbox});
+  relation["police"](${bbox});
+
+  node["name"~"${POLICE_NAME_REGEX}", i](${bbox});
+  way["name"~"${POLICE_NAME_REGEX}", i](${bbox});
+  relation["name"~"${POLICE_NAME_REGEX}", i](${bbox});
+
+  node["amenity"~"^(hospital|clinic|doctors|fire_station|courthouse|townhall|school|college|university|fuel)$"](${bbox});
+  way["amenity"~"^(hospital|clinic|doctors|fire_station|courthouse|townhall|school|college|university|fuel)$"](${bbox});
+  relation["amenity"~"^(hospital|clinic|doctors|fire_station|courthouse|townhall|school|college|university|fuel)$"](${bbox});
 
   node["healthcare"~"^(hospital|clinic|doctor)$"](${bbox});
   way["healthcare"~"^(hospital|clinic|doctor)$"](${bbox});
@@ -75,10 +90,35 @@ out center tags;
 `;
 }
 
+function normalizeText(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+function isPoliceObject(tags: Record<string, string>) {
+  const name = normalizeText(
+    `${tags.name ?? ""} ${tags["name:en"] ?? ""} ${tags.official_name ?? ""}`
+  );
+
+  return (
+    tags.amenity === "police" ||
+    Boolean(tags.police) ||
+    name.includes("police") ||
+    name.includes("chowki") ||
+    name.includes("chowky") ||
+    name.includes("commissioner of police") ||
+    name.includes("crime branch") ||
+    name.includes("cyber crime") ||
+    name.includes("traffic police") ||
+    name.includes("mahila police") ||
+    name.includes("women police") ||
+    name.includes("control room")
+  );
+}
+
 function getInfrastructureType(
   tags: Record<string, string>
 ): InfrastructureType | null {
-  if (tags.amenity === "police") return "police";
+  if (isPoliceObject(tags)) return "police";
 
   if (
     tags.amenity === "hospital" ||
@@ -111,6 +151,8 @@ function getInfrastructureType(
 
   if (tags.power) return "power";
 
+  if (tags.amenity === "fuel") return "fuel";
+
   if (
     tags.amenity === "school" ||
     tags.amenity === "college" ||
@@ -128,7 +170,9 @@ function getInfrastructureType(
   return null;
 }
 
-function getPriority(type: InfrastructureType): InfrastructureProperties["priority"] {
+function getPriority(
+  type: InfrastructureType
+): InfrastructureProperties["priority"] {
   if (
     type === "hospital" ||
     type === "police" ||
@@ -161,6 +205,17 @@ function getName(tags: Record<string, string>, type: InfrastructureType) {
   );
 }
 
+function getCoordinates(element: OverpassElement) {
+  const lat = element.lat ?? element.center?.lat;
+  const lon = element.lon ?? element.center?.lon;
+
+  if (lat === undefined || lon === undefined) {
+    return null;
+  }
+
+  return [lon, lat] as [number, number];
+}
+
 export async function fetchInfrastructureFromOverpass(
   bounds: InfrastructureBounds
 ): Promise<FeatureCollection<Point, InfrastructureProperties>> {
@@ -184,15 +239,16 @@ export async function fetchInfrastructureFromOverpass(
     .map((element) => {
       const tags = element.tags ?? {};
       const type = getInfrastructureType(tags);
+      const coordinates = getCoordinates(element);
 
-      const lat = element.lat ?? element.center?.lat;
-      const lon = element.lon ?? element.center?.lon;
-
-      if (!type || lat === undefined || lon === undefined) {
+      if (!type || !coordinates) {
         return null;
       }
 
-      const key = `${type}-${element.type}-${element.id}`;
+      const name = getName(tags, type);
+      const key = `${type}-${normalizeText(name)}-${coordinates[0].toFixed(
+        5
+      )}-${coordinates[1].toFixed(5)}`;
 
       if (seen.has(key)) {
         return null;
@@ -203,18 +259,20 @@ export async function fetchInfrastructureFromOverpass(
       return {
         type: "Feature" as const,
         properties: {
-          name: getName(tags, type),
+          name,
           type,
           priority: getPriority(type),
         },
         geometry: {
           type: "Point" as const,
-          coordinates: [lon, lat],
+          coordinates,
         },
       };
     })
-    .filter((feature): feature is NonNullable<typeof feature> => Boolean(feature))
-    .slice(0, 500);
+    .filter((feature): feature is NonNullable<typeof feature> =>
+      Boolean(feature)
+    )
+    .slice(0, 900);
 
   return {
     type: "FeatureCollection",
