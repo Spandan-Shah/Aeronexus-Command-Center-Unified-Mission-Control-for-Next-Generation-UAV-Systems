@@ -1,7 +1,6 @@
 import { AlertsPanel } from "../components/live/AlertsPanel";
 import { CommandDeck } from "../components/live/CommandDeck";
 import { TelemetryGrid } from "../components/live/TelemetryGrid";
-import { VideoFeed } from "../components/live/VideoFeed";
 import { AeroWorldMap } from "../components/map/AeroWorldMap";
 import { telemetry } from "../data/telemetry";
 
@@ -11,15 +10,13 @@ export function LiveOps() {
   );
 
   return (
-    <div className="h-full overflow-auto p-3">
-      <div className="grid min-h-[calc(100vh-92px)] grid-cols-12 gap-3">
-        <section className="col-span-12 min-h-155 xl:col-span-7">
+    <div className="h-full overflow-hidden p-3">
+      <div className="grid h-full min-h-0 grid-cols-12 gap-3">
+        <section className="col-span-12 min-h-0 xl:col-span-8">
           <AeroWorldMap />
         </section>
 
-        <section className="col-span-12 flex min-h-0 flex-col gap-3 xl:col-span-5">
-          <VideoFeed />
-
+        <section className="col-span-12 flex min-h-0 flex-col gap-3 xl:col-span-4">
           <TelemetryGrid />
 
           <div className="rounded border border-(--border) bg-(--panel) p-3">
@@ -56,7 +53,7 @@ export function LiveOps() {
             </div>
           </div>
 
-          <div className="min-h-47.5 flex-1">
+          <div className="min-h-0 flex-1">
             <AlertsPanel />
           </div>
 
