@@ -1,5 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import L, { type GeoJSON, type Map as LeafletMap } from "leaflet";
+import L, {
+  type Layer,
+  type Map as LeafletMap,
+  type TileLayer,
+} from "leaflet";
 import "leaflet/dist/leaflet.css";
 import {
   Crosshair,
@@ -7,7 +11,9 @@ import {
   Home,
   Layers,
   LocateFixed,
+  Moon,
   Plane,
+  Sun,
 } from "lucide-react";
 import {
   contactPoints,
@@ -31,6 +37,8 @@ type LayerId =
 
 type LayerState = Record<LayerId, boolean>;
 
+type MapTheme = "dark" | "light";
+
 const defaultLayerState: LayerState = {
   drones: true,
   route: true,
@@ -51,11 +59,51 @@ const layerButtons: { id: LayerId; label: string }[] = [
   { id: "home", label: "Home" },
 ];
 
+const baseMaps: Record<
+  MapTheme,
+  {
+    label: string;
+    url: string;
+    attribution: string;
+  }
+> = {
+  dark: {
+    label: "Dark Tactical",
+    url: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+    attribution: "© OpenStreetMap contributors © CARTO",
+  },
+  light: {
+    label: "Voyager Detail",
+    url: "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+    attribution: "© OpenStreetMap contributors © CARTO",
+  },
+};
+
+const mapColors = {
+  geofenceBoundary: "#009933",
+  geofenceFill: "#009933",
+
+  restrictedBoundary: "#ff4d4d",
+  restrictedFill: "#ff4d4d",
+
+  route: "#29d3ff",
+  heat: "#ff4d4d",
+  home: "#49e58f",
+  contact: "#ff4d4d",
+  drone: "#f6b23c",
+  mapStroke: "#050d18",
+};
+
+function createWorldBounds() {
+  return L.latLngBounds(L.latLng(-85, -180), L.latLng(85, 180));
+}
+
 export function AeroWorldMap() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<LeafletMap | null>(null);
+  const baseTileRef = useRef<TileLayer | null>(null);
 
-  const layerRefs = useRef<Record<LayerId, GeoJSON | L.LayerGroup | null>>({
+  const layerRefs = useRef<Record<LayerId, Layer | null>>({
     drones: null,
     route: null,
     geofence: null,
@@ -65,6 +113,7 @@ export function AeroWorldMap() {
     home: null,
   });
 
+  const [mapTheme, setMapTheme] = useState<MapTheme>("dark");
   const [layers, setLayers] = useState<LayerState>(defaultLayerState);
   const [coordinates, setCoordinates] = useState("23.02250°N · 72.57140°E");
   const [zoom, setZoom] = useState(initialMapView.zoom.toFixed(1));
@@ -72,49 +121,59 @@ export function AeroWorldMap() {
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
-const worldBounds = L.latLngBounds(
-  L.latLng(-85, -180),
-  L.latLng(85, 180)
-);
+    const worldBounds = createWorldBounds();
 
-const map = L.map(containerRef.current, {
-  center: [initialMapView.latitude, initialMapView.longitude],
-  zoom: Math.max(initialMapView.zoom, 2),
-  minZoom: 2,
-  maxZoom: 19,
-  zoomControl: true,
-  attributionControl: true,
-  maxBounds: worldBounds,
-  maxBoundsViscosity: 1.0,
-  worldCopyJump: false,
-});
+    const map = L.map(containerRef.current, {
+      center: [initialMapView.latitude, initialMapView.longitude],
+      zoom: Math.max(initialMapView.zoom, 2),
+      minZoom: 2,
+      maxZoom: 19,
+      zoomControl: true,
+      attributionControl: false,
+      maxBounds: worldBounds,
+      maxBoundsViscosity: 1.0,
+      worldCopyJump: false,
+    });
+
+    L.control
+      .attribution({
+        position: "bottomright",
+        prefix: false,
+      })
+      .addTo(map);
 
     mapRef.current = map;
 
-L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png", {
-  minZoom: 2,
-  maxZoom: 19,
-  noWrap: true,
-  bounds: worldBounds,
-  attribution: "© OpenStreetMap contributors © CARTO",
-}).addTo(map);
+    const baseLayer = L.tileLayer(baseMaps[mapTheme].url, {
+      minZoom: 2,
+      maxZoom: 19,
+      noWrap: true,
+      bounds: worldBounds,
+      attribution: baseMaps[mapTheme].attribution,
+    });
 
+    baseLayer.addTo(map);
+    baseTileRef.current = baseLayer;
 
     const geofenceLayer = L.geoJSON(geofenceZone, {
       style: {
-        color: "#009933",
-        weight: 2,
+        color: mapColors.geofenceBoundary,
+        weight: 2.5,
         dashArray: "6 6",
-        fillColor: "##009933",
+        fillColor: mapColors.geofenceFill,
         fillOpacity: 0.1,
+      },
+      onEachFeature: (feature, layer) => {
+        const name = feature.properties?.name ?? "Mission Geofence";
+        layer.bindPopup(`<b>${name}</b><br/>Mission operation boundary`);
       },
     }).addTo(map);
 
     const restrictedLayer = L.geoJSON(restrictedZones, {
       style: {
-        color: "#ff4d4d",
+        color: mapColors.restrictedBoundary,
         weight: 2,
-        fillColor: "#ff4d4d",
+        fillColor: mapColors.restrictedFill,
         fillOpacity: 0.18,
       },
       onEachFeature: (feature, layer) => {
@@ -125,9 +184,13 @@ L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png", {
 
     const routeLayer = L.geoJSON(missionRoute, {
       style: {
-        color: "#29d3ff",
+        color: mapColors.route,
         weight: 4,
         dashArray: "5 5",
+      },
+      onEachFeature: (feature, layer) => {
+        const name = feature.properties?.name ?? "Mission Route";
+        layer.bindPopup(`<b>${name}</b><br/>Planned autonomous route`);
       },
     }).addTo(map);
 
@@ -135,8 +198,8 @@ L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png", {
       pointToLayer: (_feature, latlng) =>
         L.circle(latlng, {
           radius: 450,
-          color: "#ff4d4d",
-          fillColor: "#ff4d4d",
+          color: mapColors.heat,
+          fillColor: mapColors.heat,
           fillOpacity: 0.22,
           weight: 0,
         }),
@@ -146,9 +209,9 @@ L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png", {
       pointToLayer: (_feature, latlng) =>
         L.circleMarker(latlng, {
           radius: 9,
-          color: "#050d18",
+          color: mapColors.mapStroke,
           weight: 2,
-          fillColor: "#49e58f",
+          fillColor: mapColors.home,
           fillOpacity: 1,
         }),
       onEachFeature: (feature, layer) => {
@@ -163,7 +226,7 @@ L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png", {
           radius: 8,
           color: "#ffffff",
           weight: 1,
-          fillColor: "#ff4d4d",
+          fillColor: mapColors.contact,
           fillOpacity: 1,
         }).bindPopup(
           `<b>${feature.properties?.name ?? "Contact"}</b><br/>
@@ -176,9 +239,9 @@ L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png", {
       pointToLayer: (feature, latlng) =>
         L.circleMarker(latlng, {
           radius: 9,
-          color: "#050d18",
+          color: mapColors.mapStroke,
           weight: 2,
-          fillColor: "#f6b23c",
+          fillColor: mapColors.drone,
           fillOpacity: 1,
         }).bindPopup(
           `<b>${feature.properties?.name ?? "Drone"}</b><br/>
@@ -208,21 +271,17 @@ L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png", {
       setZoom(map.getZoom().toFixed(1));
     });
 
-    setTimeout(() => {
-      map.invalidateSize();
-    }, 100);
-
-    setTimeout(() => {
-      map.invalidateSize();
-    }, 500);
-
-    setTimeout(() => {
-      map.invalidateSize();
-    }, 1000);
+    const resizeOne = window.setTimeout(() => map.invalidateSize(), 100);
+    const resizeTwo = window.setTimeout(() => map.invalidateSize(), 500);
+    const resizeThree = window.setTimeout(() => map.invalidateSize(), 1000);
 
     return () => {
+      window.clearTimeout(resizeOne);
+      window.clearTimeout(resizeTwo);
+      window.clearTimeout(resizeThree);
       map.remove();
       mapRef.current = null;
+      baseTileRef.current = null;
     };
   }, []);
 
@@ -238,13 +297,34 @@ L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png", {
         if (!map.hasLayer(layer)) {
           layer.addTo(map);
         }
-      } else {
-        if (map.hasLayer(layer)) {
-          map.removeLayer(layer);
-        }
+      } else if (map.hasLayer(layer)) {
+        map.removeLayer(layer);
       }
     }
   }, [layers]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const worldBounds = createWorldBounds();
+
+    if (baseTileRef.current) {
+      map.removeLayer(baseTileRef.current);
+    }
+
+    const nextBaseLayer = L.tileLayer(baseMaps[mapTheme].url, {
+      minZoom: 2,
+      maxZoom: 19,
+      noWrap: true,
+      bounds: worldBounds,
+      attribution: baseMaps[mapTheme].attribution,
+    });
+
+    nextBaseLayer.addTo(map);
+    nextBaseLayer.bringToBack();
+    baseTileRef.current = nextBaseLayer;
+  }, [mapTheme]);
 
   function toggleLayer(layerId: LayerId) {
     setLayers((current) => ({
@@ -253,11 +333,15 @@ L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png", {
     }));
   }
 
-function flyToWorld() {
-  mapRef.current?.flyTo([22, 20], 2.4, {
-    duration: 1.2,
-  });
-}
+  function toggleMapTheme() {
+    setMapTheme((current) => (current === "dark" ? "light" : "dark"));
+  }
+
+  function flyToWorld() {
+    mapRef.current?.flyTo([22, 20], 2.4, {
+      duration: 1.2,
+    });
+  }
 
   function flyToHome() {
     mapRef.current?.flyTo([23.0225, 72.5714], 15, {
@@ -278,7 +362,7 @@ function flyToWorld() {
   }
 
   return (
-   <div className="relative h-full min-h-0 overflow-hidden rounded border border-(--border) bg-[#050d18]">
+    <div className="relative h-full min-h-0 overflow-hidden rounded border border-(--border) bg-[#050d18]">
       <div ref={containerRef} className="absolute inset-0 z-0" />
 
       <div className="pointer-events-none absolute inset-0 z-10 bg-[linear-gradient(to_bottom,rgba(5,13,24,0.02),rgba(5,13,24,0.08))]" />
@@ -290,7 +374,8 @@ function flyToWorld() {
         </div>
 
         <div className="mt-1 text-hud text-[9px] text-(--muted)">
-          OSM · WGS-84 · LIVE SIMULATION · ZOOM {zoom}
+          {baseMaps[mapTheme].label.toUpperCase()} · WGS-84 · NO WORLD WRAP ·
+          ZOOM {zoom}
         </div>
       </div>
 
@@ -299,6 +384,17 @@ function flyToWorld() {
           <Layers size={14} className="text-(--primary)" />
           Map Layers
         </div>
+
+        <button
+          onClick={toggleMapTheme}
+          className="mb-2 flex w-full items-center justify-between rounded border border-(--primary) bg-[rgba(246,178,60,0.08)] px-2 py-1.5 text-hud text-[9px] text-(--primary)"
+        >
+          <span className="flex items-center gap-1.5">
+            {mapTheme === "dark" ? <Moon size={12} /> : <Sun size={12} />}
+            Map Theme
+          </span>
+          <span>{mapTheme === "dark" ? "Dark" : "Detailed"}</span>
+        </button>
 
         <div className="space-y-1.5">
           {layerButtons.map((layer) => (
