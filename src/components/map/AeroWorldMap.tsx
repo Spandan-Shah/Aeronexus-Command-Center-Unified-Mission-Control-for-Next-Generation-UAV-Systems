@@ -72,27 +72,41 @@ export function AeroWorldMap() {
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
-    const map = L.map(containerRef.current, {
-      center: [initialMapView.latitude, initialMapView.longitude],
-      zoom: initialMapView.zoom,
-      zoomControl: true,
-      attributionControl: true,
-    });
+const worldBounds = L.latLngBounds(
+  L.latLng(-85, -180),
+  L.latLng(85, 180)
+);
+
+const map = L.map(containerRef.current, {
+  center: [initialMapView.latitude, initialMapView.longitude],
+  zoom: Math.max(initialMapView.zoom, 2),
+  minZoom: 2,
+  maxZoom: 19,
+  zoomControl: true,
+  attributionControl: true,
+  maxBounds: worldBounds,
+  maxBoundsViscosity: 1.0,
+  worldCopyJump: false,
+});
 
     mapRef.current = map;
 
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-      attribution: "© OpenStreetMap contributors",
-    }).addTo(map);
+L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png", {
+  minZoom: 2,
+  maxZoom: 19,
+  noWrap: true,
+  bounds: worldBounds,
+  attribution: "© OpenStreetMap contributors © CARTO",
+}).addTo(map);
+
 
     const geofenceLayer = L.geoJSON(geofenceZone, {
       style: {
-        color: "#f6b23c",
+        color: "#009933",
         weight: 2,
         dashArray: "6 6",
-        fillColor: "#f6b23c",
-        fillOpacity: 0.08,
+        fillColor: "##009933",
+        fillOpacity: 0.1,
       },
     }).addTo(map);
 
@@ -239,11 +253,11 @@ export function AeroWorldMap() {
     }));
   }
 
-  function flyToWorld() {
-    mapRef.current?.flyTo([22, 20], 2, {
-      duration: 1.2,
-    });
-  }
+function flyToWorld() {
+  mapRef.current?.flyTo([22, 20], 2.4, {
+    duration: 1.2,
+  });
+}
 
   function flyToHome() {
     mapRef.current?.flyTo([23.0225, 72.5714], 15, {
