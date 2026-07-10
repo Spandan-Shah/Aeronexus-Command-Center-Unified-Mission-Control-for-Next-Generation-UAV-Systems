@@ -8,9 +8,9 @@ import type {
 export const initialMapView = {
   longitude: 72.5714,
   latitude: 23.0225,
-  zoom: 12.3,
-  pitch: 45,
-  bearing: -25,
+  zoom: 11.5,
+  pitch: 0,
+  bearing: 0,
 };
 
 export const dronePoints: FeatureCollection<Point> = {
