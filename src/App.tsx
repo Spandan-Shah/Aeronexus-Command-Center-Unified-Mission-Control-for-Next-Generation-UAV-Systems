@@ -61,13 +61,9 @@ function App() {
   const [activePage, setActivePage] = useState<PageId>("live-ops");
 
   return (
-    <>
-      <AppShell activePage={activePage} onPageChange={setActivePage}>
-        {renderPage(activePage)}
-      </AppShell>
-
-      {activePage === "mission-planner" && <SimulatorControlDock />}
-    </>
+    <AppShell activePage={activePage} onPageChange={setActivePage}>
+      {renderPage(activePage)}
+    </AppShell>
   );
 }
 
