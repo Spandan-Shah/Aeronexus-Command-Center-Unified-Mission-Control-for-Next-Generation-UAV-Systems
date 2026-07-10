@@ -2,6 +2,8 @@ import {
   Activity,
   Battery,
   Camera,
+  ChevronLeft,
+  ChevronRight,
   ClipboardCheck,
   FileText,
   Gauge,
@@ -14,6 +16,7 @@ import {
   Wrench,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { useState } from "react";
 import type { PageId } from "../../data/navigation";
 
 type MenuItem = {
@@ -43,23 +46,39 @@ const menuItems: MenuItem[] = [
 ];
 
 export function AppSidebar({ activePage, onPageChange }: AppSidebarProps) {
+  const [collapsed, setCollapsed] = useState(true);
+
   return (
-    <aside className="relative w-64 shrink-0 border-r border-(--border) bg-[#050d18]">
-      <div className="h-16 border-b border-(--border) px-4 flex items-center gap-3">
-        <div className="relative h-9 w-9 rounded border border-(--primary) bg-[rgba(246,178,60,0.08)] flex items-center justify-center text-(--primary)">
+    <aside
+      className={`relative shrink-0 border-r border-(--border) bg-[#050d18] transition-all duration-300 ${
+        collapsed ? "w-18" : "w-64"
+      }`}
+    >
+      <div className="flex h-16 items-center gap-3 border-b border-(--border) px-3">
+        <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded border border-(--primary) bg-[rgba(246,178,60,0.08)] text-(--primary)">
           <Activity size={18} />
           <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-(--nominal)" />
         </div>
 
-        <div>
-          <div className="text-hud text-sm font-bold">AeroNexus</div>
-          <div className="text-hud text-[10px] text-(--muted)">
-            Drone Ecosystem
+        {!collapsed && (
+          <div className="min-w-0">
+            <div className="text-hud text-sm font-bold">AeroNexus</div>
+            <div className="text-hud text-[10px] text-(--muted)">
+              Drone Ecosystem
+            </div>
           </div>
-        </div>
+        )}
+
+        <button
+          onClick={() => setCollapsed((current) => !current)}
+          className="ml-auto flex h-7 w-7 items-center justify-center rounded border border-(--border) text-(--muted) hover:border-(--primary) hover:text-(--primary)"
+          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {collapsed ? <ChevronRight size={15} /> : <ChevronLeft size={15} />}
+        </button>
       </div>
 
-      <nav className="p-2 space-y-1">
+      <nav className="space-y-1 p-2">
         {menuItems.map((item) => {
           const Icon = item.icon;
           const active = activePage === item.id;
@@ -68,29 +87,32 @@ export function AppSidebar({ activePage, onPageChange }: AppSidebarProps) {
             <button
               key={item.id}
               onClick={() => onPageChange(item.id)}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded text-left text-sm transition ${
+              title={collapsed ? item.title : undefined}
+              className={`flex w-full items-center gap-3 rounded px-3 py-2 text-left text-sm transition ${
                 active
-                  ? "bg-[rgba(246,178,60,0.12)] text-(--primary) border-l-2 border-(--primary)"
+                  ? "border-l-2 border-(--primary) bg-[rgba(246,178,60,0.12)] text-(--primary)"
                   : "text-(--muted) hover:bg-(--panel) hover:text-(--foreground)"
-              }`}
+              } ${collapsed ? "justify-center px-2" : ""}`}
             >
-              <Icon size={16} />
-              <span>{item.title}</span>
+              <Icon size={16} className="shrink-0" />
+              {!collapsed && <span>{item.title}</span>}
             </button>
           );
         })}
       </nav>
 
-      <div className="absolute bottom-0 w-64 border-t border-(--border) p-3 text-hud text-[10px]">
-        <div className="flex justify-between text-(--muted)">
-          <span>Mode</span>
-          <span className="text-(--nominal)">Simulation</span>
+      {!collapsed && (
+        <div className="absolute bottom-0 w-64 border-t border-(--border) p-3 text-hud text-[10px]">
+          <div className="flex justify-between text-(--muted)">
+            <span>Mode</span>
+            <span className="text-(--nominal)">Simulation</span>
+          </div>
+          <div className="mt-1 flex justify-between text-(--muted)">
+            <span>Version</span>
+            <span>v0.1.0</span>
+          </div>
         </div>
-        <div className="mt-1 flex justify-between text-(--muted)">
-          <span>Version</span>
-          <span>v0.1.0</span>
-        </div>
-      </div>
+      )}
     </aside>
   );
 }
