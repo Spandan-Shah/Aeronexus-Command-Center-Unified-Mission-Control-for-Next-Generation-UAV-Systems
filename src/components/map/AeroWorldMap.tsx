@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import type { FeatureCollection, Point } from "geojson";
 import L, {
   type Layer,
   type Map as LeafletMap,
@@ -27,8 +28,11 @@ import {
 } from "../../data/worldMap";
 import {
   infrastructurePoints,
+  type InfrastructureProperties,
   type InfrastructureType,
 } from "../../data/infrastructure";
+import { fetchInfrastructureFromOverpass } from "../../services/overpassInfrastructure";
+import { fetchOfficialAhmedabadPoliceFromOverpass } from "../../services/ahmedabadOfficialPolice";
 
 type LayerId =
   | "drones"
@@ -43,6 +47,17 @@ type LayerId =
 type LayerState = Record<LayerId, boolean>;
 
 type MapTheme = "dark" | "light";
+
+type InfrastructureCollection = FeatureCollection<
+  Point,
+  InfrastructureProperties
+>;
+
+type PoliceStats = {
+  matched: number;
+  missing: number;
+  total: number;
+};
 
 const defaultLayerState: LayerState = {
   drones: true,
@@ -170,11 +185,46 @@ function createWorldBounds() {
   return L.latLngBounds(L.latLng(-85, -180), L.latLng(85, 180));
 }
 
+function escapeHtml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function normalizeInfrastructureType(type: unknown): InfrastructureType {
+  if (typeof type === "string" && type in infrastructureStyles) {
+    return type as InfrastructureType;
+  }
+
+  return "government";
+}
+
+function normalizePriority(
+  priority: unknown
+): InfrastructureProperties["priority"] {
+  if (
+    priority === "critical" ||
+    priority === "high" ||
+    priority === "medium"
+  ) {
+    return priority;
+  }
+
+  return "medium";
+}
+
+function getInfrastructureStyle(type: InfrastructureType) {
+  return infrastructureStyles[type] ?? infrastructureStyles.government;
+}
+
 function createInfrastructureIcon(
   type: InfrastructureType,
-  priority: "critical" | "high" | "medium"
+  priority: InfrastructureProperties["priority"]
 ) {
-  const style = infrastructureStyles[type];
+  const style = getInfrastructureStyle(type);
   const size = priority === "critical" ? 32 : priority === "high" ? 28 : 24;
 
   return L.divIcon({
@@ -207,6 +257,41 @@ function createInfrastructureIcon(
   });
 }
 
+function createInfrastructureKey(
+  feature: InfrastructureCollection["features"][number]
+) {
+  const type = feature.properties.type;
+  const name = feature.properties.name.toLowerCase().trim();
+  const [longitude, latitude] = feature.geometry.coordinates;
+
+  return `${type}-${name}-${longitude.toFixed(5)}-${latitude.toFixed(5)}`;
+}
+
+function mergeInfrastructureCollections(
+  collections: InfrastructureCollection[]
+): InfrastructureCollection {
+  const seen = new Set<string>();
+  const features: InfrastructureCollection["features"] = [];
+
+  for (const collection of collections) {
+    for (const feature of collection.features) {
+      const key = createInfrastructureKey(feature);
+
+      if (seen.has(key)) {
+        continue;
+      }
+
+      seen.add(key);
+      features.push(feature);
+    }
+  }
+
+  return {
+    type: "FeatureCollection",
+    features,
+  };
+}
+
 export function AeroWorldMap() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<LeafletMap | null>(null);
@@ -227,9 +312,20 @@ export function AeroWorldMap() {
   const [layers, setLayers] = useState<LayerState>(defaultLayerState);
   const [coordinates, setCoordinates] = useState("23.02250°N · 72.57140°E");
   const [zoom, setZoom] = useState(initialMapView.zoom.toFixed(1));
+  const [infrastructureCount, setInfrastructureCount] = useState(
+    infrastructurePoints.features.length
+  );
+  const [policeStats, setPoliceStats] = useState<PoliceStats>({
+    matched: 0,
+    missing: 0,
+    total: 0,
+  });
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
+
+    let isMounted = true;
+    let infrastructureTimer: number | undefined;
 
     const worldBounds = createWorldBounds();
 
@@ -274,7 +370,7 @@ export function AeroWorldMap() {
         fillOpacity: 0.1,
       },
       onEachFeature: (feature, layer) => {
-        const name = feature.properties?.name ?? "Mission Geofence";
+        const name = escapeHtml(feature.properties?.name ?? "Mission Geofence");
         layer.bindPopup(`<b>${name}</b><br/>Mission operation boundary`);
       },
     }).addTo(map);
@@ -287,7 +383,7 @@ export function AeroWorldMap() {
         fillOpacity: 0.18,
       },
       onEachFeature: (feature, layer) => {
-        const name = feature.properties?.name ?? "Restricted Zone";
+        const name = escapeHtml(feature.properties?.name ?? "Restricted Zone");
         layer.bindPopup(`<b>${name}</b><br/>No-fly / restricted area`);
       },
     }).addTo(map);
@@ -299,7 +395,7 @@ export function AeroWorldMap() {
         dashArray: "5 5",
       },
       onEachFeature: (feature, layer) => {
-        const name = feature.properties?.name ?? "Mission Route";
+        const name = escapeHtml(feature.properties?.name ?? "Mission Route");
         layer.bindPopup(`<b>${name}</b><br/>Planned autonomous route`);
       },
     }).addTo(map);
@@ -325,60 +421,76 @@ export function AeroWorldMap() {
           fillOpacity: 1,
         }),
       onEachFeature: (feature, layer) => {
-        const name = feature.properties?.name ?? "HOME";
+        const name = escapeHtml(feature.properties?.name ?? "HOME");
         layer.bindPopup(`<b>${name}</b><br/>Launch / return point`);
       },
     }).addTo(map);
 
     const contactLayer = L.geoJSON(contactPoints, {
-      pointToLayer: (feature, latlng) =>
-        L.circleMarker(latlng, {
+      pointToLayer: (feature, latlng) => {
+        const name = escapeHtml(feature.properties?.name ?? "Contact");
+        const type = escapeHtml(feature.properties?.type ?? "Unknown");
+        const confidence = escapeHtml(
+          String(feature.properties?.confidence ?? "N/A")
+        );
+
+        return L.circleMarker(latlng, {
           radius: 8,
           color: "#ffffff",
           weight: 1,
           fillColor: mapColors.contact,
           fillOpacity: 1,
         }).bindPopup(
-          `<b>${feature.properties?.name ?? "Contact"}</b><br/>
-          Type: ${feature.properties?.type ?? "Unknown"}<br/>
-          Confidence: ${feature.properties?.confidence ?? "N/A"}`
-        ),
+          `<b>${name}</b><br/>
+          Type: ${type}<br/>
+          Confidence: ${confidence}`
+        );
+      },
     }).addTo(map);
 
-const infrastructureLayer = L.geoJSON(infrastructurePoints, {
-  pointToLayer: (feature, latlng) => {
-    const type = feature.properties?.type as InfrastructureType;
-    const priority = feature.properties?.priority as
-      | "critical"
-      | "high"
-      | "medium";
+    const infrastructureLayer = L.geoJSON(infrastructurePoints, {
+      pointToLayer: (feature, latlng) => {
+        const type = normalizeInfrastructureType(feature.properties?.type);
+        const priority = normalizePriority(feature.properties?.priority);
+        const style = getInfrastructureStyle(type);
+        const name = escapeHtml(
+          feature.properties?.name ?? "Infrastructure Node"
+        );
 
-    const style = infrastructureStyles[type];
-
-    return L.marker(latlng, {
-      icon: createInfrastructureIcon(type, priority),
-    }).bindPopup(
-      `<b>${feature.properties?.name ?? "Infrastructure Node"}</b><br/>
-      Category: ${style.label}<br/>
-      Priority: ${priority.toUpperCase()}`
-    );
-  },
-}).addTo(map);
+        return L.marker(latlng, {
+          icon: createInfrastructureIcon(type, priority),
+        }).bindPopup(
+          `<b>${name}</b><br/>
+          Category: ${style.label}<br/>
+          Priority: ${priority.toUpperCase()}`
+        );
+      },
+    }).addTo(map);
 
     const droneLayer = L.geoJSON(dronePoints, {
-      pointToLayer: (feature, latlng) =>
-        L.circleMarker(latlng, {
+      pointToLayer: (feature, latlng) => {
+        const name = escapeHtml(feature.properties?.name ?? "Drone");
+        const status = escapeHtml(String(feature.properties?.status ?? "N/A"));
+        const battery = escapeHtml(
+          String(feature.properties?.battery ?? "N/A")
+        );
+        const altitude = escapeHtml(
+          String(feature.properties?.altitude ?? "N/A")
+        );
+
+        return L.circleMarker(latlng, {
           radius: 9,
           color: mapColors.mapStroke,
           weight: 2,
           fillColor: mapColors.drone,
           fillOpacity: 1,
         }).bindPopup(
-          `<b>${feature.properties?.name ?? "Drone"}</b><br/>
-          Status: ${feature.properties?.status ?? "N/A"}<br/>
-          Battery: ${feature.properties?.battery ?? "N/A"}<br/>
-          Altitude: ${feature.properties?.altitude ?? "N/A"}`
-        ),
+          `<b>${name}</b><br/>
+          Status: ${status}<br/>
+          Battery: ${battery}<br/>
+          Altitude: ${altitude}`
+        );
+      },
     }).addTo(map);
 
     layerRefs.current = {
@@ -391,6 +503,79 @@ const infrastructureLayer = L.geoJSON(infrastructurePoints, {
       home: homeLayer,
       infrastructure: infrastructureLayer,
     };
+
+    async function loadInfrastructureFromMapBounds() {
+      if (map.getZoom() < 10) {
+        if (!isMounted) return;
+
+        infrastructureLayer.clearLayers();
+        infrastructureLayer.addData(infrastructurePoints);
+        setInfrastructureCount(infrastructurePoints.features.length);
+
+        return;
+      }
+
+      let liveInfrastructure: InfrastructureCollection = infrastructurePoints;
+
+      try {
+        const bounds = map.getBounds();
+
+        liveInfrastructure = await fetchInfrastructureFromOverpass({
+          south: bounds.getSouth(),
+          west: bounds.getWest(),
+          north: bounds.getNorth(),
+          east: bounds.getEast(),
+        });
+      } catch (error) {
+        console.error("Failed to load live infrastructure data:", error);
+      }
+
+      let officialPoliceInfrastructure: InfrastructureCollection = {
+        type: "FeatureCollection",
+        features: [],
+      };
+
+      try {
+        const officialPolice =
+          await fetchOfficialAhmedabadPoliceFromOverpass();
+
+        officialPoliceInfrastructure =
+          officialPolice.collection as InfrastructureCollection;
+
+        if (isMounted) {
+          setPoliceStats({
+            matched: officialPolice.matched,
+            missing: officialPolice.missing.length,
+            total: officialPolice.total,
+          });
+        }
+      } catch (error) {
+        console.error("Failed to load official Ahmedabad police data:", error);
+      }
+
+      if (!isMounted) return;
+
+      const mergedInfrastructure = mergeInfrastructureCollections([
+        liveInfrastructure,
+        officialPoliceInfrastructure,
+      ]);
+
+      infrastructureLayer.clearLayers();
+      infrastructureLayer.addData(mergedInfrastructure);
+      setInfrastructureCount(mergedInfrastructure.features.length);
+    }
+
+    function scheduleInfrastructureLoad() {
+      window.clearTimeout(infrastructureTimer);
+
+      infrastructureTimer = window.setTimeout(() => {
+        void loadInfrastructureFromMapBounds();
+      }, 900);
+    }
+
+    void loadInfrastructureFromMapBounds();
+
+    map.on("moveend", scheduleInfrastructureLoad);
 
     map.on("mousemove", (event) => {
       setCoordinates(
@@ -407,9 +592,12 @@ const infrastructureLayer = L.geoJSON(infrastructurePoints, {
     const resizeThree = window.setTimeout(() => map.invalidateSize(), 1000);
 
     return () => {
+      isMounted = false;
       window.clearTimeout(resizeOne);
       window.clearTimeout(resizeTwo);
       window.clearTimeout(resizeThree);
+      window.clearTimeout(infrastructureTimer);
+      map.off("moveend", scheduleInfrastructureLoad);
       map.remove();
       mapRef.current = null;
       baseTileRef.current = null;
@@ -506,7 +694,9 @@ const infrastructureLayer = L.geoJSON(infrastructurePoints, {
 
         <div className="mt-1 text-hud text-[9px] text-(--muted)">
           {baseMaps[mapTheme].label.toUpperCase()} · WGS-84 · NO WORLD WRAP ·
-          ZOOM {zoom}
+          ZOOM {zoom} · INFRA {infrastructureCount} · POLICE{" "}
+          {policeStats.matched}/{policeStats.total} · MISS{" "}
+          {policeStats.missing}
         </div>
       </div>
 
