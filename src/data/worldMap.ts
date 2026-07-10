@@ -108,17 +108,23 @@ export const geofenceZone: FeatureCollection<Polygon> = {
     {
       type: "Feature",
       properties: {
-        name: "Mission Geofence",
+        name: "Ahmedabad City Geofence",
+        type: "Operational Boundary",
       },
       geometry: {
         type: "Polygon",
         coordinates: [
           [
-            [72.562, 23.016],
-            [72.592, 23.0175],
-            [72.597, 23.037],
-            [72.568, 23.041],
-            [72.562, 23.016],
+            [72.470, 23.080],
+            [72.485, 23.020],
+            [72.515, 22.965],
+            [72.590, 22.940],
+            [72.665, 22.970],
+            [72.725, 23.040],
+            [72.710, 23.115],
+            [72.640, 23.155],
+            [72.555, 23.145],
+            [72.470, 23.080],
           ],
         ],
       },
