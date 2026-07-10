@@ -21,18 +21,24 @@ import {
 const osmStyle: StyleSpecification = {
   version: 8,
   sources: {
-    osm: {
+    "carto-dark": {
       type: "raster",
-      tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
+      tiles: [
+        "https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
+        "https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
+        "https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
+      ],
       tileSize: 256,
-      attribution: "© OpenStreetMap contributors",
+      attribution: "© OpenStreetMap contributors © CARTO",
     },
   },
   layers: [
     {
-      id: "osm-base",
+      id: "carto-dark-base",
       type: "raster",
-      source: "osm",
+      source: "carto-dark",
+      minzoom: 0,
+      maxzoom: 20,
     },
   ],
 };
@@ -111,6 +117,18 @@ export function AeroWorldMap() {
     });
 
     mapRef.current = map;
+
+    setTimeout(() => {
+  map.resize();
+}, 100);
+
+setTimeout(() => {
+  map.resize();
+}, 500);
+
+window.addEventListener("resize", () => {
+  map.resize();
+});
 
     map.addControl(
       new NavigationControl({
@@ -413,7 +431,7 @@ export function AeroWorldMap() {
     <div className="relative h-full min-h-155 overflow-hidden rounded border border-(--border) bg-[#050d18]">
       <div ref={containerRef} className="absolute inset-0" />
 
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(5,13,24,0.15),rgba(5,13,24,0.35))]" />
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(5,13,24,0.04),rgba(5,13,24,0.12))]" />
 
       <div className="absolute left-3 top-3 rounded border border-(--border) bg-[#050d18]/90 px-3 py-2 backdrop-blur">
         <div className="flex items-center gap-2 text-hud text-[10px] text-(--primary)">
