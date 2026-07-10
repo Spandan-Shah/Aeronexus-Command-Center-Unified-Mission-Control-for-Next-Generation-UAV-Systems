@@ -105,7 +105,9 @@ export function AeroWorldMap() {
       zoom: initialMapView.zoom,
       pitch: initialMapView.pitch,
       bearing: initialMapView.bearing,
-      attributionControl: true,
+      attributionControl: {
+  compact: true,
+},
     });
 
     mapRef.current = map;
@@ -408,7 +410,7 @@ export function AeroWorldMap() {
   }
 
   return (
-    <div className="relative h-full min-h-[620px] overflow-hidden rounded border border-(--border) bg-[#050d18]">
+    <div className="relative h-full min-h-155 overflow-hidden rounded border border-(--border) bg-[#050d18]">
       <div ref={containerRef} className="absolute inset-0" />
 
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(5,13,24,0.15),rgba(5,13,24,0.35))]" />
