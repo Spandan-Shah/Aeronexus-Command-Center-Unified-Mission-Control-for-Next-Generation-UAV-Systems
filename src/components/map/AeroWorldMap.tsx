@@ -25,6 +25,10 @@ import {
   missionRoute,
   restrictedZones,
 } from "../../data/worldMap";
+import {
+  infrastructurePoints,
+  type InfrastructureType,
+} from "../../data/infrastructure";
 
 type LayerId =
   | "drones"
@@ -33,7 +37,8 @@ type LayerId =
   | "restricted"
   | "contacts"
   | "heat"
-  | "home";
+  | "home"
+  | "infrastructure";
 
 type LayerState = Record<LayerId, boolean>;
 
@@ -47,6 +52,7 @@ const defaultLayerState: LayerState = {
   contacts: true,
   heat: true,
   home: true,
+  infrastructure: true,
 };
 
 const layerButtons: { id: LayerId; label: string }[] = [
@@ -57,6 +63,7 @@ const layerButtons: { id: LayerId; label: string }[] = [
   { id: "contacts", label: "Contacts" },
   { id: "heat", label: "Heat Scan" },
   { id: "home", label: "Home" },
+  { id: "infrastructure", label: "Infrastructure" },
 ];
 
 const baseMaps: Record<
@@ -94,8 +101,110 @@ const mapColors = {
   mapStroke: "#050d18",
 };
 
+const infrastructureStyles: Record<
+  InfrastructureType,
+  {
+    label: string;
+    symbol: string;
+    color: string;
+  }
+> = {
+  police: {
+    label: "Police",
+    symbol: "🛡",
+    color: "#3b82f6",
+  },
+  hospital: {
+    label: "Hospital",
+    symbol: "✚",
+    color: "#ef4444",
+  },
+  fire: {
+    label: "Fire",
+    symbol: "🔥",
+    color: "#f97316",
+  },
+  airport: {
+    label: "Airport",
+    symbol: "✈",
+    color: "#38bdf8",
+  },
+  railway: {
+    label: "Railway",
+    symbol: "▣",
+    color: "#a78bfa",
+  },
+  government: {
+    label: "Government",
+    symbol: "🏛",
+    color: "#facc15",
+  },
+  power: {
+    label: "Power",
+    symbol: "⚡",
+    color: "#fbbf24",
+  },
+  fuel: {
+    label: "Fuel",
+    symbol: "⛽",
+    color: "#22c55e",
+  },
+  school: {
+    label: "School",
+    symbol: "🎓",
+    color: "#14b8a6",
+  },
+  water: {
+    label: "Water",
+    symbol: "💧",
+    color: "#06b6d4",
+  },
+  telecom: {
+    label: "Telecom",
+    symbol: "📡",
+    color: "#ec4899",
+  },
+};
+
 function createWorldBounds() {
   return L.latLngBounds(L.latLng(-85, -180), L.latLng(85, 180));
+}
+
+function createInfrastructureIcon(
+  type: InfrastructureType,
+  priority: "critical" | "high" | "medium"
+) {
+  const style = infrastructureStyles[type];
+  const size = priority === "critical" ? 32 : priority === "high" ? 28 : 24;
+
+  return L.divIcon({
+    className: "aeronexus-infrastructure-marker",
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+    popupAnchor: [0, -size / 2],
+    html: `
+      <div
+        style="
+          width: ${size}px;
+          height: ${size}px;
+          border-radius: 999px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: rgba(5, 13, 24, 0.92);
+          border: 2px solid ${style.color};
+          color: ${style.color};
+          box-shadow: 0 0 14px ${style.color}66;
+          font-size: ${Math.round(size * 0.5)}px;
+          font-weight: 800;
+          line-height: 1;
+        "
+        title="${style.label}"
+      >
+        ${style.symbol}
+      </div>
+    `,
+  });
 }
 
 export function AeroWorldMap() {
@@ -111,6 +220,7 @@ export function AeroWorldMap() {
     contacts: null,
     heat: null,
     home: null,
+    infrastructure: null,
   });
 
   const [mapTheme, setMapTheme] = useState<MapTheme>("dark");
@@ -235,6 +345,26 @@ export function AeroWorldMap() {
         ),
     }).addTo(map);
 
+const infrastructureLayer = L.geoJSON(infrastructurePoints, {
+  pointToLayer: (feature, latlng) => {
+    const type = feature.properties?.type as InfrastructureType;
+    const priority = feature.properties?.priority as
+      | "critical"
+      | "high"
+      | "medium";
+
+    const style = infrastructureStyles[type];
+
+    return L.marker(latlng, {
+      icon: createInfrastructureIcon(type, priority),
+    }).bindPopup(
+      `<b>${feature.properties?.name ?? "Infrastructure Node"}</b><br/>
+      Category: ${style.label}<br/>
+      Priority: ${priority.toUpperCase()}`
+    );
+  },
+}).addTo(map);
+
     const droneLayer = L.geoJSON(dronePoints, {
       pointToLayer: (feature, latlng) =>
         L.circleMarker(latlng, {
@@ -259,6 +389,7 @@ export function AeroWorldMap() {
       contacts: contactLayer,
       heat: heatLayer,
       home: homeLayer,
+      infrastructure: infrastructureLayer,
     };
 
     map.on("mousemove", (event) => {
