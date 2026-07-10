@@ -3,10 +3,16 @@ import maplibregl, {
   NavigationControl,
   ScaleControl,
   type Map,
-  type StyleSpecification,
 } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { Crosshair, Globe2, Home, Layers, LocateFixed, Plane } from "lucide-react";
+import {
+  Crosshair,
+  Globe2,
+  Home,
+  Layers,
+  LocateFixed,
+  Plane,
+} from "lucide-react";
 import {
   contactPoints,
   dronePoints,
@@ -18,30 +24,7 @@ import {
   restrictedZones,
 } from "../../data/worldMap";
 
-const osmStyle: StyleSpecification = {
-  version: 8,
-  sources: {
-    "carto-dark": {
-      type: "raster",
-      tiles: [
-        "https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
-        "https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
-        "https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
-      ],
-      tileSize: 256,
-      attribution: "© OpenStreetMap contributors © CARTO",
-    },
-  },
-  layers: [
-    {
-      id: "carto-dark-base",
-      type: "raster",
-      source: "carto-dark",
-      minzoom: 0,
-      maxzoom: 20,
-    },
-  ],
-};
+const MAP_STYLE = "https://demotiles.maplibre.org/style.json";
 
 const layerGroups = [
   {
@@ -62,7 +45,11 @@ const layerGroups = [
   {
     id: "restricted",
     label: "Restricted",
-    layers: ["restricted-fill-layer", "restricted-line-layer", "restricted-label-layer"],
+    layers: [
+      "restricted-fill-layer",
+      "restricted-line-layer",
+      "restricted-label-layer",
+    ],
   },
   {
     id: "contacts",
@@ -98,7 +85,7 @@ export function AeroWorldMap() {
   const mapRef = useRef<Map | null>(null);
 
   const [layers, setLayers] = useState<LayerState>(defaultLayerState);
-  const [coordinates, setCoordinates] = useState("23.0225°N · 72.5714°E");
+  const [coordinates, setCoordinates] = useState("23.02250°N · 72.57140°E");
   const [zoom, setZoom] = useState(initialMapView.zoom.toFixed(1));
 
   useEffect(() => {
@@ -106,29 +93,27 @@ export function AeroWorldMap() {
 
     const map = new maplibregl.Map({
       container: containerRef.current,
-      style: osmStyle,
+      style: MAP_STYLE,
       center: [initialMapView.longitude, initialMapView.latitude],
       zoom: initialMapView.zoom,
       pitch: initialMapView.pitch,
       bearing: initialMapView.bearing,
       attributionControl: {
-  compact: true,
-},
+        compact: true,
+      },
     });
 
     mapRef.current = map;
 
-    setTimeout(() => {
-  map.resize();
-}, 100);
+    const forceResize = () => {
+      map.resize();
+    };
 
-setTimeout(() => {
-  map.resize();
-}, 500);
+    const resizeTimerOne = window.setTimeout(forceResize, 100);
+    const resizeTimerTwo = window.setTimeout(forceResize, 500);
+    const resizeTimerThree = window.setTimeout(forceResize, 1000);
 
-window.addEventListener("resize", () => {
-  map.resize();
-});
+    window.addEventListener("resize", forceResize);
 
     map.addControl(
       new NavigationControl({
@@ -155,7 +140,13 @@ window.addEventListener("resize", () => {
       setZoom(map.getZoom().toFixed(1));
     });
 
+    map.on("error", (event) => {
+      console.error("AeroNexus MapLibre error:", event);
+    });
+
     map.on("load", () => {
+      forceResize();
+
       map.addSource("drones-source", {
         type: "geojson",
         data: dronePoints,
@@ -367,7 +358,13 @@ window.addEventListener("resize", () => {
       });
     });
 
+    map.on("idle", forceResize);
+
     return () => {
+      window.clearTimeout(resizeTimerOne);
+      window.clearTimeout(resizeTimerTwo);
+      window.clearTimeout(resizeTimerThree);
+      window.removeEventListener("resize", forceResize);
       map.remove();
       mapRef.current = null;
     };
@@ -423,6 +420,16 @@ window.addEventListener("resize", () => {
       zoom: 1.7,
       pitch: 0,
       bearing: 0,
+      duration: 1200,
+    });
+  }
+
+  function flyToUav() {
+    mapRef.current?.flyTo({
+      center: [72.5815, 23.0302],
+      zoom: 15,
+      pitch: 55,
+      bearing: -30,
       duration: 1200,
     });
   }
@@ -500,7 +507,7 @@ window.addEventListener("resize", () => {
         </button>
 
         <button
-          onClick={() => mapRef.current?.flyTo({ center: [72.5815, 23.0302], zoom: 15 })}
+          onClick={flyToUav}
           className="flex items-center gap-2 rounded border border-(--border) bg-[#050d18]/90 px-3 py-2 text-hud text-[10px] text-(--foreground) backdrop-blur hover:border-(--primary)"
         >
           <LocateFixed size={14} />
