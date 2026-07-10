@@ -10,7 +10,13 @@ import {
 } from "lucide-react";
 import { useSimulator } from "../../hooks/useSimulator";
 
-export function SimulatorControlDock() {
+type SimulatorControlDockProps = {
+  mode?: "floating" | "inline";
+};
+
+export function SimulatorControlDock({
+  mode = "floating",
+}: SimulatorControlDockProps) {
   const { state, connected, lastResult, sendCommand } = useSimulator();
 
   return (
