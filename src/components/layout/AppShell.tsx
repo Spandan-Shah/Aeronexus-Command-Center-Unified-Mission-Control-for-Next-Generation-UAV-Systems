@@ -15,12 +15,12 @@ export function AppShell({
   onPageChange,
 }: AppShellProps) {
   return (
-    <div className="min-h-screen bg-(--background) text-(--foreground) flex">
+    <div className="flex h-screen overflow-hidden bg-(--background) text-(--foreground)">
       <AppSidebar activePage={activePage} onPageChange={onPageChange} />
 
-      <main className="flex-1 min-w-0 flex flex-col">
+      <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <StatusBar />
-        <div className="flex-1 min-h-0">{children}</div>
+        <div className="min-h-0 flex-1 overflow-hidden">{children}</div>
       </main>
     </div>
   );
