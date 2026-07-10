@@ -278,7 +278,7 @@ function flyToWorld() {
   }
 
   return (
-    <div className="relative h-full min-h-155 overflow-hidden rounded border border-(--border) bg-[#050d18]">
+   <div className="relative h-full min-h-0 overflow-hidden rounded border border-(--border) bg-[#050d18]">
       <div ref={containerRef} className="absolute inset-0 z-0" />
 
       <div className="pointer-events-none absolute inset-0 z-10 bg-[linear-gradient(to_bottom,rgba(5,13,24,0.02),rgba(5,13,24,0.08))]" />
