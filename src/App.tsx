@@ -13,6 +13,7 @@ import { Maintenance } from "./pages/Maintenance";
 import { MissionPlanner } from "./pages/MissionPlanner";
 import { PreFlight } from "./pages/PreFlight";
 import { Security } from "./pages/Security";
+import { DroneControl } from "./pages/DroneControl";
 
 function renderPage(activePage: PageId) {
   switch (activePage) {
@@ -21,6 +22,9 @@ function renderPage(activePage: PageId) {
 
     case "mission-planner":
       return <MissionPlanner />;
+
+    case "drone-control":
+      return <DroneControl />;
 
     case "fleet":
       return <Fleet />;
