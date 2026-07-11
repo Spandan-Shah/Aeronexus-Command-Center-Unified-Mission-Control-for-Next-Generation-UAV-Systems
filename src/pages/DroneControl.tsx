@@ -7,9 +7,7 @@ import {
   CheckCircle2,
   CirclePause,
   CirclePlay,
-  Crosshair,
   Flame,
-  Gauge,
   Home,
   Lock,
   MapPinned,
@@ -26,7 +24,6 @@ import {
   Video,
   Wifi,
   XCircle,
-  Zap,
 } from "lucide-react";
 import { MetricCard } from "../components/common/MetricCard";
 import { Panel } from "../components/common/Panel";
