@@ -6,6 +6,7 @@ import {
   ChevronRight,
   ClipboardCheck,
   FileText,
+  Gamepad2,
   Gauge,
   Map,
   Package,
@@ -15,6 +16,7 @@ import {
   ShieldCheck,
   Wrench,
 } from "lucide-react";
+
 import type { LucideIcon } from "lucide-react";
 import { useState } from "react";
 import type { PageId } from "../../data/navigation";
@@ -33,6 +35,7 @@ type AppSidebarProps = {
 const menuItems: MenuItem[] = [
   { id: "live-ops", title: "Live Ops", icon: Radar },
   { id: "mission-planner", title: "Mission Planner", icon: Map },
+  { id: "drone-control", title: "Drone Control", icon: Gamepad2 },
   { id: "fleet", title: "Fleet", icon: Plane },
   { id: "drone-health", title: "Drone Health", icon: Gauge },
   { id: "battery", title: "Battery", icon: Battery },
