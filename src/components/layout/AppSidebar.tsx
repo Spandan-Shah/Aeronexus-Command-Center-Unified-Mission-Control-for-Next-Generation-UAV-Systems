@@ -18,7 +18,7 @@ import {
 
 import type { LucideIcon } from "lucide-react";
 import { useState } from "react";
-import aeroNexusLogo from "../../assets/aeronexus-logo.png";
+import aeroNexusLogo from "../../assets/SSS (1).png";
 import type { PageId } from "../../data/navigation";
 
 type MenuItem = {
