@@ -1,5 +1,11 @@
-import { useState } from "react";
-import { Camera, Crosshair, Maximize2, ScanLine } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import {
+  Camera,
+  Crosshair,
+  ExternalLink,
+  Maximize2,
+  ScanLine,
+} from "lucide-react";
 
 type AiVideoPanelProps = {
   videoSrc?: string;
@@ -12,7 +18,28 @@ export function AiVideoPanel({
   videoTitle = "Simulated EO/IR Feed",
   videoSourceName = "SIM-CAM-01",
 }: AiVideoPanelProps) {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const [videoFailed, setVideoFailed] = useState(false);
+  const [videoLoaded, setVideoLoaded] = useState(false);
+
+  useEffect(() => {
+    setVideoFailed(false);
+    setVideoLoaded(false);
+
+    if (!videoSrc) {
+      return;
+    }
+
+    const videoElement = videoRef.current;
+
+    if (videoElement) {
+      videoElement.load();
+
+      void videoElement.play().catch(() => {
+        // Browser may block autoplay if muted/playsInline is removed later.
+      });
+    }
+  }, [videoSrc]);
 
   const showVideo = Boolean(videoSrc) && !videoFailed;
 
@@ -20,16 +47,24 @@ export function AiVideoPanel({
     <div className="relative h-135 overflow-hidden rounded border border-(--border) bg-[#07111f]">
       {showVideo ? (
         <video
+          ref={videoRef}
           key={videoSrc}
-          src={videoSrc}
           className="absolute inset-0 h-full w-full object-cover opacity-90"
           autoPlay
           muted
           loop
           playsInline
           preload="auto"
-          onError={() => setVideoFailed(true)}
-        />
+          onCanPlay={() => setVideoLoaded(true)}
+          onLoadedData={() => setVideoLoaded(true)}
+          onError={() => {
+            setVideoFailed(true);
+            setVideoLoaded(false);
+          }}
+        >
+          <source src={videoSrc} type="video/mp4" />
+          Your browser does not support MP4 video playback.
+        </video>
       ) : (
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(73,229,143,0.18),rgba(5,13,24,0.96)_58%)]" />
       )}
@@ -38,7 +73,7 @@ export function AiVideoPanel({
 
       <div className="absolute inset-0 bg-[rgba(5,13,24,0.18)]" />
 
-      <div className="absolute left-3 top-3 flex flex-wrap gap-2">
+      <div className="absolute left-3 top-3 flex max-w-[78%] flex-wrap gap-2">
         <span className="flex items-center gap-2 rounded bg-[#050d18]/85 px-3 py-1.5 text-hud text-[10px] text-(--primary)">
           <Camera size={13} />
           {videoSourceName}
@@ -53,16 +88,47 @@ export function AiVideoPanel({
             {videoSrc}
           </span>
         )}
+
+        {videoSrc && (
+          <a
+            href={videoSrc}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-1 rounded bg-[#050d18]/85 px-3 py-1.5 text-hud text-[10px] text-(--nominal) hover:text-(--primary)"
+          >
+            <ExternalLink size={12} />
+            Open Video
+          </a>
+        )}
       </div>
 
+      {videoSrc && !videoFailed && !videoLoaded && (
+        <div className="absolute left-1/2 top-1/2 z-30 w-80 -translate-x-1/2 -translate-y-1/2 rounded border border-(--primary) bg-[#050d18]/95 p-4 text-center">
+          <div className="text-hud text-sm text-(--primary)">
+            Loading video feed...
+          </div>
+          <div className="mt-2 break-all text-xs text-(--muted)">
+            {videoSrc}
+          </div>
+        </div>
+      )}
+
       {videoFailed && (
-        <div className="absolute left-1/2 top-1/2 z-30 w-[360px] -translate-x-1/2 -translate-y-1/2 rounded border border-(--critical) bg-[#050d18]/95 p-4 text-center">
+        <div className="absolute left-1/2 top-1/2 z-30 w-96 -translate-x-1/2 -translate-y-1/2 rounded border border-(--critical) bg-[#050d18]/95 p-4 text-center">
           <div className="text-hud text-sm text-(--critical)">
             Video failed to load
           </div>
-          <div className="mt-2 text-xs text-(--muted)">
-            Check file exists inside public/videos and file name matches exactly.
+
+          <div className="mt-2 text-xs leading-relaxed text-(--muted)">
+            The file is missing, the name does not match, or the MP4 codec is not
+            browser-supported.
           </div>
+
+          {videoSrc && (
+            <div className="mt-3 break-all rounded border border-(--border) bg-[#07111f] p-2 text-[10px] text-(--caution)">
+              {videoSrc}
+            </div>
+          )}
         </div>
       )}
 
