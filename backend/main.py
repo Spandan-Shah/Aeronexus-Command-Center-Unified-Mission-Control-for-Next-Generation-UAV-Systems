@@ -1,11 +1,16 @@
 import asyncio
-from fastapi import FastAPI, WebSocket
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from database import init_database, insert_command, insert_event, get_events
-from simulator import simulator_state, update_simulator, run_command, now_time
 from mavlink_adapter import MavlinkAdapter
+from simulator import simulator_state, update_simulator, run_command, now_time
+from telemetry_hub import (
+    get_latest_telemetry,
+    get_source_statuses,
+    ingest_telemetry,
+)
 
 app = FastAPI(title="AeroNexus Backend")
 
@@ -69,11 +74,61 @@ def mavlink_status():
     return mavlink.connect()
 
 
+@app.post("/api/telemetry/esp32")
+async def receive_esp32_wifi_telemetry(payload: dict):
+    telemetry = ingest_telemetry(payload, "esp32_wifi")
+
+    insert_event(
+        now_time(),
+        "ESP32_WIFI",
+        f"Telemetry received from {telemetry.get('device', 'Unknown Device')}",
+    )
+
+    return {
+        "ok": True,
+        "message": "ESP32 Wi-Fi telemetry received",
+        "telemetry": telemetry,
+    }
+
+
+@app.post("/api/telemetry/ml")
+async def receive_camera_ml_telemetry(payload: dict):
+    telemetry = ingest_telemetry(payload, "camera_ml")
+
+    insert_event(
+        now_time(),
+        "CAMERA_ML",
+        f"ML telemetry received from {telemetry.get('device', 'Camera ML')}",
+    )
+
+    return {
+        "ok": True,
+        "message": "Camera ML telemetry received",
+        "telemetry": telemetry,
+    }
+
+
+@app.get("/api/telemetry/current")
+async def current_unified_telemetry():
+    return get_latest_telemetry()
+
+
+@app.get("/api/telemetry/sources")
+async def telemetry_sources():
+    return {
+        "sources": get_source_statuses(),
+    }
+
+
 @app.websocket("/ws/telemetry")
 async def telemetry_socket(websocket: WebSocket):
     await websocket.accept()
 
-    while True:
-        state = update_simulator()
-        await websocket.send_json(state)
-        await asyncio.sleep(1)
+    try:
+        while True:
+            state = update_simulator()
+            await websocket.send_json(state)
+            await asyncio.sleep(1)
+
+    except WebSocketDisconnect:
+        insert_event(now_time(), "WEBSOCKET", "Telemetry websocket disconnected")
