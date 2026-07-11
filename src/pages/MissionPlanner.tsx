@@ -45,14 +45,14 @@ const initialWaypoints: MissionWaypoint[] = [
     speed: 6,
     action: "photo",
   },
-  {
-    ...createDefaultWaypoint(23.0301, 72.5812, 3),
-    name: "WP-3",
-    altitude: 60,
-    speed: 5,
-    holdSeconds: 8,
-    action: "hold",
-  },
+{
+  ...createDefaultWaypoint(23.0301, 72.5812, 3),
+  name: "WP-3",
+  altitude: 60,
+  speed: 5,
+  holdSeconds: 8,
+  action: "hover",
+},
 ];
 
 const actionOptions: {
