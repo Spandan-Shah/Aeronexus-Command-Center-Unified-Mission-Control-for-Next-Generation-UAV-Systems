@@ -62,8 +62,18 @@ const actionOptions: {
   { value: "none", label: "No Action" },
   { value: "scan", label: "Area Scan" },
   { value: "photo", label: "Capture Photo" },
-  { value: "hold", label: "Hold Position" },
+  { value: "video", label: "Start Video Capture" },
+  { value: "thermal-scan", label: "Thermal Scan" },
+  { value: "hover", label: "Hover Observation" },
+  { value: "loiter", label: "Loiter Around Point" },
+  { value: "perimeter-scan", label: "Perimeter Scan" },
+  { value: "search-grid", label: "Search Grid Sweep" },
+  { value: "inspect-target", label: "Inspect Target" },
+  { value: "speaker-alert", label: "Speaker Alert" },
+  { value: "spotlight", label: "Spotlight Area" },
+  { value: "payload-check", label: "Payload Safety Check" },
   { value: "return-check", label: "Return Check" },
+  { value: "emergency-mark", label: "Mark Emergency Point" },
 ];
 
 function getBatteryStatus(value: number): MetricStatus {
