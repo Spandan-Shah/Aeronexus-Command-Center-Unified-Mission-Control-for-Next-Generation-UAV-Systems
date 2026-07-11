@@ -4,8 +4,18 @@ export type WaypointAction =
   | "none"
   | "scan"
   | "photo"
-  | "hold"
-  | "return-check";
+  | "video"
+  | "thermal-scan"
+  | "hover"
+  | "loiter"
+  | "perimeter-scan"
+  | "search-grid"
+  | "inspect-target"
+  | "speaker-alert"
+  | "spotlight"
+  | "payload-check"
+  | "return-check"
+  | "emergency-mark";
 
 export type MissionWaypoint = {
   id: string;
@@ -187,6 +197,28 @@ function calculateTotalDistance(waypoints: MissionWaypoint[]) {
   return total;
 }
 
+function getWaypointActionExtraTimeSeconds(action: WaypointAction) {
+  const actionTimeMap: Record<WaypointAction, number> = {
+    none: 0,
+    scan: 8,
+    photo: 4,
+    video: 12,
+    "thermal-scan": 14,
+    hover: 10,
+    loiter: 18,
+    "perimeter-scan": 20,
+    "search-grid": 28,
+    "inspect-target": 15,
+    "speaker-alert": 6,
+    spotlight: 8,
+    "payload-check": 10,
+    "return-check": 8,
+    "emergency-mark": 5,
+  };
+
+  return actionTimeMap[action];
+}
+
 function calculateEstimatedTime(waypoints: MissionWaypoint[]) {
   let totalSeconds = 0;
 
@@ -201,6 +233,7 @@ function calculateEstimatedTime(waypoints: MissionWaypoint[]) {
 
   for (const waypoint of waypoints) {
     totalSeconds += waypoint.holdSeconds;
+    totalSeconds += getWaypointActionExtraTimeSeconds(waypoint.action);
   }
 
   return totalSeconds;
