@@ -25,7 +25,7 @@ export function PowerAlerts() {
       }
       className="h-full"
     >
-      <div className="max-h-[320px] overflow-auto">
+      <div className="max-h-80 overflow-auto">
         {powerAlerts.map((alert) => {
           const Icon = iconMap[alert.level];
 
