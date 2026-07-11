@@ -1,6 +1,7 @@
 export type PageId =
   | "live-ops"
   | "mission-planner"
+  | "drone-control"
   | "fleet"
   | "drone-health"
   | "battery"
