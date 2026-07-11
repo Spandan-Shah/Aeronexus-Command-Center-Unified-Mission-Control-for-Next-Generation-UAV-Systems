@@ -13,7 +13,7 @@ import { Panel } from "../common/Panel";
 export function PowerUsageChart() {
   return (
     <Panel title="Power Usage Trend" className="h-full">
-      <div className="h-[320px] p-3">
+      <div className="h-80 p-3">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={powerHistory}>
             <CartesianGrid stroke="rgba(143,163,184,0.15)" strokeDasharray="3 3" />
