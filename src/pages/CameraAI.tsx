@@ -1,11 +1,34 @@
-import { BrainCircuit, Camera } from "lucide-react";
+import {
+  AlertTriangle,
+  BrainCircuit,
+  Camera,
+  ShieldCheck,
+} from "lucide-react";
+import { AiAnalyticsPanel } from "../components/camera/AiAnalyticsPanel";
+import { AiRiskMatrix } from "../components/camera/AiRiskMatrix";
 import { AiVideoPanel } from "../components/camera/AiVideoPanel";
 import { CameraControls } from "../components/camera/CameraControls";
 import { DetectionEventLedger } from "../components/camera/DetectionEventLedger";
+import { ModelPerformancePanel } from "../components/camera/ModelPerformancePanel";
 import { ModelPipeline } from "../components/camera/ModelPipeline";
 import { cameraStatus } from "../data/camera";
+import { useUnifiedTelemetry } from "../hooks/useUnifiedTelemetry";
+
+function getRiskClass(risk?: string) {
+  if (risk === "critical") return "border-(--critical) bg-[rgba(255,77,77,0.08)] text-(--critical)";
+  if (risk === "high") return "border-(--caution) bg-[rgba(246,178,60,0.08)] text-(--caution)";
+  if (risk === "medium") return "border-(--info) bg-[rgba(41,211,255,0.08)] text-(--info)";
+  return "border-(--nominal) bg-[rgba(73,229,143,0.08)] text-(--nominal)";
+}
 
 export function CameraAI() {
+  const { telemetry, sources, error } = useUnifiedTelemetry();
+
+  const risk = telemetry?.risk ?? "low";
+  const confidence = Math.round((telemetry?.ml?.confidence ?? 0) * 100);
+  const cameraSource = sources.find((source) => source.source === "camera_ml");
+  const cameraOnline = Boolean(cameraSource?.connected);
+
   return (
     <div className="h-full overflow-auto p-3">
       <div className="mb-3 rounded border border-(--border) bg-(--panel) p-4">
@@ -14,16 +37,41 @@ export function CameraAI() {
             <h1 className="text-hud text-lg font-bold text-(--foreground)">
               Camera AI Analytics
             </h1>
+
             <p className="mt-1 text-sm text-(--muted)">
-              Live video HUD, object detection, AI model pipeline, event ledger,
-              and assisted review controls.
+              Live video HUD, object detection, AI risk scoring, model
+              performance, event ledger, and assisted review controls.
             </p>
           </div>
 
-          <div className="flex gap-2">
-            <span className="flex items-center gap-2 rounded border border-(--nominal) bg-[rgba(73,229,143,0.08)] px-3 py-2 text-hud text-[10px] text-(--nominal)">
+          <div className="flex flex-wrap gap-2">
+            <span
+              className={`flex items-center gap-2 rounded border px-3 py-2 text-hud text-[10px] ${
+                cameraOnline
+                  ? "border-(--nominal) bg-[rgba(73,229,143,0.08)] text-(--nominal)"
+                  : "border-(--border) bg-[#07111f] text-(--muted)"
+              }`}
+            >
+              <Camera size={14} />
+              {cameraOnline ? "Camera Online" : "Camera Sim"}
+            </span>
+
+            <span className="flex items-center gap-2 rounded border border-(--primary) bg-[rgba(41,211,255,0.08)] px-3 py-2 text-hud text-[10px] text-(--primary)">
               <BrainCircuit size={14} />
-              AI Active
+              {confidence}% Confidence
+            </span>
+
+            <span
+              className={`flex items-center gap-2 rounded border px-3 py-2 text-hud text-[10px] uppercase ${getRiskClass(
+                risk
+              )}`}
+            >
+              {risk === "low" ? (
+                <ShieldCheck size={14} />
+              ) : (
+                <AlertTriangle size={14} />
+              )}
+              {risk} Risk
             </span>
 
             <span className="flex items-center gap-2 rounded border border-(--primary) bg-[rgba(246,178,60,0.08)] px-3 py-2 text-hud text-[10px] text-(--primary)">
@@ -32,6 +80,12 @@ export function CameraAI() {
             </span>
           </div>
         </div>
+
+        {error && (
+          <div className="mt-3 rounded border border-(--critical) bg-[rgba(255,77,77,0.08)] px-3 py-2 text-xs text-(--critical)">
+            Backend offline: {error}
+          </div>
+        )}
       </div>
 
       <div className="grid gap-3 xl:grid-cols-12">
@@ -39,15 +93,24 @@ export function CameraAI() {
           <AiVideoPanel />
         </section>
 
-        <aside className="xl:col-span-4">
+        <aside className="space-y-3 xl:col-span-4">
+          <AiAnalyticsPanel />
           <CameraControls />
         </aside>
 
-        <section className="xl:col-span-5">
+        <section className="xl:col-span-4">
+          <AiRiskMatrix />
+        </section>
+
+        <section className="xl:col-span-4">
+          <ModelPerformancePanel />
+        </section>
+
+        <section className="xl:col-span-4">
           <ModelPipeline />
         </section>
 
-        <section className="xl:col-span-7">
+        <section className="xl:col-span-12">
           <DetectionEventLedger />
         </section>
       </div>
