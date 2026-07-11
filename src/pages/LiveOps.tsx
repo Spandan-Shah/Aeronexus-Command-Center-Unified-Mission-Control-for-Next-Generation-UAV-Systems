@@ -3,6 +3,8 @@ import { CommandDeck } from "../components/live/CommandDeck";
 import { TelemetryGrid } from "../components/live/TelemetryGrid";
 import { AeroWorldMap } from "../components/map/AeroWorldMap";
 import { telemetry } from "../data/telemetry";
+import { DataSourcePanel } from "../components/live/DataSourcePanel";
+
 
 export function LiveOps() {
   const missionProgress = Math.round(
@@ -18,6 +20,8 @@ export function LiveOps() {
 
         <section className="col-span-12 flex min-h-0 flex-col gap-3 xl:col-span-4">
           <TelemetryGrid />
+
+          <DataSourcePanel />
 
           <div className="rounded border border-(--border) bg-(--panel) p-3">
             <div className="flex items-center justify-between">
