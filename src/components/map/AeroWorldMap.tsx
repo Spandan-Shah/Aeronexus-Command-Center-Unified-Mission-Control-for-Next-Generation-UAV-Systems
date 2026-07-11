@@ -31,10 +31,12 @@ import {
   type InfrastructureProperties,
   type InfrastructureType,
 } from "../../data/infrastructure";
+import { useUnifiedTelemetry } from "../../hooks/useUnifiedTelemetry";
 import { fetchInfrastructureFromOverpass } from "../../services/overpassInfrastructure";
 import { fetchOfficialAhmedabadPoliceFromOverpass } from "../../services/ahmedabadOfficialPolice";
 
 type LayerId =
+  | "live-drone"
   | "drones"
   | "route"
   | "geofence"
@@ -60,6 +62,7 @@ type PoliceStats = {
 };
 
 const defaultLayerState: LayerState = {
+  "live-drone": true,
   drones: true,
   route: true,
   geofence: true,
@@ -71,7 +74,8 @@ const defaultLayerState: LayerState = {
 };
 
 const layerButtons: { id: LayerId; label: string }[] = [
-  { id: "drones", label: "Drones" },
+  { id: "live-drone", label: "Live Drone" },
+  { id: "drones", label: "Sim Drones" },
   { id: "route", label: "Mission Route" },
   { id: "geofence", label: "Geofence" },
   { id: "restricted", label: "Restricted" },
@@ -113,6 +117,7 @@ const mapColors = {
   home: "#49e58f",
   contact: "#ff4d4d",
   drone: "#f6b23c",
+  liveDrone: "#29d3ff",
   mapStroke: "#050d18",
 };
 
@@ -220,6 +225,13 @@ function getInfrastructureStyle(type: InfrastructureType) {
   return infrastructureStyles[type] ?? infrastructureStyles.government;
 }
 
+function getRiskColor(risk?: string) {
+  if (risk === "critical") return "#ff4d4d";
+  if (risk === "high") return "#f6b23c";
+  if (risk === "medium") return "#29d3ff";
+  return "#49e58f";
+}
+
 function createInfrastructureIcon(
   type: InfrastructureType,
   priority: InfrastructureProperties["priority"]
@@ -252,6 +264,67 @@ function createInfrastructureIcon(
         title="${style.label}"
       >
         ${style.symbol}
+      </div>
+    `,
+  });
+}
+
+function createLiveDroneIcon(risk?: string) {
+  const color = getRiskColor(risk);
+
+  return L.divIcon({
+    className: "aeronexus-live-drone-marker",
+    iconSize: [44, 44],
+    iconAnchor: [22, 22],
+    popupAnchor: [0, -22],
+    html: `
+      <div
+        style="
+          position: relative;
+          width: 44px;
+          height: 44px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        "
+      >
+        <div
+          style="
+            position: absolute;
+            width: 44px;
+            height: 44px;
+            border-radius: 999px;
+            background: ${color}22;
+            border: 1px solid ${color};
+            box-shadow: 0 0 22px ${color}99;
+          "
+        ></div>
+
+        <div
+          style="
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            transform: rotate(45deg);
+            background: rgba(5, 13, 24, 0.96);
+            border: 2px solid ${color};
+            box-shadow: 0 0 14px ${color};
+          "
+        ></div>
+
+        <div
+          style="
+            position: relative;
+            z-index: 2;
+            color: ${color};
+            font-size: 14px;
+            font-weight: 900;
+            transform: rotate(-45deg);
+            font-family: monospace;
+          "
+        >
+          UAV
+        </div>
       </div>
     `,
   });
@@ -293,11 +366,15 @@ function mergeInfrastructureCollections(
 }
 
 export function AeroWorldMap() {
+  const { telemetry } = useUnifiedTelemetry();
+
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<LeafletMap | null>(null);
   const baseTileRef = useRef<TileLayer | null>(null);
+  const liveDroneLayerRef = useRef<L.LayerGroup | null>(null);
 
   const layerRefs = useRef<Record<LayerId, Layer | null>>({
+    "live-drone": null,
     drones: null,
     route: null,
     geofence: null,
@@ -360,6 +437,9 @@ export function AeroWorldMap() {
 
     baseLayer.addTo(map);
     baseTileRef.current = baseLayer;
+
+    const liveDroneLayer = L.layerGroup().addTo(map);
+    liveDroneLayerRef.current = liveDroneLayer;
 
     const geofenceLayer = L.geoJSON(geofenceZone, {
       style: {
@@ -494,6 +574,7 @@ export function AeroWorldMap() {
     }).addTo(map);
 
     layerRefs.current = {
+      "live-drone": liveDroneLayer,
       drones: droneLayer,
       route: routeLayer,
       geofence: geofenceLayer,
@@ -601,6 +682,7 @@ export function AeroWorldMap() {
       map.remove();
       mapRef.current = null;
       baseTileRef.current = null;
+      liveDroneLayerRef.current = null;
     };
   }, []);
 
@@ -645,6 +727,50 @@ export function AeroWorldMap() {
     baseTileRef.current = nextBaseLayer;
   }, [mapTheme]);
 
+  useEffect(() => {
+    const map = mapRef.current;
+    const liveDroneLayer = liveDroneLayerRef.current;
+
+    if (!map || !liveDroneLayer) return;
+
+    liveDroneLayer.clearLayers();
+
+    if (!telemetry?.gps) {
+      return;
+    }
+
+    const latitude = telemetry.gps.lat;
+    const longitude = telemetry.gps.lng;
+    const risk = telemetry.risk ?? "low";
+    const deviceName = escapeHtml(telemetry.device ?? "Live Drone");
+    const source = escapeHtml(telemetry.source ?? "unknown");
+    const battery = telemetry.battery ?? 0;
+    const temperature = telemetry.temperature ?? 0;
+    const smoke = telemetry.smoke ?? 0;
+    const secureSession = telemetry.secureSession ? "ACTIVE" : "OFF";
+    const riskLabel = risk.toUpperCase();
+
+    const marker = L.marker([latitude, longitude], {
+      icon: createLiveDroneIcon(risk),
+      zIndexOffset: 1000,
+    }).bindPopup(
+      `<b>${deviceName}</b><br/>
+      Source: ${source}<br/>
+      Risk: ${riskLabel}<br/>
+      Battery: ${battery}%<br/>
+      Temperature: ${temperature}°C<br/>
+      Smoke: ${smoke}<br/>
+      Secure Session: ${secureSession}<br/>
+      GPS: ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`
+    );
+
+    marker.addTo(liveDroneLayer);
+
+    if (layers["live-drone"] && !map.hasLayer(liveDroneLayer)) {
+      liveDroneLayer.addTo(map);
+    }
+  }, [telemetry, layers]);
+
   function toggleLayer(layerId: LayerId) {
     setLayers((current) => ({
       ...current,
@@ -675,6 +801,16 @@ export function AeroWorldMap() {
   }
 
   function flyToUav() {
+    const liveGps = telemetry?.gps;
+
+    if (liveGps) {
+      mapRef.current?.flyTo([liveGps.lat, liveGps.lng], 16, {
+        duration: 1.2,
+      });
+
+      return;
+    }
+
     mapRef.current?.flyTo([23.0302, 72.5815], 16, {
       duration: 1.2,
     });
@@ -696,7 +832,8 @@ export function AeroWorldMap() {
           {baseMaps[mapTheme].label.toUpperCase()} · WGS-84 · NO WORLD WRAP ·
           ZOOM {zoom} · INFRA {infrastructureCount} · POLICE{" "}
           {policeStats.matched}/{policeStats.total} · MISS{" "}
-          {policeStats.missing}
+          {policeStats.missing} · LIVE{" "}
+          {telemetry?.gps ? "GPS LOCK" : "NO GPS"}
         </div>
       </div>
 
