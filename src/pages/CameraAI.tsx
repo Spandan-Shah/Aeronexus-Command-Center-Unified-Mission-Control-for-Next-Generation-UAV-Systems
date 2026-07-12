@@ -158,7 +158,11 @@ export function CameraAI() {
         model?: string;
       } = await response.json();
 
-      setAnnotatedVideoUrl(`${result.annotated_video_url}?t=${Date.now()}`);
+      const backendUrl = "http://127.0.0.1:8000";
+
+setAnnotatedVideoUrl(
+  `${backendUrl}${result.annotated_video_url}&t=${Date.now()}`
+);
     } catch (annotationError) {
       setAnnotatorError(
         annotationError instanceof Error
