@@ -4,19 +4,45 @@ import {
   AlertTriangle,
   BrainCircuit,
   CheckCircle2,
-  Flame,
   Loader2,
   PlayCircle,
-  Waves,
+  Target,
+  UserRound,
+  Car,
 } from "lucide-react";
 import { Panel } from "../common/Panel";
 import type { CameraVideoSource } from "./VideoSourceLibrary";
+
+export type CameraDetectionBox = {
+  label: string;
+  display_label: string;
+  confidence: number;
+  category: "person" | "vehicle" | "threat" | "object";
+  frame_index?: number;
+  box: {
+    x1: number;
+    y1: number;
+    x2: number;
+    y2: number;
+  };
+};
 
 export type CameraOpenCvAnalysis = {
   source_id: string;
   title: string;
   category: string;
   analyzed_at: string;
+  model?: {
+    provider: string;
+    model: string;
+    mode: string;
+    confidence_threshold: number;
+  };
+  frame?: {
+    width: number;
+    height: number;
+    best_frame_index: number;
+  };
   frames: {
     source_fps: number;
     total_video_frames: number;
@@ -26,16 +52,18 @@ export type CameraOpenCvAnalysis = {
   metrics: {
     brightness: number;
     contrast: number;
-    fire_score: number;
-    smoke_score: number;
     edge_density: number;
-    motion_score: number;
+    detection_count: number;
+    best_frame_detection_count: number;
   };
   detections: {
     person: boolean;
+    vehicle: boolean;
     fire: boolean;
     smoke: boolean;
+    flood: boolean;
     confidence: number;
+    boxes: CameraDetectionBox[];
   };
   risk: "low" | "medium" | "high" | "critical";
   events: {
@@ -134,17 +162,18 @@ export function OpenCvAnalysisPanel({
           source_id: selectedVideo.id,
           sample_every: 8,
           max_frames: 90,
+          confidence_threshold: 0.35,
         }),
       });
 
       if (!response.ok) {
-        throw new Error(`OpenCV API failed with status ${response.status}`);
+        throw new Error(`YOLO API failed with status ${response.status}`);
       }
 
       const data = (await response.json()) as AnalyzeResponse;
 
       if (!data.ok || !data.analysis) {
-        throw new Error(data.error ?? "OpenCV analysis failed");
+        throw new Error(data.error ?? "YOLO analysis failed");
       }
 
       onAnalysisComplete(data.analysis);
@@ -160,12 +189,22 @@ export function OpenCvAnalysisPanel({
   }
 
   const confidence = Math.round((analysis?.detections.confidence ?? 0) * 100);
+  const personCount =
+    analysis?.detections.boxes.filter((box) => box.category === "person")
+      .length ?? 0;
+  const vehicleCount =
+    analysis?.detections.boxes.filter((box) => box.category === "vehicle")
+      .length ?? 0;
 
   return (
     <Panel
-      title="OpenCV Video Analytics"
+      title="YOLO Camera Analytics"
       right={
-        <span className={`text-hud text-[10px] uppercase ${getRiskClass(analysis?.risk)}`}>
+        <span
+          className={`text-hud text-[10px] uppercase ${getRiskClass(
+            analysis?.risk
+          )}`}
+        >
           {analysis?.risk ?? "idle"}
         </span>
       }
@@ -196,12 +235,12 @@ export function OpenCvAnalysisPanel({
             {loading ? (
               <>
                 <Loader2 size={14} className="animate-spin" />
-                Analyzing Video
+                Running YOLO Detection
               </>
             ) : (
               <>
                 <PlayCircle size={14} />
-                Analyze with OpenCV
+                Analyze with YOLO
               </>
             )}
           </button>
@@ -216,21 +255,29 @@ export function OpenCvAnalysisPanel({
 
         {!analysis && (
           <div className="rounded border border-(--border) bg-[#07111f] p-3 text-xs leading-relaxed text-(--muted)">
-            Select a real video source and click Analyze. The backend will scan
-            video frames using OpenCV and push fire/smoke/risk results into the
-            Camera AI dashboard.
+            Select a real video source and click Analyze. The backend will use
+            OpenCV to read frames and YOLO to generate real object detection
+            boxes.
           </div>
         )}
 
         {analysis && (
           <>
-            <div className={`rounded border p-3 ${getRiskBorderClass(analysis.risk)}`}>
+            <div
+              className={`rounded border p-3 ${getRiskBorderClass(
+                analysis.risk
+              )}`}
+            >
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-hud text-[10px] text-(--muted)">
-                    Analysis Risk
+                    Model Risk
                   </div>
-                  <div className={`mt-1 text-hud text-lg uppercase ${getRiskClass(analysis.risk)}`}>
+                  <div
+                    className={`mt-1 text-hud text-lg uppercase ${getRiskClass(
+                      analysis.risk
+                    )}`}
+                  >
                     {analysis.risk}
                   </div>
                 </div>
@@ -238,7 +285,10 @@ export function OpenCvAnalysisPanel({
                 {analysis.risk === "low" ? (
                   <CheckCircle2 size={24} className="text-(--nominal)" />
                 ) : (
-                  <AlertTriangle size={24} className={getRiskClass(analysis.risk)} />
+                  <AlertTriangle
+                    size={24}
+                    className={getRiskClass(analysis.risk)}
+                  />
                 )}
               </div>
             </div>
@@ -246,85 +296,114 @@ export function OpenCvAnalysisPanel({
             <div className="grid grid-cols-2 gap-2">
               <MetricBox label="Confidence" value={confidence} suffix="%" />
               <MetricBox
+                label="Detections"
+                value={analysis.metrics.detection_count}
+              />
+              <MetricBox label="Persons" value={personCount} />
+              <MetricBox label="Vehicles" value={vehicleCount} />
+              <MetricBox
                 label="Frames"
                 value={analysis.frames.sampled_frames}
               />
               <MetricBox
-                label="Fire Score"
-                value={analysis.metrics.fire_score}
-              />
-              <MetricBox
-                label="Smoke Score"
-                value={analysis.metrics.smoke_score}
-              />
-              <MetricBox
-                label="Motion"
-                value={analysis.metrics.motion_score}
-              />
-              <MetricBox
-                label="Brightness"
-                value={analysis.metrics.brightness}
+                label="Best Frame"
+                value={analysis.frame?.best_frame_index ?? "-"}
               />
             </div>
 
             <div className="grid grid-cols-2 gap-2">
               <div
                 className={`rounded border p-3 ${
-                  analysis.detections.fire
-                    ? "border-(--critical) bg-[rgba(255,77,77,0.08)]"
+                  analysis.detections.person
+                    ? "border-(--info) bg-[rgba(41,211,255,0.08)]"
                     : "border-(--border) bg-[#07111f]"
                 }`}
               >
-                <Flame
+                <UserRound
                   size={18}
                   className={
-                    analysis.detections.fire
-                      ? "text-(--critical)"
+                    analysis.detections.person
+                      ? "text-(--info)"
                       : "text-(--muted)"
                   }
                 />
                 <div className="mt-2 text-hud text-[10px] text-(--foreground)">
-                  Fire
+                  Person
                 </div>
                 <div className="mt-1 text-hud text-[9px] text-(--muted)">
-                  {analysis.detections.fire ? "DETECTED" : "CLEAR"}
+                  {analysis.detections.person ? "DETECTED" : "CLEAR"}
                 </div>
               </div>
 
               <div
                 className={`rounded border p-3 ${
-                  analysis.detections.smoke
+                  analysis.detections.vehicle
                     ? "border-(--caution) bg-[rgba(246,178,60,0.08)]"
                     : "border-(--border) bg-[#07111f]"
                 }`}
               >
-                <Waves
+                <Car
                   size={18}
                   className={
-                    analysis.detections.smoke
+                    analysis.detections.vehicle
                       ? "text-(--caution)"
                       : "text-(--muted)"
                   }
                 />
                 <div className="mt-2 text-hud text-[10px] text-(--foreground)">
-                  Smoke
+                  Vehicle
                 </div>
                 <div className="mt-1 text-hud text-[9px] text-(--muted)">
-                  {analysis.detections.smoke ? "DETECTED" : "CLEAR"}
+                  {analysis.detections.vehicle ? "DETECTED" : "CLEAR"}
                 </div>
               </div>
             </div>
 
             <div className="rounded border border-(--border) bg-[#07111f] p-3">
               <div className="flex items-center gap-2 text-hud text-[10px] text-(--primary)">
+                <Target size={14} />
+                Detection Boxes
+              </div>
+
+              <div className="mt-2 max-h-48 space-y-2 overflow-y-auto">
+                {analysis.detections.boxes.length === 0 && (
+                  <div className="text-xs text-(--muted)">
+                    No objects detected above confidence threshold.
+                  </div>
+                )}
+
+                {analysis.detections.boxes.map((box, index) => (
+                  <div
+                    key={`${box.label}-${index}`}
+                    className="rounded border border-(--border) bg-[#050d18] p-2"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-hud text-[10px] text-(--foreground)">
+                        {box.display_label}
+                      </span>
+                      <span className="text-hud text-[10px] text-(--primary)">
+                        {Math.round(box.confidence * 100)}%
+                      </span>
+                    </div>
+
+                    <div className="mt-1 text-[10px] text-(--muted)">
+                      {box.category.toUpperCase()}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded border border-(--border) bg-[#07111f] p-3">
+              <div className="flex items-center gap-2 text-hud text-[10px] text-(--primary)">
                 <Activity size={14} />
-                OpenCV Events
+                Model Events
               </div>
 
               <div className="mt-2 space-y-2">
                 {analysis.events.length === 0 && (
                   <div className="text-xs text-(--muted)">
-                    No major fire/smoke/motion event found.
+                    No important detection event found.
                   </div>
                 )}
 
