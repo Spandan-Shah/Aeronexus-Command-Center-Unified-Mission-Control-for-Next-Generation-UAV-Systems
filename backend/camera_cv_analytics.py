@@ -14,6 +14,11 @@ except ImportError:
     cv2 = None
     np = None
 
+try:
+    from ultralytics import YOLO
+except ImportError:
+    YOLO = None
+
 
 router = APIRouter(prefix="/api/camera-ai", tags=["camera-ai"])
 
@@ -37,13 +42,17 @@ VIDEO_SOURCES = {
     },
 }
 
+DEFAULT_MODEL_PATH = "yolov8n.pt"
+
 _last_camera_analysis: dict[str, Any] | None = None
+_yolo_model: Any | None = None
 
 
 class AnalyzeVideoRequest(BaseModel):
     source_id: str = "city-surveillance"
     sample_every: int = 8
     max_frames: int = 90
+    confidence_threshold: float = 0.35
 
 
 def now_iso() -> str:
@@ -61,215 +70,187 @@ def require_opencv() -> None:
         )
 
 
-def calculate_mask_stats(mask: Any) -> dict[str, float]:
-    require_opencv()
+def require_yolo() -> None:
+    if YOLO is None:
+        raise RuntimeError("Ultralytics is not installed. Run: pip install ultralytics")
 
-    total_pixels = mask.shape[0] * mask.shape[1]
-    active_pixels = cv2.countNonZero(mask)
-    active_percent = (active_pixels / total_pixels) * 100
 
-    component_count, labels, stats, _ = cv2.connectedComponentsWithStats(
-        mask,
-        connectivity=8,
-    )
+def get_yolo_model() -> Any:
+    global _yolo_model
 
-    largest_component_area = 0
+    require_yolo()
 
-    for component_index in range(1, component_count):
-        area = int(stats[component_index, cv2.CC_STAT_AREA])
-        largest_component_area = max(largest_component_area, area)
+    if _yolo_model is None:
+        _yolo_model = YOLO(DEFAULT_MODEL_PATH)
 
-    largest_component_percent = (largest_component_area / total_pixels) * 100
+    return _yolo_model
 
-    return {
-        "active_percent": round(active_percent, 4),
-        "largest_component_percent": round(largest_component_percent, 4),
+
+def normalize_label(label: str) -> str:
+    return label.strip().lower().replace(" ", "-")
+
+
+def is_vehicle_label(label: str) -> bool:
+    return label in {
+        "car",
+        "truck",
+        "bus",
+        "motorcycle",
+        "bicycle",
+        "boat",
+        "train",
     }
 
 
-def calculate_fire_features(hsv_frame: Any, frame_bgr: Any) -> dict[str, float]:
-    require_opencv()
-
-    lower_red_1 = np.array([0, 120, 130])
-    upper_red_1 = np.array([10, 255, 255])
-
-    lower_red_2 = np.array([170, 120, 130])
-    upper_red_2 = np.array([180, 255, 255])
-
-    lower_orange = np.array([11, 110, 140])
-    upper_orange = np.array([28, 255, 255])
-
-    lower_yellow = np.array([29, 100, 150])
-    upper_yellow = np.array([38, 255, 255])
-
-    red_mask_1 = cv2.inRange(hsv_frame, lower_red_1, upper_red_1)
-    red_mask_2 = cv2.inRange(hsv_frame, lower_red_2, upper_red_2)
-    orange_mask = cv2.inRange(hsv_frame, lower_orange, upper_orange)
-    yellow_mask = cv2.inRange(hsv_frame, lower_yellow, upper_yellow)
-
-    fire_mask = cv2.bitwise_or(red_mask_1, red_mask_2)
-    fire_mask = cv2.bitwise_or(fire_mask, orange_mask)
-    fire_mask = cv2.bitwise_or(fire_mask, yellow_mask)
-
-    kernel = np.ones((5, 5), np.uint8)
-    fire_mask = cv2.morphologyEx(fire_mask, cv2.MORPH_OPEN, kernel)
-    fire_mask = cv2.morphologyEx(fire_mask, cv2.MORPH_CLOSE, kernel)
-
-    stats = calculate_mask_stats(fire_mask)
-
-    masked_pixels = frame_bgr[fire_mask > 0]
-
-    if masked_pixels.size == 0:
-        mean_red_dominance = 0.0
-    else:
-        blue = masked_pixels[:, 0].astype(float)
-        green = masked_pixels[:, 1].astype(float)
-        red = masked_pixels[:, 2].astype(float)
-        mean_red_dominance = float(np.mean(red - ((green + blue) / 2)))
-
-    area_score = clamp(stats["active_percent"] / 2.5, 0.0, 1.0)
-    component_score = clamp(stats["largest_component_percent"] / 1.2, 0.0, 1.0)
-    red_dominance_score = clamp(mean_red_dominance / 90, 0.0, 1.0)
-
-    fire_score = (
-        area_score * 0.35
-        + component_score * 0.45
-        + red_dominance_score * 0.20
-    )
-
-    return {
-        "fire_area_percent": stats["active_percent"],
-        "fire_largest_component_percent": stats["largest_component_percent"],
-        "fire_red_dominance": round(mean_red_dominance, 3),
-        "fire_score": round(fire_score, 3),
+def is_threat_label(label: str) -> bool:
+    return label in {
+        "fire",
+        "smoke",
+        "flood",
+        "flame",
+        "water-flood",
     }
 
 
-def calculate_smoke_features(hsv_frame: Any, gray_frame: Any) -> dict[str, float]:
+def calculate_frame_metrics(frame_bgr: Any) -> dict[str, float]:
     require_opencv()
 
-    saturation = hsv_frame[:, :, 1]
-    value = hsv_frame[:, :, 2]
-
-    low_saturation = saturation < 45
-    medium_brightness = (value > 75) & (value < 215)
-    gray_region = (gray_frame > 70) & (gray_frame < 220)
-
-    smoke_mask = low_saturation & medium_brightness & gray_region
-    smoke_mask = smoke_mask.astype("uint8") * 255
-
-    kernel = np.ones((7, 7), np.uint8)
-    smoke_mask = cv2.morphologyEx(smoke_mask, cv2.MORPH_OPEN, kernel)
-    smoke_mask = cv2.morphologyEx(smoke_mask, cv2.MORPH_CLOSE, kernel)
-
-    stats = calculate_mask_stats(smoke_mask)
-
-    edges = cv2.Canny(gray_frame, 80, 160)
-    edge_density = (cv2.countNonZero(edges) / (gray_frame.shape[0] * gray_frame.shape[1])) * 100
-
+    gray_frame = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2GRAY)
+    brightness = float(np.mean(gray_frame))
     contrast = float(np.std(gray_frame))
 
-    area_score = clamp(stats["active_percent"] / 22, 0.0, 1.0)
-    component_score = clamp(stats["largest_component_percent"] / 10, 0.0, 1.0)
-
-    low_edge_bonus = 1.0 if edge_density < 7.5 else 0.45
-    contrast_bonus = 1.0 if 18 <= contrast <= 75 else 0.55
-
-    smoke_score = (
-        area_score * 0.35
-        + component_score * 0.45
-        + low_edge_bonus * 0.10
-        + contrast_bonus * 0.10
-    )
+    edges = cv2.Canny(gray_frame, 80, 160)
+    edge_density = (
+        cv2.countNonZero(edges) / (gray_frame.shape[0] * gray_frame.shape[1])
+    ) * 100
 
     return {
-        "smoke_area_percent": stats["active_percent"],
-        "smoke_largest_component_percent": stats["largest_component_percent"],
+        "brightness": round(brightness, 2),
+        "contrast": round(contrast, 2),
         "edge_density": round(edge_density, 3),
-        "contrast": round(contrast, 3),
-        "smoke_score": round(smoke_score, 3),
     }
 
 
-def calculate_motion_score(
-    previous_gray_frame: Any | None,
-    current_gray_frame: Any,
-) -> float:
-    require_opencv()
+def extract_yolo_detections(
+    frame_bgr: Any,
+    confidence_threshold: float,
+) -> list[dict[str, Any]]:
+    model = get_yolo_model()
 
-    if previous_gray_frame is None:
-        return 0.0
+    results = model.predict(
+        source=frame_bgr,
+        conf=confidence_threshold,
+        verbose=False,
+    )
 
-    difference = cv2.absdiff(previous_gray_frame, current_gray_frame)
-    _, threshold = cv2.threshold(difference, 25, 255, cv2.THRESH_BINARY)
+    if not results:
+        return []
 
-    motion_pixels = cv2.countNonZero(threshold)
-    total_pixels = current_gray_frame.shape[0] * current_gray_frame.shape[1]
+    result = results[0]
+    names = result.names
 
-    return round((motion_pixels / total_pixels) * 100, 3)
+    detections: list[dict[str, Any]] = []
+
+    if result.boxes is None:
+        return detections
+
+    for box in result.boxes:
+        xyxy = box.xyxy[0].cpu().numpy().tolist()
+        confidence = float(box.conf[0].cpu().item())
+        class_id = int(box.cls[0].cpu().item())
+
+        raw_label = str(names.get(class_id, class_id))
+        label = normalize_label(raw_label)
+
+        x1, y1, x2, y2 = xyxy
+
+        detections.append(
+            {
+                "label": label,
+                "display_label": raw_label,
+                "confidence": round(confidence, 3),
+                "box": {
+                    "x1": round(float(x1), 2),
+                    "y1": round(float(y1), 2),
+                    "x2": round(float(x2), 2),
+                    "y2": round(float(y2), 2),
+                },
+                "category": get_detection_category(label),
+            }
+        )
+
+    detections.sort(key=lambda item: item["confidence"], reverse=True)
+
+    return detections
 
 
-def calculate_risk_level(
-    fire_detected: bool,
-    smoke_detected: bool,
-    motion_detected: bool,
-) -> str:
-    if fire_detected and smoke_detected:
+def get_detection_category(label: str) -> str:
+    if label == "person":
+        return "person"
+
+    if is_vehicle_label(label):
+        return "vehicle"
+
+    if is_threat_label(label):
+        return "threat"
+
+    return "object"
+
+
+def calculate_risk_level(detections: list[dict[str, Any]]) -> str:
+    threat_detections = [
+        detection for detection in detections if detection["category"] == "threat"
+    ]
+    person_detections = [
+        detection for detection in detections if detection["category"] == "person"
+    ]
+    vehicle_detections = [
+        detection for detection in detections if detection["category"] == "vehicle"
+    ]
+
+    if threat_detections:
         return "critical"
 
-    if fire_detected:
+    if len(person_detections) >= 3 and vehicle_detections:
         return "high"
 
-    if smoke_detected:
-        return "high"
-
-    if motion_detected:
+    if person_detections or vehicle_detections:
         return "medium"
 
     return "low"
 
 
 def build_detection_events(
-    fire_detected: bool,
-    smoke_detected: bool,
-    motion_detected: bool,
-    confidence: float,
+    detections: list[dict[str, Any]],
     source_title: str,
 ) -> list[dict[str, Any]]:
     events: list[dict[str, Any]] = []
 
-    if fire_detected:
-        events.append(
-            {
-                "type": "fire",
-                "severity": "high",
-                "confidence": confidence,
-                "title": "Fire-like region detected",
-                "message": f"OpenCV detected a connected fire-colored region in {source_title}.",
-                "created_at": now_iso(),
-            }
-        )
+    for detection in detections[:8]:
+        label = detection["display_label"]
+        confidence = detection["confidence"]
+        category = detection["category"]
 
-    if smoke_detected:
-        events.append(
-            {
-                "type": "smoke",
-                "severity": "high",
-                "confidence": confidence,
-                "title": "Smoke-like region detected",
-                "message": f"OpenCV detected a large low-saturation smoke-like region in {source_title}.",
-                "created_at": now_iso(),
-            }
-        )
+        if category == "threat":
+            severity = "critical"
+            title = f"{label} detected"
+        elif category == "person":
+            severity = "medium"
+            title = "Person detected"
+        elif category == "vehicle":
+            severity = "medium"
+            title = f"{label} detected"
+        else:
+            severity = "info"
+            title = f"{label} detected"
 
-    if motion_detected:
         events.append(
             {
-                "type": "motion",
-                "severity": "medium",
+                "type": detection["label"],
+                "severity": severity,
                 "confidence": confidence,
-                "title": "Motion activity detected",
-                "message": f"OpenCV detected significant frame-to-frame movement in {source_title}.",
+                "title": title,
+                "message": f"YOLO detected {label} in {source_title} with {round(confidence * 100)}% confidence.",
                 "created_at": now_iso(),
             }
         )
@@ -277,12 +258,38 @@ def build_detection_events(
     return events
 
 
+def choose_best_frame_result(
+    frame_results: list[dict[str, Any]],
+) -> dict[str, Any]:
+    if not frame_results:
+        raise RuntimeError("No frame results available")
+
+    def score_frame(frame_result: dict[str, Any]) -> float:
+        detections = frame_result["detections"]
+
+        if not detections:
+            return 0.0
+
+        confidence_sum = sum(detection["confidence"] for detection in detections)
+        important_count = sum(
+            1
+            for detection in detections
+            if detection["category"] in {"person", "vehicle", "threat"}
+        )
+
+        return confidence_sum + important_count
+
+    return max(frame_results, key=score_frame)
+
+
 def analyze_video_file(
     source_id: str,
     sample_every: int,
     max_frames: int,
+    confidence_threshold: float,
 ) -> dict[str, Any]:
     require_opencv()
+    require_yolo()
 
     if source_id not in VIDEO_SOURCES:
         raise ValueError("Unknown video source")
@@ -294,7 +301,8 @@ def analyze_video_file(
         raise FileNotFoundError(f"Video file not found: {video_path}")
 
     sample_every = max(1, min(sample_every, 30))
-    max_frames = max(10, min(max_frames, 300))
+    max_frames = max(5, min(max_frames, 300))
+    confidence_threshold = clamp(confidence_threshold, 0.10, 0.90)
 
     capture = cv2.VideoCapture(str(video_path))
 
@@ -308,19 +316,15 @@ def analyze_video_file(
 
     sampled_frames = 0
     frame_index = 0
+    frame_width = 640
+    frame_height = 360
 
     brightness_values: list[float] = []
-    fire_scores: list[float] = []
-    fire_area_values: list[float] = []
-    fire_component_values: list[float] = []
-    smoke_scores: list[float] = []
-    smoke_area_values: list[float] = []
-    smoke_component_values: list[float] = []
-    edge_values: list[float] = []
     contrast_values: list[float] = []
-    motion_scores: list[float] = []
+    edge_values: list[float] = []
 
-    previous_gray_frame = None
+    all_detections: list[dict[str, Any]] = []
+    frame_results: list[dict[str, Any]] = []
 
     while sampled_frames < max_frames:
         success, frame = capture.read()
@@ -332,28 +336,33 @@ def analyze_video_file(
             frame_index += 1
             continue
 
-        resized_frame = cv2.resize(frame, (640, 360))
-        gray_frame = cv2.cvtColor(resized_frame, cv2.COLOR_BGR2GRAY)
-        hsv_frame = cv2.cvtColor(resized_frame, cv2.COLOR_BGR2HSV)
+        resized_frame = cv2.resize(frame, (frame_width, frame_height))
+        metrics = calculate_frame_metrics(resized_frame)
 
-        fire_features = calculate_fire_features(hsv_frame, resized_frame)
-        smoke_features = calculate_smoke_features(hsv_frame, gray_frame)
+        detections = extract_yolo_detections(
+            resized_frame,
+            confidence_threshold=confidence_threshold,
+        )
 
-        brightness_values.append(float(np.mean(gray_frame)))
+        brightness_values.append(metrics["brightness"])
+        contrast_values.append(metrics["contrast"])
+        edge_values.append(metrics["edge_density"])
 
-        fire_scores.append(fire_features["fire_score"])
-        fire_area_values.append(fire_features["fire_area_percent"])
-        fire_component_values.append(fire_features["fire_largest_component_percent"])
+        for detection in detections:
+            detection_with_frame = {
+                **detection,
+                "frame_index": frame_index,
+            }
+            all_detections.append(detection_with_frame)
 
-        smoke_scores.append(smoke_features["smoke_score"])
-        smoke_area_values.append(smoke_features["smoke_area_percent"])
-        smoke_component_values.append(smoke_features["smoke_largest_component_percent"])
+        frame_results.append(
+            {
+                "frame_index": frame_index,
+                "detections": detections,
+                "metrics": metrics,
+            }
+        )
 
-        edge_values.append(smoke_features["edge_density"])
-        contrast_values.append(smoke_features["contrast"])
-        motion_scores.append(calculate_motion_score(previous_gray_frame, gray_frame))
-
-        previous_gray_frame = gray_frame
         sampled_frames += 1
         frame_index += 1
 
@@ -362,68 +371,44 @@ def analyze_video_file(
     if sampled_frames == 0:
         raise RuntimeError("No frames were analyzed from the video")
 
-    brightness = float(np.mean(brightness_values))
+    best_frame = choose_best_frame_result(frame_results)
+    best_detections = best_frame["detections"][:20]
 
-    fire_score = float(np.percentile(fire_scores, 85))
-    fire_area_percent = float(np.percentile(fire_area_values, 85))
-    fire_largest_component_percent = float(np.percentile(fire_component_values, 85))
-
-    smoke_score = float(np.percentile(smoke_scores, 85))
-    smoke_area_percent = float(np.percentile(smoke_area_values, 85))
-    smoke_largest_component_percent = float(np.percentile(smoke_component_values, 85))
-
-    edge_density = float(np.mean(edge_values))
-    contrast = float(np.mean(contrast_values))
-    motion_score = float(np.percentile(motion_scores, 90))
-
-    fire_detected = (
-        fire_score >= 0.62
-        and fire_area_percent >= 0.18
-        and fire_largest_component_percent >= 0.08
+    person_detected = any(
+        detection["category"] == "person" for detection in all_detections
+    )
+    vehicle_detected = any(
+        detection["category"] == "vehicle" for detection in all_detections
     )
 
-    smoke_detected = (
-        smoke_score >= 0.70
-        and smoke_area_percent >= 8.0
-        and smoke_largest_component_percent >= 3.0
-        and edge_density <= 10.5
+    fire_detected = any(
+        detection["label"] in {"fire", "flame"} for detection in all_detections
+    )
+    smoke_detected = any(
+        detection["label"] == "smoke" for detection in all_detections
+    )
+    flood_detected = any(
+        detection["label"] in {"flood", "water-flood"} for detection in all_detections
     )
 
-    motion_detected = motion_score >= 6.0
-
-    confidence = clamp(
-        max(
-            fire_score if fire_detected else 0,
-            smoke_score if smoke_detected else 0,
-            motion_score / 18 if motion_detected else 0,
-            0.08,
-        ),
-        0.08,
-        0.98,
+    max_confidence = max(
+        [detection["confidence"] for detection in all_detections],
+        default=0.0,
     )
 
-    risk = calculate_risk_level(
-        fire_detected=fire_detected,
-        smoke_detected=smoke_detected,
-        motion_detected=motion_detected,
-    )
-
-    events = build_detection_events(
-        fire_detected=fire_detected,
-        smoke_detected=smoke_detected,
-        motion_detected=motion_detected,
-        confidence=confidence,
-        source_title=source["title"],
-    )
+    risk = calculate_risk_level(all_detections)
+    events = build_detection_events(best_detections, source["title"])
 
     telemetry_payload = {
         "device": f"CameraAI-{source_id}",
-        "flightMode": "OPENCV_ANALYSIS",
+        "flightMode": "YOLO_ANALYSIS",
         "ml": {
-            "person": False,
+            "person": person_detected,
+            "vehicle": vehicle_detected,
             "fire": fire_detected,
             "smoke": smoke_detected,
-            "confidence": round(confidence, 3),
+            "flood": flood_detected,
+            "confidence": round(max_confidence, 3),
         },
         "risk": risk,
         "secureSession": True,
@@ -438,6 +423,17 @@ def analyze_video_file(
         "category": source["category"],
         "video_path": str(video_path),
         "analyzed_at": now_iso(),
+        "model": {
+            "provider": "ultralytics",
+            "model": DEFAULT_MODEL_PATH,
+            "mode": "object_detection",
+            "confidence_threshold": round(confidence_threshold, 2),
+        },
+        "frame": {
+            "width": frame_width,
+            "height": frame_height,
+            "best_frame_index": best_frame["frame_index"],
+        },
         "frames": {
             "source_fps": round(source_fps, 2),
             "total_video_frames": total_video_frames,
@@ -445,39 +441,20 @@ def analyze_video_file(
             "sample_every": sample_every,
         },
         "metrics": {
-            "brightness": round(brightness, 2),
-            "contrast": round(contrast, 2),
-            "fire_score": round(fire_score, 3),
-            "fire_area_percent": round(fire_area_percent, 3),
-            "fire_largest_component_percent": round(
-                fire_largest_component_percent,
-                3,
-            ),
-            "smoke_score": round(smoke_score, 3),
-            "smoke_area_percent": round(smoke_area_percent, 3),
-            "smoke_largest_component_percent": round(
-                smoke_largest_component_percent,
-                3,
-            ),
-            "edge_density": round(edge_density, 3),
-            "motion_score": round(motion_score, 3),
-        },
-        "thresholds": {
-            "fire_score_min": 0.62,
-            "fire_area_percent_min": 0.18,
-            "fire_component_percent_min": 0.08,
-            "smoke_score_min": 0.70,
-            "smoke_area_percent_min": 8.0,
-            "smoke_component_percent_min": 3.0,
-            "smoke_edge_density_max": 10.5,
-            "motion_score_min": 6.0,
+            "brightness": round(float(np.mean(brightness_values)), 2),
+            "contrast": round(float(np.mean(contrast_values)), 2),
+            "edge_density": round(float(np.mean(edge_values)), 3),
+            "detection_count": len(all_detections),
+            "best_frame_detection_count": len(best_detections),
         },
         "detections": {
-            "person": False,
+            "person": person_detected,
+            "vehicle": vehicle_detected,
             "fire": fire_detected,
             "smoke": smoke_detected,
-            "motion": motion_detected,
-            "confidence": round(confidence, 3),
+            "flood": flood_detected,
+            "confidence": round(max_confidence, 3),
+            "boxes": best_detections,
         },
         "risk": risk,
         "events": events,
@@ -501,6 +478,8 @@ def camera_ai_sources():
 
     return {
         "opencv_available": cv2 is not None and np is not None,
+        "yolo_available": YOLO is not None,
+        "model": DEFAULT_MODEL_PATH,
         "sources": sources,
     }
 
@@ -514,6 +493,7 @@ def analyze_camera_video(request: AnalyzeVideoRequest):
             source_id=request.source_id,
             sample_every=request.sample_every,
             max_frames=request.max_frames,
+            confidence_threshold=request.confidence_threshold,
         )
 
         _last_camera_analysis = result
