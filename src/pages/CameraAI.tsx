@@ -27,6 +27,8 @@ import {
 import { cameraStatus } from "../data/camera";
 import { useUnifiedTelemetry } from "../hooks/useUnifiedTelemetry";
 
+const BACKEND_URL = "http://127.0.0.1:8000";
+
 const videoSources: CameraVideoSource[] = [
   {
     id: "simulated-feed",
@@ -131,20 +133,17 @@ export function CameraAI() {
     setAnnotatedVideoUrl(null);
 
     try {
-      const response = await fetch(
-        "http://127.0.0.1:8000/api/camera-ai/annotate-video",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            source_id: selectedVideo.id,
-            confidence_threshold: 0.65,
-            max_frames: 900,
-          }),
-        }
-      );
+      const response = await fetch(`${BACKEND_URL}/api/camera-ai/annotate-video`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          source_id: selectedVideo.id,
+          confidence_threshold: 0.45,
+          max_frames: 900,
+        }),
+      });
 
       if (!response.ok) {
         const message = await response.text();
@@ -153,16 +152,15 @@ export function CameraAI() {
 
       const result: {
         annotated_video_url: string;
-        total_detections?: number;
-        processed_frames?: number;
+        mode?: string;
         model?: string;
       } = await response.json();
 
-      const backendUrl = "http://127.0.0.1:8000";
+      const separator = result.annotated_video_url.includes("?") ? "&" : "?";
 
-setAnnotatedVideoUrl(
-  `${backendUrl}${result.annotated_video_url}&t=${Date.now()}`
-);
+      setAnnotatedVideoUrl(
+        `${BACKEND_URL}${result.annotated_video_url}${separator}t=${Date.now()}`
+      );
     } catch (annotationError) {
       setAnnotatorError(
         annotationError instanceof Error
@@ -202,7 +200,7 @@ setAnnotatedVideoUrl(
               ) : (
                 <ScanSearch size={14} />
               )}
-              {isAnnotatingVideo ? "Annotating..." : "Live YOLO Video"}
+              {isAnnotatingVideo ? "Starting Stream..." : "Live YOLO Video"}
             </button>
 
             <span
@@ -255,8 +253,14 @@ setAnnotatedVideoUrl(
 
         {isAnnotatedPlayback && (
           <div className="mt-3 rounded border border-(--nominal) bg-[rgba(73,229,143,0.08)] px-3 py-2 text-xs text-(--nominal)">
-            Frame-by-frame YOLO annotated video is active. The moving detection
-            boxes are drawn directly inside the generated MP4 video.
+            Frame-by-frame YOLO MJPEG stream is active. Moving detection boxes
+            are drawn directly inside streamed frames.
+
+            {annotatedVideoUrl && (
+              <div className="mt-2 break-all rounded border border-(--border) bg-[#07111f] px-3 py-2 text-[10px] text-(--muted)">
+                Stream URL: {annotatedVideoUrl}
+              </div>
+            )}
           </div>
         )}
       </div>
