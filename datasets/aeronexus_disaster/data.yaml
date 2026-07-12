@@ -1,0 +1,11 @@
+path: M:/Project/AeroNexus/datasets/aeronexus_disaster
+train: train/images
+val: val/images
+
+names:
+  0: person
+  1: vehicle
+  2: fire
+  3: smoke
+  4: flood
+  5: blocked_road
