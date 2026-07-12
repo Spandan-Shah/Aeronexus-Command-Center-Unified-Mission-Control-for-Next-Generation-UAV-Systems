@@ -13,6 +13,10 @@ import { DetectionEventLedger } from "../components/camera/DetectionEventLedger"
 import { ModelPerformancePanel } from "../components/camera/ModelPerformancePanel";
 import { ModelPipeline } from "../components/camera/ModelPipeline";
 import {
+  type CameraOpenCvAnalysis,
+  OpenCvAnalysisPanel,
+} from "../components/camera/OpenCvAnalysisPanel";
+import {
   type CameraVideoSource,
   VideoSourceLibrary,
 } from "../components/camera/VideoSourceLibrary";
@@ -83,11 +87,21 @@ export function CameraAI() {
   const [selectedVideo, setSelectedVideo] = useState<CameraVideoSource>(
     videoSources[0]
   );
+  const [openCvAnalysis, setOpenCvAnalysis] =
+    useState<CameraOpenCvAnalysis | null>(null);
 
-  const risk = telemetry?.risk ?? "low";
-  const confidence = Math.round((telemetry?.ml?.confidence ?? 0) * 100);
+  const risk = telemetry?.risk ?? openCvAnalysis?.risk ?? "low";
+  const confidence = Math.round(
+    ((telemetry?.ml?.confidence ?? openCvAnalysis?.detections.confidence) ?? 0) *
+      100
+  );
   const cameraSource = sources.find((source) => source.source === "camera_ml");
   const cameraOnline = Boolean(cameraSource?.connected);
+
+  function selectVideo(video: CameraVideoSource) {
+    setSelectedVideo(video);
+    setOpenCvAnalysis(null);
+  }
 
   return (
     <div className="h-full overflow-auto p-3">
@@ -99,9 +113,8 @@ export function CameraAI() {
             </h1>
 
             <p className="mt-1 text-sm text-(--muted)">
-              Live video HUD, object detection, AI risk scoring, model
-              performance, event ledger, source library, and assisted review
-              controls.
+              Live video HUD, object detection, OpenCV analysis, AI risk
+              scoring, model performance, event ledger, and assisted review.
             </p>
           </div>
 
@@ -155,11 +168,19 @@ export function CameraAI() {
             videoSrc={selectedVideo.src}
             videoTitle={selectedVideo.title}
             videoSourceName={selectedVideo.sourceName}
+            openCvAnalysis={openCvAnalysis}
           />
         </section>
 
         <aside className="space-y-3 xl:col-span-4">
           <AiAnalyticsPanel />
+
+          <OpenCvAnalysisPanel
+            selectedVideo={selectedVideo}
+            analysis={openCvAnalysis}
+            onAnalysisComplete={setOpenCvAnalysis}
+          />
+
           <CameraControls />
         </aside>
 
@@ -167,7 +188,7 @@ export function CameraAI() {
           <VideoSourceLibrary
             selectedVideoId={selectedVideo.id}
             videos={videoSources}
-            onSelectVideo={setSelectedVideo}
+            onSelectVideo={selectVideo}
           />
         </section>
 
