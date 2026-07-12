@@ -1,11 +1,21 @@
 import asyncio
+
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from database import init_database, insert_command, insert_event, get_events
+from alert_system import (
+    create_alert_contact,
+    create_and_send_alert,
+    get_alert_contacts,
+    get_alert_deliveries,
+    get_alerts,
+    init_alert_database,
+    seed_demo_alert_contacts,
+)
+from database import get_events, init_database, insert_command, insert_event
 from mavlink_adapter import MavlinkAdapter
-from simulator import simulator_state, update_simulator, run_command, now_time
+from simulator import now_time, run_command, simulator_state, update_simulator
 from telemetry_hub import (
     get_latest_telemetry,
     get_source_statuses,
@@ -32,6 +42,8 @@ class CommandRequest(BaseModel):
 @app.on_event("startup")
 def startup():
     init_database()
+    init_alert_database()
+    seed_demo_alert_contacts()
     insert_event(now_time(), "SYSTEM", "AeroNexus backend started")
 
 
@@ -117,6 +129,73 @@ async def current_unified_telemetry():
 async def telemetry_sources():
     return {
         "sources": get_source_statuses(),
+    }
+
+
+@app.get("/api/alerts/contacts")
+def alert_contacts():
+    return {
+        "contacts": get_alert_contacts(),
+    }
+
+
+@app.post("/api/alerts/contacts")
+def add_alert_contact(payload: dict):
+    try:
+        contact = create_alert_contact(payload)
+
+        insert_event(
+            now_time(),
+            "ALERT_CONTACT",
+            f"Alert contact added: {contact.get('name', 'Unknown')}",
+        )
+
+        return {
+            "ok": True,
+            "contact": contact,
+        }
+
+    except ValueError as error:
+        return {
+            "ok": False,
+            "error": str(error),
+        }
+
+
+@app.get("/api/alerts")
+def emergency_alerts():
+    return {
+        "alerts": get_alerts(),
+    }
+
+
+@app.post("/api/alerts/send")
+def send_emergency_alert(payload: dict):
+    try:
+        result = create_and_send_alert(payload)
+
+        insert_event(
+            now_time(),
+            "EMERGENCY_ALERT",
+            f"{payload.get('alert_type', 'alert')} alert sent to {result['matched_contacts']} contacts",
+        )
+
+        return {
+            "ok": True,
+            "result": result,
+        }
+
+    except ValueError as error:
+        return {
+            "ok": False,
+            "error": str(error),
+        }
+
+
+@app.get("/api/alerts/{alert_id}/deliveries")
+def emergency_alert_deliveries(alert_id: int):
+    return {
+        "deliveries": get_alert_deliveries(alert_id),
     }
 
 
