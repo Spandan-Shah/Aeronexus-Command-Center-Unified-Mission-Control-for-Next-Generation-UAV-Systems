@@ -61,57 +61,134 @@ def require_opencv() -> None:
         )
 
 
-def calculate_fire_score(hsv_frame: Any) -> float:
+def calculate_mask_stats(mask: Any) -> dict[str, float]:
     require_opencv()
 
-    lower_red_1 = np.array([0, 90, 90])
-    upper_red_1 = np.array([12, 255, 255])
+    total_pixels = mask.shape[0] * mask.shape[1]
+    active_pixels = cv2.countNonZero(mask)
+    active_percent = (active_pixels / total_pixels) * 100
 
-    lower_red_2 = np.array([170, 90, 90])
+    component_count, labels, stats, _ = cv2.connectedComponentsWithStats(
+        mask,
+        connectivity=8,
+    )
+
+    largest_component_area = 0
+
+    for component_index in range(1, component_count):
+        area = int(stats[component_index, cv2.CC_STAT_AREA])
+        largest_component_area = max(largest_component_area, area)
+
+    largest_component_percent = (largest_component_area / total_pixels) * 100
+
+    return {
+        "active_percent": round(active_percent, 4),
+        "largest_component_percent": round(largest_component_percent, 4),
+    }
+
+
+def calculate_fire_features(hsv_frame: Any, frame_bgr: Any) -> dict[str, float]:
+    require_opencv()
+
+    lower_red_1 = np.array([0, 120, 130])
+    upper_red_1 = np.array([10, 255, 255])
+
+    lower_red_2 = np.array([170, 120, 130])
     upper_red_2 = np.array([180, 255, 255])
 
-    lower_orange = np.array([13, 80, 110])
-    upper_orange = np.array([35, 255, 255])
+    lower_orange = np.array([11, 110, 140])
+    upper_orange = np.array([28, 255, 255])
+
+    lower_yellow = np.array([29, 100, 150])
+    upper_yellow = np.array([38, 255, 255])
 
     red_mask_1 = cv2.inRange(hsv_frame, lower_red_1, upper_red_1)
     red_mask_2 = cv2.inRange(hsv_frame, lower_red_2, upper_red_2)
     orange_mask = cv2.inRange(hsv_frame, lower_orange, upper_orange)
+    yellow_mask = cv2.inRange(hsv_frame, lower_yellow, upper_yellow)
 
     fire_mask = cv2.bitwise_or(red_mask_1, red_mask_2)
     fire_mask = cv2.bitwise_or(fire_mask, orange_mask)
+    fire_mask = cv2.bitwise_or(fire_mask, yellow_mask)
 
-    fire_pixels = cv2.countNonZero(fire_mask)
-    total_pixels = hsv_frame.shape[0] * hsv_frame.shape[1]
+    kernel = np.ones((5, 5), np.uint8)
+    fire_mask = cv2.morphologyEx(fire_mask, cv2.MORPH_OPEN, kernel)
+    fire_mask = cv2.morphologyEx(fire_mask, cv2.MORPH_CLOSE, kernel)
 
-    return (fire_pixels / total_pixels) * 100
+    stats = calculate_mask_stats(fire_mask)
+
+    masked_pixels = frame_bgr[fire_mask > 0]
+
+    if masked_pixels.size == 0:
+        mean_red_dominance = 0.0
+    else:
+        blue = masked_pixels[:, 0].astype(float)
+        green = masked_pixels[:, 1].astype(float)
+        red = masked_pixels[:, 2].astype(float)
+        mean_red_dominance = float(np.mean(red - ((green + blue) / 2)))
+
+    area_score = clamp(stats["active_percent"] / 2.5, 0.0, 1.0)
+    component_score = clamp(stats["largest_component_percent"] / 1.2, 0.0, 1.0)
+    red_dominance_score = clamp(mean_red_dominance / 90, 0.0, 1.0)
+
+    fire_score = (
+        area_score * 0.35
+        + component_score * 0.45
+        + red_dominance_score * 0.20
+    )
+
+    return {
+        "fire_area_percent": stats["active_percent"],
+        "fire_largest_component_percent": stats["largest_component_percent"],
+        "fire_red_dominance": round(mean_red_dominance, 3),
+        "fire_score": round(fire_score, 3),
+    }
 
 
-def calculate_smoke_score(hsv_frame: Any, gray_frame: Any) -> float:
+def calculate_smoke_features(hsv_frame: Any, gray_frame: Any) -> dict[str, float]:
     require_opencv()
 
     saturation = hsv_frame[:, :, 1]
     value = hsv_frame[:, :, 2]
 
-    low_saturation_mask = saturation < 65
-    medium_brightness_mask = (value > 80) & (value < 230)
-    gray_texture_mask = (gray_frame > 70) & (gray_frame < 225)
+    low_saturation = saturation < 45
+    medium_brightness = (value > 75) & (value < 215)
+    gray_region = (gray_frame > 70) & (gray_frame < 220)
 
-    smoke_mask = low_saturation_mask & medium_brightness_mask & gray_texture_mask
+    smoke_mask = low_saturation & medium_brightness & gray_region
+    smoke_mask = smoke_mask.astype("uint8") * 255
 
-    smoke_pixels = int(np.count_nonzero(smoke_mask))
-    total_pixels = hsv_frame.shape[0] * hsv_frame.shape[1]
+    kernel = np.ones((7, 7), np.uint8)
+    smoke_mask = cv2.morphologyEx(smoke_mask, cv2.MORPH_OPEN, kernel)
+    smoke_mask = cv2.morphologyEx(smoke_mask, cv2.MORPH_CLOSE, kernel)
 
-    return (smoke_pixels / total_pixels) * 100
-
-
-def calculate_edge_density(gray_frame: Any) -> float:
-    require_opencv()
+    stats = calculate_mask_stats(smoke_mask)
 
     edges = cv2.Canny(gray_frame, 80, 160)
-    edge_pixels = cv2.countNonZero(edges)
-    total_pixels = gray_frame.shape[0] * gray_frame.shape[1]
+    edge_density = (cv2.countNonZero(edges) / (gray_frame.shape[0] * gray_frame.shape[1])) * 100
 
-    return (edge_pixels / total_pixels) * 100
+    contrast = float(np.std(gray_frame))
+
+    area_score = clamp(stats["active_percent"] / 22, 0.0, 1.0)
+    component_score = clamp(stats["largest_component_percent"] / 10, 0.0, 1.0)
+
+    low_edge_bonus = 1.0 if edge_density < 7.5 else 0.45
+    contrast_bonus = 1.0 if 18 <= contrast <= 75 else 0.55
+
+    smoke_score = (
+        area_score * 0.35
+        + component_score * 0.45
+        + low_edge_bonus * 0.10
+        + contrast_bonus * 0.10
+    )
+
+    return {
+        "smoke_area_percent": stats["active_percent"],
+        "smoke_largest_component_percent": stats["largest_component_percent"],
+        "edge_density": round(edge_density, 3),
+        "contrast": round(contrast, 3),
+        "smoke_score": round(smoke_score, 3),
+    }
 
 
 def calculate_motion_score(
@@ -124,27 +201,29 @@ def calculate_motion_score(
         return 0.0
 
     difference = cv2.absdiff(previous_gray_frame, current_gray_frame)
-    motion_value = float(np.mean(difference))
+    _, threshold = cv2.threshold(difference, 25, 255, cv2.THRESH_BINARY)
 
-    return motion_value
+    motion_pixels = cv2.countNonZero(threshold)
+    total_pixels = current_gray_frame.shape[0] * current_gray_frame.shape[1]
+
+    return round((motion_pixels / total_pixels) * 100, 3)
 
 
 def calculate_risk_level(
     fire_detected: bool,
     smoke_detected: bool,
-    motion_score: float,
-    brightness: float,
+    motion_detected: bool,
 ) -> str:
     if fire_detected and smoke_detected:
         return "critical"
 
-    if fire_detected or smoke_detected:
+    if fire_detected:
         return "high"
 
-    if motion_score > 18:
-        return "medium"
+    if smoke_detected:
+        return "high"
 
-    if brightness < 35:
+    if motion_detected:
         return "medium"
 
     return "low"
@@ -153,7 +232,7 @@ def calculate_risk_level(
 def build_detection_events(
     fire_detected: bool,
     smoke_detected: bool,
-    motion_score: float,
+    motion_detected: bool,
     confidence: float,
     source_title: str,
 ) -> list[dict[str, Any]]:
@@ -163,10 +242,10 @@ def build_detection_events(
         events.append(
             {
                 "type": "fire",
-                "severity": "critical",
+                "severity": "high",
                 "confidence": confidence,
-                "title": "Fire pattern detected",
-                "message": f"OpenCV detected fire-like color signature in {source_title}.",
+                "title": "Fire-like region detected",
+                "message": f"OpenCV detected a connected fire-colored region in {source_title}.",
                 "created_at": now_iso(),
             }
         )
@@ -177,20 +256,20 @@ def build_detection_events(
                 "type": "smoke",
                 "severity": "high",
                 "confidence": confidence,
-                "title": "Smoke pattern detected",
-                "message": f"OpenCV detected smoke-like low-saturation region in {source_title}.",
+                "title": "Smoke-like region detected",
+                "message": f"OpenCV detected a large low-saturation smoke-like region in {source_title}.",
                 "created_at": now_iso(),
             }
         )
 
-    if motion_score > 18:
+    if motion_detected:
         events.append(
             {
                 "type": "motion",
                 "severity": "medium",
-                "confidence": min(0.95, motion_score / 40),
+                "confidence": confidence,
                 "title": "Motion activity detected",
-                "message": f"OpenCV detected motion activity in {source_title}.",
+                "message": f"OpenCV detected significant frame-to-frame movement in {source_title}.",
                 "created_at": now_iso(),
             }
         )
@@ -231,10 +310,14 @@ def analyze_video_file(
     frame_index = 0
 
     brightness_values: list[float] = []
-    contrast_values: list[float] = []
     fire_scores: list[float] = []
+    fire_area_values: list[float] = []
+    fire_component_values: list[float] = []
     smoke_scores: list[float] = []
-    edge_scores: list[float] = []
+    smoke_area_values: list[float] = []
+    smoke_component_values: list[float] = []
+    edge_values: list[float] = []
+    contrast_values: list[float] = []
     motion_scores: list[float] = []
 
     previous_gray_frame = None
@@ -253,11 +336,21 @@ def analyze_video_file(
         gray_frame = cv2.cvtColor(resized_frame, cv2.COLOR_BGR2GRAY)
         hsv_frame = cv2.cvtColor(resized_frame, cv2.COLOR_BGR2HSV)
 
+        fire_features = calculate_fire_features(hsv_frame, resized_frame)
+        smoke_features = calculate_smoke_features(hsv_frame, gray_frame)
+
         brightness_values.append(float(np.mean(gray_frame)))
-        contrast_values.append(float(np.std(gray_frame)))
-        fire_scores.append(calculate_fire_score(hsv_frame))
-        smoke_scores.append(calculate_smoke_score(hsv_frame, gray_frame))
-        edge_scores.append(calculate_edge_density(gray_frame))
+
+        fire_scores.append(fire_features["fire_score"])
+        fire_area_values.append(fire_features["fire_area_percent"])
+        fire_component_values.append(fire_features["fire_largest_component_percent"])
+
+        smoke_scores.append(smoke_features["smoke_score"])
+        smoke_area_values.append(smoke_features["smoke_area_percent"])
+        smoke_component_values.append(smoke_features["smoke_largest_component_percent"])
+
+        edge_values.append(smoke_features["edge_density"])
+        contrast_values.append(smoke_features["contrast"])
         motion_scores.append(calculate_motion_score(previous_gray_frame, gray_frame))
 
         previous_gray_frame = gray_frame
@@ -270,37 +363,55 @@ def analyze_video_file(
         raise RuntimeError("No frames were analyzed from the video")
 
     brightness = float(np.mean(brightness_values))
-    contrast = float(np.mean(contrast_values))
-    fire_score = float(np.mean(fire_scores))
-    smoke_score = float(np.mean(smoke_scores))
-    edge_density = float(np.mean(edge_scores))
-    motion_score = float(np.mean(motion_scores))
 
-    fire_detected = fire_score > 1.8
-    smoke_detected = smoke_score > 18
+    fire_score = float(np.percentile(fire_scores, 85))
+    fire_area_percent = float(np.percentile(fire_area_values, 85))
+    fire_largest_component_percent = float(np.percentile(fire_component_values, 85))
+
+    smoke_score = float(np.percentile(smoke_scores, 85))
+    smoke_area_percent = float(np.percentile(smoke_area_values, 85))
+    smoke_largest_component_percent = float(np.percentile(smoke_component_values, 85))
+
+    edge_density = float(np.mean(edge_values))
+    contrast = float(np.mean(contrast_values))
+    motion_score = float(np.percentile(motion_scores, 90))
+
+    fire_detected = (
+        fire_score >= 0.62
+        and fire_area_percent >= 0.18
+        and fire_largest_component_percent >= 0.08
+    )
+
+    smoke_detected = (
+        smoke_score >= 0.70
+        and smoke_area_percent >= 8.0
+        and smoke_largest_component_percent >= 3.0
+        and edge_density <= 10.5
+    )
+
+    motion_detected = motion_score >= 6.0
 
     confidence = clamp(
         max(
-            fire_score / 7,
-            smoke_score / 45,
-            motion_score / 35,
-            edge_density / 18,
+            fire_score if fire_detected else 0,
+            smoke_score if smoke_detected else 0,
+            motion_score / 18 if motion_detected else 0,
+            0.08,
         ),
-        0.05,
-        0.99,
+        0.08,
+        0.98,
     )
 
     risk = calculate_risk_level(
         fire_detected=fire_detected,
         smoke_detected=smoke_detected,
-        motion_score=motion_score,
-        brightness=brightness,
+        motion_detected=motion_detected,
     )
 
     events = build_detection_events(
         fire_detected=fire_detected,
         smoke_detected=smoke_detected,
-        motion_score=motion_score,
+        motion_detected=motion_detected,
         confidence=confidence,
         source_title=source["title"],
     )
@@ -337,14 +448,35 @@ def analyze_video_file(
             "brightness": round(brightness, 2),
             "contrast": round(contrast, 2),
             "fire_score": round(fire_score, 3),
+            "fire_area_percent": round(fire_area_percent, 3),
+            "fire_largest_component_percent": round(
+                fire_largest_component_percent,
+                3,
+            ),
             "smoke_score": round(smoke_score, 3),
+            "smoke_area_percent": round(smoke_area_percent, 3),
+            "smoke_largest_component_percent": round(
+                smoke_largest_component_percent,
+                3,
+            ),
             "edge_density": round(edge_density, 3),
             "motion_score": round(motion_score, 3),
+        },
+        "thresholds": {
+            "fire_score_min": 0.62,
+            "fire_area_percent_min": 0.18,
+            "fire_component_percent_min": 0.08,
+            "smoke_score_min": 0.70,
+            "smoke_area_percent_min": 8.0,
+            "smoke_component_percent_min": 3.0,
+            "smoke_edge_density_max": 10.5,
+            "motion_score_min": 6.0,
         },
         "detections": {
             "person": False,
             "fire": fire_detected,
             "smoke": smoke_detected,
+            "motion": motion_detected,
             "confidence": round(confidence, 3),
         },
         "risk": risk,
