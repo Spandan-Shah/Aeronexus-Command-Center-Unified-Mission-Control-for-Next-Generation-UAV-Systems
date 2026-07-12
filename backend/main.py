@@ -1,4 +1,5 @@
 import asyncio
+from camera_cv_analytics import router as camera_ai_router
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
@@ -23,6 +24,7 @@ from telemetry_hub import (
 )
 
 app = FastAPI(title="AeroNexus Backend")
+app.include_router(camera_ai_router)
 
 app.add_middleware(
     CORSMiddleware,
