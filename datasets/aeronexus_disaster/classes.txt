@@ -1,0 +1,6 @@
+person
+vehicle
+fire
+smoke
+flood
+blocked_road
