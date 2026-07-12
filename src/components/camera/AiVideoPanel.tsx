@@ -43,7 +43,7 @@ export function AiVideoPanel({
 
   useEffect(() => {
     setVideoFailed(false);
-    setVideoLoaded(false);
+    setVideoLoaded(isMjpegStream);
 
     if (!videoSrc || isMjpegStream) return;
 
@@ -64,8 +64,8 @@ export function AiVideoPanel({
     (openCvAnalysis?.detections.confidence ?? 0) * 100
   );
 
-  // Static overlay boxes disabled.
-  // Moving boxes are drawn by backend directly into MJPEG frames.
+  // Static HTML overlay boxes are disabled.
+  // Moving boxes must come only from backend MJPEG frames.
   const detectionBoxes: CameraDetectionBox[] = [];
 
   return (
