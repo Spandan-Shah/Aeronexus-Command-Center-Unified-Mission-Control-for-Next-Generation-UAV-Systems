@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Camera, ExternalLink, Flame, Waves } from "lucide-react";
-import type { CameraOpenCvAnalysis } from "./OpenCvAnalysisPanel";
+import { Camera, ExternalLink } from "lucide-react";
+import type { CameraDetectionBox, CameraOpenCvAnalysis } from "./OpenCvAnalysisPanel";
 
 type AiVideoPanelProps = {
   videoSrc?: string;
@@ -21,6 +21,58 @@ function getRiskBorderClass(risk?: string) {
   if (risk === "high") return "border-(--caution)";
   if (risk === "medium") return "border-(--info)";
   return "border-(--nominal)";
+}
+
+function getDetectionBorderClass(category: CameraDetectionBox["category"]) {
+  if (category === "threat") return "border-(--critical)";
+  if (category === "person") return "border-(--info)";
+  if (category === "vehicle") return "border-(--caution)";
+  return "border-(--primary)";
+}
+
+function getDetectionTextClass(category: CameraDetectionBox["category"]) {
+  if (category === "threat") return "text-(--critical)";
+  if (category === "person") return "text-(--info)";
+  if (category === "vehicle") return "text-(--caution)";
+  return "text-(--primary)";
+}
+
+function DetectionOverlayBox({
+  detection,
+  frameWidth,
+  frameHeight,
+}: {
+  detection: CameraDetectionBox;
+  frameWidth: number;
+  frameHeight: number;
+}) {
+  const left = (detection.box.x1 / frameWidth) * 100;
+  const top = (detection.box.y1 / frameHeight) * 100;
+  const width = ((detection.box.x2 - detection.box.x1) / frameWidth) * 100;
+  const height = ((detection.box.y2 - detection.box.y1) / frameHeight) * 100;
+
+  return (
+    <div
+      className={`absolute border-2 ${getDetectionBorderClass(
+        detection.category
+      )}`}
+      style={{
+        left: `${left}%`,
+        top: `${top}%`,
+        width: `${width}%`,
+        height: `${height}%`,
+      }}
+    >
+      <div
+        className={`absolute -top-6 left-0 whitespace-nowrap bg-[#050d18]/95 px-1.5 py-0.5 text-hud text-[9px] ${getDetectionTextClass(
+          detection.category
+        )}`}
+      >
+        {detection.display_label.toUpperCase()} ·{" "}
+        {Math.round(detection.confidence * 100)}%
+      </div>
+    </div>
+  );
 }
 
 export function AiVideoPanel({
@@ -55,6 +107,10 @@ export function AiVideoPanel({
     (openCvAnalysis?.detections.confidence ?? 0) * 100
   );
 
+  const frameWidth = openCvAnalysis?.frame?.width ?? 640;
+  const frameHeight = openCvAnalysis?.frame?.height ?? 360;
+  const detectionBoxes = openCvAnalysis?.detections.boxes ?? [];
+
   return (
     <div className="relative h-135 overflow-hidden rounded border border-(--border) bg-[#07111f]">
       {showVideo ? (
@@ -81,11 +137,9 @@ export function AiVideoPanel({
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(73,229,143,0.18),rgba(5,13,24,0.96)_58%)]" />
       )}
 
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(41,211,255,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(41,211,255,0.04)_1px,transparent_1px)] bg-[size:12px_12px]" />
+      <div className="absolute inset-0 bg-[rgba(5,13,24,0.08)]" />
 
-      <div className="absolute inset-0 bg-[rgba(5,13,24,0.12)]" />
-
-      <div className="absolute left-3 top-3 flex max-w-[78%] flex-wrap gap-2">
+      <div className="absolute left-3 top-3 z-30 flex max-w-[78%] flex-wrap gap-2">
         <span className="flex items-center gap-2 rounded bg-[#050d18]/85 px-3 py-1.5 text-hud text-[10px] text-(--primary)">
           <Camera size={13} />
           {videoSourceName}
@@ -94,12 +148,6 @@ export function AiVideoPanel({
         <span className="rounded bg-[#050d18]/85 px-3 py-1.5 text-hud text-[10px] text-(--muted)">
           {videoTitle}
         </span>
-
-        {videoSrc && (
-          <span className="rounded bg-[#050d18]/85 px-3 py-1.5 text-hud text-[10px] text-(--caution)">
-            {videoSrc}
-          </span>
-        )}
 
         {videoSrc && (
           <a
@@ -114,15 +162,15 @@ export function AiVideoPanel({
         )}
       </div>
 
-      <div className="absolute right-3 top-3 text-right text-hud text-[10px]">
-        <div className="text-(--primary)">CAMERA AI FEED</div>
-        <div className="mt-1 text-(--muted)">OpenCV Ready</div>
+      <div className="absolute right-3 top-3 z-30 text-right text-hud text-[10px]">
+        <div className="text-(--primary)">YOLO CAMERA FEED</div>
+        <div className="mt-1 text-(--muted)">Model Ready</div>
         <div className="mt-1 text-(--muted)">28 FPS</div>
       </div>
 
       {openCvAnalysis && (
         <div
-          className={`absolute right-3 top-20 z-20 rounded border bg-[#050d18]/90 px-3 py-2 backdrop-blur ${getRiskBorderClass(
+          className={`absolute right-3 top-20 z-30 rounded border bg-[#050d18]/90 px-3 py-2 backdrop-blur ${getRiskBorderClass(
             openCvAnalysis.risk
           )}`}
         >
@@ -131,36 +179,26 @@ export function AiVideoPanel({
               openCvAnalysis.risk
             )}`}
           >
-            OPENCV · {openCvAnalysis.risk} RISK
+            YOLO · {openCvAnalysis.risk} RISK
           </div>
 
           <div className="mt-1 text-hud text-[9px] text-(--muted)">
-            Confidence {confidence}% · Frames{" "}
-            {openCvAnalysis.frames.sampled_frames}
+            Confidence {confidence}% · Boxes {detectionBoxes.length}
           </div>
         </div>
       )}
 
-      {openCvAnalysis?.detections.fire && (
-        <div className="absolute left-[18%] top-[42%] h-28 w-36 border border-(--critical)">
-          <div className="absolute -top-6 left-0 flex items-center gap-1 bg-[#050d18]/90 px-1 text-hud text-[9px] text-(--critical)">
-            <Flame size={11} />
-            FIRE · {confidence}%
-          </div>
-        </div>
-      )}
-
-      {openCvAnalysis?.detections.smoke && (
-        <div className="absolute left-[52%] top-[54%] h-28 w-44 border border-(--caution)">
-          <div className="absolute -top-6 left-0 flex items-center gap-1 bg-[#050d18]/90 px-1 text-hud text-[9px] text-(--caution)">
-            <Waves size={11} />
-            SMOKE · {confidence}%
-          </div>
-        </div>
-      )}
+      {detectionBoxes.map((detection, index) => (
+        <DetectionOverlayBox
+          key={`${detection.label}-${index}`}
+          detection={detection}
+          frameWidth={frameWidth}
+          frameHeight={frameHeight}
+        />
+      ))}
 
       {videoSrc && !videoFailed && !videoLoaded && (
-        <div className="absolute left-1/2 top-1/2 z-30 w-80 -translate-x-1/2 -translate-y-1/2 rounded border border-(--primary) bg-[#050d18]/95 p-4 text-center">
+        <div className="absolute left-1/2 top-1/2 z-40 w-80 -translate-x-1/2 -translate-y-1/2 rounded border border-(--primary) bg-[#050d18]/95 p-4 text-center">
           <div className="text-hud text-sm text-(--primary)">
             Loading video feed...
           </div>
@@ -172,7 +210,7 @@ export function AiVideoPanel({
       )}
 
       {videoFailed && (
-        <div className="absolute left-1/2 top-1/2 z-30 w-96 -translate-x-1/2 -translate-y-1/2 rounded border border-(--critical) bg-[#050d18]/95 p-4 text-center">
+        <div className="absolute left-1/2 top-1/2 z-40 w-96 -translate-x-1/2 -translate-y-1/2 rounded border border-(--critical) bg-[#050d18]/95 p-4 text-center">
           <div className="text-hud text-sm text-(--critical)">
             Video failed to load
           </div>
@@ -190,13 +228,17 @@ export function AiVideoPanel({
         </div>
       )}
 
-      <div className="absolute bottom-3 left-3 text-hud text-[10px]">
-        <div className="text-(--caution)">GIMBAL PITCH -32° · YAW +018°</div>
-        <div className="mt-1 text-(--muted)">23.0225°N · 72.5714°E</div>
+      <div className="absolute bottom-3 left-3 z-30 text-hud text-[10px]">
+        <div className="text-(--caution)">MODEL: YOLOv8n · BEST FRAME MODE</div>
+        <div className="mt-1 text-(--muted)">
+          {openCvAnalysis
+            ? `Best frame: ${openCvAnalysis.frame?.best_frame_index ?? "-"}`
+            : "Run analysis to show real detection boxes"}
+        </div>
       </div>
 
-      <div className="absolute bottom-3 right-3 rounded border border-(--border) bg-[#050d18]/85 px-2 py-1 text-hud text-[9px] text-(--muted)">
-        1920 × 1080
+      <div className="absolute bottom-3 right-3 z-30 rounded border border-(--border) bg-[#050d18]/85 px-2 py-1 text-hud text-[9px] text-(--muted)">
+        640 × 360 analysis
       </div>
     </div>
   );
