@@ -3,6 +3,8 @@ import {
   AlertTriangle,
   BrainCircuit,
   Camera,
+  Loader2,
+  ScanSearch,
   ShieldCheck,
 } from "lucide-react";
 
@@ -92,6 +94,12 @@ export function CameraAI() {
   const [openCvAnalysis, setOpenCvAnalysis] =
     useState<CameraOpenCvAnalysis | null>(null);
 
+  const [annotatedVideoUrl, setAnnotatedVideoUrl] = useState<string | null>(
+    null
+  );
+  const [isAnnotatingVideo, setIsAnnotatingVideo] = useState(false);
+  const [annotatorError, setAnnotatorError] = useState<string | null>(null);
+
   const risk = telemetry?.risk ?? openCvAnalysis?.risk ?? "low";
 
   const confidence = Math.round(
@@ -101,10 +109,62 @@ export function CameraAI() {
 
   const cameraSource = sources.find((source) => source.source === "camera_ml");
   const cameraOnline = Boolean(cameraSource?.connected);
+  const isAnnotatedPlayback = Boolean(annotatedVideoUrl);
 
   function selectVideo(video: CameraVideoSource) {
     setSelectedVideo(video);
     setOpenCvAnalysis(null);
+    setAnnotatedVideoUrl(null);
+    setAnnotatorError(null);
+  }
+
+  async function generateAnnotatedVideo() {
+    if (!selectedVideo.src) {
+      setAnnotatorError(
+        "Simulated feed has no local MP4 file. Select city, disaster, or forest video."
+      );
+      return;
+    }
+
+    setIsAnnotatingVideo(true);
+    setAnnotatorError(null);
+    setAnnotatedVideoUrl(null);
+
+    try {
+      const response = await fetch(
+        "http://127.0.0.1:8000/api/camera-ai/annotate-video",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            source_id: selectedVideo.id,
+            confidence_threshold: 0.35,
+            max_frames: 900,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const message = await response.text();
+        throw new Error(message || "Video annotation failed.");
+      }
+
+      const result: {
+        annotated_video_url: string;
+      } = await response.json();
+
+      setAnnotatedVideoUrl(`${result.annotated_video_url}?t=${Date.now()}`);
+    } catch (annotationError) {
+      setAnnotatorError(
+        annotationError instanceof Error
+          ? annotationError.message
+          : "Video annotation failed."
+      );
+    } finally {
+      setIsAnnotatingVideo(false);
+    }
   }
 
   return (
@@ -124,6 +184,20 @@ export function CameraAI() {
           </div>
 
           <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={generateAnnotatedVideo}
+              disabled={isAnnotatingVideo || !selectedVideo.src}
+              className="flex items-center gap-2 rounded border border-(--primary) bg-[rgba(41,211,255,0.08)] px-3 py-2 text-hud text-[10px] text-(--primary) disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isAnnotatingVideo ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                <ScanSearch size={14} />
+              )}
+              {isAnnotatingVideo ? "Annotating..." : "Live YOLO Video"}
+            </button>
+
             <span
               className={`flex items-center gap-2 rounded border px-3 py-2 text-hud text-[10px] ${
                 cameraOnline
@@ -165,15 +239,33 @@ export function CameraAI() {
             Backend offline: {error}
           </div>
         )}
+
+        {annotatorError && (
+          <div className="mt-3 rounded border border-(--critical) bg-[rgba(255,77,77,0.08)] px-3 py-2 text-xs text-(--critical)">
+            Annotator error: {annotatorError}
+          </div>
+        )}
+
+        {isAnnotatedPlayback && (
+          <div className="mt-3 rounded border border-(--nominal) bg-[rgba(73,229,143,0.08)] px-3 py-2 text-xs text-(--nominal)">
+            Frame-by-frame YOLO annotated video is active. Boxes are now drawn
+            directly on each video frame.
+          </div>
+        )}
       </div>
 
       <div className="grid gap-3 xl:grid-cols-12">
         <section className="xl:col-span-8">
           <AiVideoPanel
-            videoSrc={selectedVideo.src}
-            videoTitle={selectedVideo.title}
+            videoSrc={annotatedVideoUrl ?? selectedVideo.src}
+            videoTitle={
+              isAnnotatedPlayback
+                ? `${selectedVideo.title} · Frame-by-frame YOLO`
+                : selectedVideo.title
+            }
             videoSourceName={selectedVideo.sourceName}
             openCvAnalysis={openCvAnalysis}
+            isAnnotatedPlayback={isAnnotatedPlayback}
           />
         </section>
 
