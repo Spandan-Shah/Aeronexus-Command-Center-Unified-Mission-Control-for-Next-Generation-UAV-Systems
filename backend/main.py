@@ -22,9 +22,11 @@ from telemetry_hub import (
     get_source_statuses,
     ingest_telemetry,
 )
+from camera_video_annotator import router as camera_video_annotator_router
 
 app = FastAPI(title="AeroNexus Backend")
 app.include_router(camera_ai_router)
+app.include_router(camera_video_annotator_router)
 
 app.add_middleware(
     CORSMiddleware,
