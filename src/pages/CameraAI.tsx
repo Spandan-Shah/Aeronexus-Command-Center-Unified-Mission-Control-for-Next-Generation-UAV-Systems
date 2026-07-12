@@ -5,11 +5,13 @@ import {
   Camera,
   ShieldCheck,
 } from "lucide-react";
+
 import { AiAnalyticsPanel } from "../components/camera/AiAnalyticsPanel";
 import { AiRiskMatrix } from "../components/camera/AiRiskMatrix";
 import { AiVideoPanel } from "../components/camera/AiVideoPanel";
 import { CameraControls } from "../components/camera/CameraControls";
 import { DetectionEventLedger } from "../components/camera/DetectionEventLedger";
+import { DisasterFeatureMatrixPanel } from "../components/camera/DisasterFeatureMatrixPanel";
 import { ModelPerformancePanel } from "../components/camera/ModelPerformancePanel";
 import { ModelPipeline } from "../components/camera/ModelPipeline";
 import {
@@ -91,10 +93,12 @@ export function CameraAI() {
     useState<CameraOpenCvAnalysis | null>(null);
 
   const risk = telemetry?.risk ?? openCvAnalysis?.risk ?? "low";
+
   const confidence = Math.round(
     ((telemetry?.ml?.confidence ?? openCvAnalysis?.detections.confidence) ?? 0) *
       100
   );
+
   const cameraSource = sources.find((source) => source.source === "camera_ml");
   const cameraOnline = Boolean(cameraSource?.connected);
 
@@ -113,8 +117,9 @@ export function CameraAI() {
             </h1>
 
             <p className="mt-1 text-sm text-(--muted)">
-              Live video HUD, object detection, OpenCV analysis, AI risk
-              scoring, model performance, event ledger, and assisted review.
+              Live video HUD, YOLO object detection, OpenCV frame analysis,
+              disaster feature matrix, risk scoring, event ledger, and assisted
+              review.
             </p>
           </div>
 
@@ -183,6 +188,10 @@ export function CameraAI() {
 
           <CameraControls />
         </aside>
+
+        <section className="xl:col-span-8">
+          <DisasterFeatureMatrixPanel analysis={openCvAnalysis} />
+        </section>
 
         <section className="xl:col-span-4">
           <VideoSourceLibrary
