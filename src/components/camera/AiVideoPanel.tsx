@@ -1,12 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import { Camera, ExternalLink } from "lucide-react";
-import type { CameraDetectionBox, CameraOpenCvAnalysis } from "./OpenCvAnalysisPanel";
+import type {
+  CameraDetectionBox,
+  CameraOpenCvAnalysis,
+} from "./OpenCvAnalysisPanel";
 
 type AiVideoPanelProps = {
   videoSrc?: string;
   videoTitle?: string;
   videoSourceName?: string;
   openCvAnalysis?: CameraOpenCvAnalysis | null;
+  isAnnotatedPlayback?: boolean;
 };
 
 function getRiskClass(risk?: string) {
@@ -80,6 +84,7 @@ export function AiVideoPanel({
   videoTitle = "Simulated EO/IR Feed",
   videoSourceName = "SIM-CAM-01",
   openCvAnalysis,
+  isAnnotatedPlayback = false,
 }: AiVideoPanelProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [videoFailed, setVideoFailed] = useState(false);
@@ -103,13 +108,17 @@ export function AiVideoPanel({
   }, [videoSrc]);
 
   const showVideo = Boolean(videoSrc) && !videoFailed;
+
   const confidence = Math.round(
     (openCvAnalysis?.detections.confidence ?? 0) * 100
   );
 
   const frameWidth = openCvAnalysis?.frame?.width ?? 640;
   const frameHeight = openCvAnalysis?.frame?.height ?? 360;
-  const detectionBoxes = openCvAnalysis?.detections.boxes ?? [];
+
+  const detectionBoxes = isAnnotatedPlayback
+    ? []
+    : openCvAnalysis?.detections.boxes ?? [];
 
   return (
     <div className="relative h-135 overflow-hidden rounded border border-(--border) bg-[#07111f]">
@@ -163,12 +172,16 @@ export function AiVideoPanel({
       </div>
 
       <div className="absolute right-3 top-3 z-30 text-right text-hud text-[10px]">
-        <div className="text-(--primary)">YOLO CAMERA FEED</div>
+        <div className="text-(--primary)">
+          {isAnnotatedPlayback ? "LIVE YOLO ANNOTATED FEED" : "YOLO CAMERA FEED"}
+        </div>
         <div className="mt-1 text-(--muted)">Model Ready</div>
-        <div className="mt-1 text-(--muted)">28 FPS</div>
+        <div className="mt-1 text-(--muted)">
+          {isAnnotatedPlayback ? "Frame-by-frame" : "28 FPS"}
+        </div>
       </div>
 
-      {openCvAnalysis && (
+      {openCvAnalysis && !isAnnotatedPlayback && (
         <div
           className={`absolute right-3 top-20 z-30 rounded border bg-[#050d18]/90 px-3 py-2 backdrop-blur ${getRiskBorderClass(
             openCvAnalysis.risk
@@ -184,6 +197,18 @@ export function AiVideoPanel({
 
           <div className="mt-1 text-hud text-[9px] text-(--muted)">
             Confidence {confidence}% · Boxes {detectionBoxes.length}
+          </div>
+        </div>
+      )}
+
+      {isAnnotatedPlayback && (
+        <div className="absolute right-3 top-20 z-30 rounded border border-(--nominal) bg-[#050d18]/90 px-3 py-2 backdrop-blur">
+          <div className="text-hud text-[10px] uppercase text-(--nominal)">
+            FRAME-BY-FRAME YOLO
+          </div>
+
+          <div className="mt-1 text-hud text-[9px] text-(--muted)">
+            Boxes are drawn inside the video frames
           </div>
         </div>
       )}
@@ -229,11 +254,18 @@ export function AiVideoPanel({
       )}
 
       <div className="absolute bottom-3 left-3 z-30 text-hud text-[10px]">
-        <div className="text-(--caution)">MODEL: YOLOv8n · BEST FRAME MODE</div>
+        <div className="text-(--caution)">
+          {isAnnotatedPlayback
+            ? "MODEL: CUSTOM YOLO · ANNOTATED VIDEO MODE"
+            : "MODEL: CUSTOM YOLO · BEST FRAME MODE"}
+        </div>
+
         <div className="mt-1 text-(--muted)">
-          {openCvAnalysis
-            ? `Best frame: ${openCvAnalysis.frame?.best_frame_index ?? "-"}`
-            : "Run analysis to show real detection boxes"}
+          {isAnnotatedPlayback
+            ? "Frame-by-frame YOLO annotated playback"
+            : openCvAnalysis
+              ? `Best frame: ${openCvAnalysis.frame?.best_frame_index ?? "-"}`
+              : "Run analysis to show detection boxes"}
         </div>
       </div>
 
