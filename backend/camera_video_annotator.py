@@ -1,9 +1,9 @@
-from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Generator
 
 import cv2
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from ultralytics import YOLO
 
@@ -27,9 +27,6 @@ VIDEO_SOURCES = {
     / "drone-forest-patrol.mp4",
 }
 
-OUTPUT_DIR = PROJECT_ROOT / "public" / "camera-analysis"
-OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-
 CUSTOM_MODEL_PATH = (
     PROJECT_ROOT
     / "runs"
@@ -39,9 +36,8 @@ CUSTOM_MODEL_PATH = (
     / "best.pt"
 )
 
-# For live annotated video, use base YOLO for now.
+# Use base YOLO for live person/vehicle annotation for now.
 # Your custom model is still weak because it was trained with very few pseudo labels.
-# Later, after manually corrected labels and disaster data, we can switch to best.pt.
 DEFAULT_MODEL_PATH = "yolov8n.pt"
 
 _MODEL: YOLO | None = None
@@ -82,25 +78,11 @@ def normalize_yolo_label(raw_label: str) -> str | None:
 
 
 def get_color_for_label(label: str) -> tuple[int, int, int]:
-    label = label.lower()
-
     if label == "person":
         return (255, 211, 41)
 
     if label == "vehicle":
         return (60, 178, 246)
-
-    if label == "fire":
-        return (77, 77, 255)
-
-    if label == "smoke":
-        return (180, 180, 180)
-
-    if label == "flood":
-        return (255, 180, 41)
-
-    if label == "blocked_road":
-        return (80, 120, 255)
 
     return (143, 229, 73)
 
@@ -200,15 +182,14 @@ def draw_hud(
     source_id: str,
     frame_index: int,
     detections: int,
-    model_name: str,
 ) -> None:
     _, width = frame.shape[:2]
 
     cv2.rectangle(frame, (0, 0), (width, 42), (5, 13, 24), -1)
 
     hud_text = (
-        f"AERONEXUS YOLO LIVE ANALYSIS | {source_id} | "
-        f"FRAME {frame_index} | DETECTIONS {detections} | MODEL {model_name}"
+        f"AERONEXUS LIVE YOLO STREAM | {source_id} | "
+        f"FRAME {frame_index} | DETECTIONS {detections}"
     )
 
     cv2.putText(
@@ -242,26 +223,14 @@ def detect_and_draw_frame(
     frame_height, frame_width = frame.shape[:2]
 
     if not results:
-        draw_hud(
-            frame=frame,
-            source_id=source_id,
-            frame_index=frame_index,
-            detections=detection_count,
-            model_name=DEFAULT_MODEL_PATH,
-        )
+        draw_hud(frame, source_id, frame_index, detection_count)
         return detection_count
 
     result = results[0]
     names = result.names
 
     if result.boxes is None:
-        draw_hud(
-            frame=frame,
-            source_id=source_id,
-            frame_index=frame_index,
-            detections=detection_count,
-            model_name=DEFAULT_MODEL_PATH,
-        )
+        draw_hud(frame, source_id, frame_index, detection_count)
         return detection_count
 
     for box in result.boxes:
@@ -299,29 +268,20 @@ def detect_and_draw_frame(
 
         detection_count += 1
 
-    draw_hud(
-        frame=frame,
-        source_id=source_id,
-        frame_index=frame_index,
-        detections=detection_count,
-        model_name=DEFAULT_MODEL_PATH,
-    )
+    draw_hud(frame, source_id, frame_index, detection_count)
 
     return detection_count
 
 
-@router.post("/annotate-video")
-def annotate_video(payload: AnnotateVideoRequest) -> dict[str, Any]:
-    if payload.source_id not in VIDEO_SOURCES:
-        raise HTTPException(
-            status_code=400,
-            detail=(
-                "Only local video files can be annotated. "
-                "Select city, disaster, or forest video."
-            ),
-        )
+def mjpeg_frame_generator(
+    source_id: str,
+    confidence_threshold: float,
+    frame_skip: int,
+) -> Generator[bytes, None, None]:
+    if source_id not in VIDEO_SOURCES:
+        raise HTTPException(status_code=400, detail="Invalid source_id")
 
-    video_path = VIDEO_SOURCES[payload.source_id]
+    video_path = VIDEO_SOURCES[source_id]
 
     if not video_path.exists():
         raise HTTPException(
@@ -337,71 +297,82 @@ def annotate_video(payload: AnnotateVideoRequest) -> dict[str, Any]:
             detail=f"Could not open video: {video_path}",
         )
 
-    fps = capture.get(cv2.CAP_PROP_FPS)
-
-    if fps <= 0:
-        fps = 25
-
-    width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
-
-    if width <= 0 or height <= 0:
-        capture.release()
-        raise HTTPException(
-            status_code=500,
-            detail="Could not read source video size.",
-        )
-
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    output_name = f"annotated_{payload.source_id}_{timestamp}.mp4"
-    output_path = OUTPUT_DIR / output_name
-
-    fourcc = cv2.VideoWriter_fourcc(*"mp4v")
-    writer = cv2.VideoWriter(str(output_path), fourcc, fps, (width, height))
-
-    if not writer.isOpened():
-        capture.release()
-        raise HTTPException(
-            status_code=500,
-            detail="Could not create annotated MP4 video.",
-        )
-
     frame_index = 0
-    processed_frames = 0
-    total_detections = 0
 
     try:
         while True:
             success, frame = capture.read()
 
             if not success:
-                break
+                capture.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                frame_index = 0
+                continue
 
-            if processed_frames >= payload.max_frames:
-                break
+            if frame_skip > 1 and frame_index % frame_skip != 0:
+                frame_index += 1
+                continue
 
-            detection_count = detect_and_draw_frame(
+            detect_and_draw_frame(
                 frame=frame,
-                source_id=payload.source_id,
+                source_id=source_id,
                 frame_index=frame_index,
-                confidence_threshold=payload.confidence_threshold,
+                confidence_threshold=confidence_threshold,
             )
 
-            total_detections += detection_count
-            writer.write(frame)
+            encode_success, encoded_frame = cv2.imencode(
+                ".jpg",
+                frame,
+                [int(cv2.IMWRITE_JPEG_QUALITY), 82],
+            )
+
+            if not encode_success:
+                frame_index += 1
+                continue
+
+            jpg_bytes = encoded_frame.tobytes()
+
+            yield (
+                b"--frame\r\n"
+                b"Content-Type: image/jpeg\r\n\r\n" + jpg_bytes + b"\r\n"
+            )
 
             frame_index += 1
-            processed_frames += 1
     finally:
         capture.release()
-        writer.release()
+
+
+@router.get("/annotated-stream/{source_id}")
+def annotated_stream(
+    source_id: str,
+    confidence_threshold: float = Query(default=0.65, ge=0.1, le=0.95),
+    frame_skip: int = Query(default=3, ge=1, le=10),
+) -> StreamingResponse:
+    return StreamingResponse(
+        mjpeg_frame_generator(
+            source_id=source_id,
+            confidence_threshold=confidence_threshold,
+            frame_skip=frame_skip,
+        ),
+        media_type="multipart/x-mixed-replace; boundary=frame",
+    )
+
+
+@router.post("/annotate-video")
+def annotate_video(payload: AnnotateVideoRequest) -> dict[str, Any]:
+    if payload.source_id not in VIDEO_SOURCES:
+        raise HTTPException(status_code=400, detail="Invalid source_id")
+
+    stream_url = (
+        f"/api/camera-ai/annotated-stream/{payload.source_id}"
+        f"?confidence_threshold={payload.confidence_threshold}"
+        f"&frame_skip=3"
+    )
 
     return {
         "ok": True,
         "source_id": payload.source_id,
         "model": DEFAULT_MODEL_PATH,
         "custom_model_exists": CUSTOM_MODEL_PATH.exists(),
-        "processed_frames": processed_frames,
-        "total_detections": total_detections,
-        "annotated_video_url": f"/camera-analysis/{output_name}",
+        "mode": "mjpeg_stream",
+        "annotated_video_url": stream_url,
     }
