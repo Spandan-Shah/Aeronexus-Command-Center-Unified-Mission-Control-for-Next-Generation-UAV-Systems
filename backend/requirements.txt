@@ -2,3 +2,6 @@ fastapi
 uvicorn[standard]
 numpy
 opencv-python-headless
+ultralytics
+opencv-python-headless
+numpy
