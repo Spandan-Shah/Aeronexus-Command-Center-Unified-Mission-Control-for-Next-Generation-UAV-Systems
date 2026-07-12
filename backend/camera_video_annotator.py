@@ -36,8 +36,8 @@ CUSTOM_MODEL_PATH = (
     / "best.pt"
 )
 
-# Use base YOLO for live person/vehicle annotation for now.
-# Your custom model is still weak because it was trained with very few pseudo labels.
+# Base YOLO is currently better for live person/vehicle stream.
+# The custom model needs more manually corrected labels before using it live.
 DEFAULT_MODEL_PATH = "yolov8n.pt"
 
 _MODEL: YOLO | None = None
@@ -45,7 +45,7 @@ _MODEL: YOLO | None = None
 
 class AnnotateVideoRequest(BaseModel):
     source_id: str
-    confidence_threshold: float = 0.65
+    confidence_threshold: float = 0.45
     max_frames: int = 900
 
 
@@ -110,7 +110,7 @@ def is_valid_box(
     aspect_ratio = box_width / max(box_height, 1.0)
 
     if label == "vehicle":
-        if box_area_ratio < 0.00005:
+        if box_area_ratio < 0.00001:
             return False
 
         if box_area_ratio > 0.08:
@@ -120,7 +120,7 @@ def is_valid_box(
             return False
 
     if label == "person":
-        if box_area_ratio < 0.00003:
+        if box_area_ratio < 0.00001:
             return False
 
         if box_area_ratio > 0.15:
@@ -215,7 +215,7 @@ def detect_and_draw_frame(
     results = model.predict(
         source=frame,
         conf=confidence_threshold,
-        imgsz=640,
+        imgsz=960,
         verbose=False,
     )
 
@@ -344,7 +344,7 @@ def mjpeg_frame_generator(
 @router.get("/annotated-stream/{source_id}")
 def annotated_stream(
     source_id: str,
-    confidence_threshold: float = Query(default=0.65, ge=0.1, le=0.95),
+    confidence_threshold: float = Query(default=0.45, ge=0.1, le=0.95),
     frame_skip: int = Query(default=3, ge=1, le=10),
 ) -> StreamingResponse:
     return StreamingResponse(
