@@ -26,3 +26,11 @@ dist-ssr
 # Allow AeroNexus Logs & Debrief React components
 !src/components/logs/
 !src/components/logs/**
+
+
+datasets/aeronexus_disaster/raw_frames/
+datasets/aeronexus_disaster/train/
+datasets/aeronexus_disaster/val/
+datasets/aeronexus_disaster/valid/
+runs/
+*.pt
