@@ -140,7 +140,7 @@ export function CameraAI() {
           },
           body: JSON.stringify({
             source_id: selectedVideo.id,
-            confidence_threshold: 0.35,
+            confidence_threshold: 0.65,
             max_frames: 900,
           }),
         }
@@ -153,6 +153,9 @@ export function CameraAI() {
 
       const result: {
         annotated_video_url: string;
+        total_detections?: number;
+        processed_frames?: number;
+        model?: string;
       } = await response.json();
 
       setAnnotatedVideoUrl(`${result.annotated_video_url}?t=${Date.now()}`);
@@ -248,8 +251,8 @@ export function CameraAI() {
 
         {isAnnotatedPlayback && (
           <div className="mt-3 rounded border border-(--nominal) bg-[rgba(73,229,143,0.08)] px-3 py-2 text-xs text-(--nominal)">
-            Frame-by-frame YOLO annotated video is active. Boxes are now drawn
-            directly on each video frame.
+            Frame-by-frame YOLO annotated video is active. The moving detection
+            boxes are drawn directly inside the generated MP4 video.
           </div>
         )}
       </div>
