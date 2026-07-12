@@ -3,20 +3,39 @@ import {
   Camera,
   Crosshair,
   ExternalLink,
+  Flame,
   Maximize2,
   ScanLine,
+  Waves,
 } from "lucide-react";
+import type { CameraOpenCvAnalysis } from "./OpenCvAnalysisPanel";
 
 type AiVideoPanelProps = {
   videoSrc?: string;
   videoTitle?: string;
   videoSourceName?: string;
+  openCvAnalysis?: CameraOpenCvAnalysis | null;
 };
+
+function getRiskClass(risk?: string) {
+  if (risk === "critical") return "text-(--critical)";
+  if (risk === "high") return "text-(--caution)";
+  if (risk === "medium") return "text-(--info)";
+  return "text-(--nominal)";
+}
+
+function getRiskBorderClass(risk?: string) {
+  if (risk === "critical") return "border-(--critical)";
+  if (risk === "high") return "border-(--caution)";
+  if (risk === "medium") return "border-(--info)";
+  return "border-(--nominal)";
+}
 
 export function AiVideoPanel({
   videoSrc,
   videoTitle = "Simulated EO/IR Feed",
   videoSourceName = "SIM-CAM-01",
+  openCvAnalysis,
 }: AiVideoPanelProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [videoFailed, setVideoFailed] = useState(false);
@@ -26,9 +45,7 @@ export function AiVideoPanel({
     setVideoFailed(false);
     setVideoLoaded(false);
 
-    if (!videoSrc) {
-      return;
-    }
+    if (!videoSrc) return;
 
     const videoElement = videoRef.current;
 
@@ -36,12 +53,15 @@ export function AiVideoPanel({
       videoElement.load();
 
       void videoElement.play().catch(() => {
-        // Browser may block autoplay if muted/playsInline is removed later.
+        // muted autoplay should normally work
       });
     }
   }, [videoSrc]);
 
   const showVideo = Boolean(videoSrc) && !videoFailed;
+  const confidence = Math.round(
+    (openCvAnalysis?.detections.confidence ?? 0) * 100
+  );
 
   return (
     <div className="relative h-135 overflow-hidden rounded border border-(--border) bg-[#07111f]">
@@ -102,6 +122,23 @@ export function AiVideoPanel({
         )}
       </div>
 
+      {openCvAnalysis && (
+        <div
+          className={`absolute right-3 top-20 z-20 rounded border bg-[#050d18]/90 px-3 py-2 backdrop-blur ${getRiskBorderClass(
+            openCvAnalysis.risk
+          )}`}
+        >
+          <div className={`text-hud text-[10px] uppercase ${getRiskClass(openCvAnalysis.risk)}`}>
+            OPENCV · {openCvAnalysis.risk} RISK
+          </div>
+
+          <div className="mt-1 text-hud text-[9px] text-(--muted)">
+            Confidence {confidence}% · Frames{" "}
+            {openCvAnalysis.frames.sampled_frames}
+          </div>
+        </div>
+      )}
+
       {videoSrc && !videoFailed && !videoLoaded && (
         <div className="absolute left-1/2 top-1/2 z-30 w-80 -translate-x-1/2 -translate-y-1/2 rounded border border-(--primary) bg-[#050d18]/95 p-4 text-center">
           <div className="text-hud text-sm text-(--primary)">
@@ -120,8 +157,8 @@ export function AiVideoPanel({
           </div>
 
           <div className="mt-2 text-xs leading-relaxed text-(--muted)">
-            The file is missing, the name does not match, or the MP4 codec is not
-            browser-supported.
+            The file is missing, the name does not match, or the MP4 codec is
+            not browser-supported.
           </div>
 
           {videoSrc && (
@@ -138,23 +175,45 @@ export function AiVideoPanel({
         <div className="mt-1 text-(--muted)">28 FPS</div>
       </div>
 
-      <div className="absolute left-[22%] top-[48%] h-28 w-24 border border-(--caution)">
-        <div className="absolute -top-5 left-0 bg-[#050d18]/90 px-1 text-hud text-[9px] text-(--caution)">
-          PERSON · 92%
+      {openCvAnalysis?.detections.fire && (
+        <div className="absolute left-[18%] top-[42%] h-28 w-36 border border-(--critical)">
+          <div className="absolute -top-6 left-0 flex items-center gap-1 bg-[#050d18]/90 px-1 text-hud text-[9px] text-(--critical)">
+            <Flame size={11} />
+            FIRE · {confidence}%
+          </div>
         </div>
-      </div>
+      )}
 
-      <div className="absolute left-[55%] top-[60%] h-20 w-52 border border-(--primary)">
-        <div className="absolute -top-5 left-0 bg-[#050d18]/90 px-1 text-hud text-[9px] text-(--primary)">
-          VEHICLE · 87%
+      {openCvAnalysis?.detections.smoke && (
+        <div className="absolute left-[52%] top-[54%] h-28 w-44 border border-(--caution)">
+          <div className="absolute -top-6 left-0 flex items-center gap-1 bg-[#050d18]/90 px-1 text-hud text-[9px] text-(--caution)">
+            <Waves size={11} />
+            SMOKE · {confidence}%
+          </div>
         </div>
-      </div>
+      )}
 
-      <div className="absolute right-[18%] top-[28%] h-20 w-20 border border-(--critical)">
-        <div className="absolute -top-6 left-0 bg-[#050d18]/90 px-1 text-hud text-[9px] text-(--critical)">
-          UNKNOWN HEAT · 71%
-        </div>
-      </div>
+      {!openCvAnalysis && (
+        <>
+          <div className="absolute left-[22%] top-[48%] h-28 w-24 border border-(--caution)">
+            <div className="absolute -top-5 left-0 bg-[#050d18]/90 px-1 text-hud text-[9px] text-(--caution)">
+              PERSON · 92%
+            </div>
+          </div>
+
+          <div className="absolute left-[55%] top-[60%] h-20 w-52 border border-(--primary)">
+            <div className="absolute -top-5 left-0 bg-[#050d18]/90 px-1 text-hud text-[9px] text-(--primary)">
+              VEHICLE · 87%
+            </div>
+          </div>
+
+          <div className="absolute right-[18%] top-[28%] h-20 w-20 border border-(--critical)">
+            <div className="absolute -top-6 left-0 bg-[#050d18]/90 px-1 text-hud text-[9px] text-(--critical)">
+              UNKNOWN HEAT · 71%
+            </div>
+          </div>
+        </>
+      )}
 
       <div className="absolute left-1/2 top-1/2 h-18 w-18 -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-(--caution)/70">
         <div className="absolute left-1/2 top-0 h-5 w-1 -translate-x-1/2 bg-(--caution)/70" />
@@ -175,7 +234,6 @@ export function AiVideoPanel({
       <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-3 rounded border border-(--border) bg-[#050d18]/80 px-3 py-2">
         <Crosshair size={15} className="text-(--primary)" />
         <ScanLine size={15} className="text-(--caution)" />
-        <Maximize2 size={15} className="text-(--muted)" />
       </div>
     </div>
   );
