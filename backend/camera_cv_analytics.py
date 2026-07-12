@@ -42,7 +42,18 @@ VIDEO_SOURCES = {
     },
 }
 
-DEFAULT_MODEL_PATH = "yolov8n.pt"
+CUSTOM_MODEL_PATH = (
+    PROJECT_ROOT
+    / "runs"
+    / "aeronexus"
+    / "disaster_yolo_v1"
+    / "weights"
+    / "best.pt"
+)
+
+DEFAULT_MODEL_PATH = (
+    str(CUSTOM_MODEL_PATH) if CUSTOM_MODEL_PATH.exists() else "yolov8n.pt"
+)
 
 _last_camera_analysis: dict[str, Any] | None = None
 _yolo_model: Any | None = None
@@ -476,12 +487,13 @@ def camera_ai_sources():
             }
         )
 
-    return {
-        "opencv_available": cv2 is not None and np is not None,
-        "yolo_available": YOLO is not None,
-        "model": DEFAULT_MODEL_PATH,
-        "sources": sources,
-    }
+        return {
+            "opencv_available": cv2 is not None and np is not None,
+            "yolo_available": YOLO is not None,
+            "custom_model_exists": CUSTOM_MODEL_PATH.exists(),
+            "model": DEFAULT_MODEL_PATH,
+            "sources": sources,
+        }
 
 
 @router.post("/analyze")
