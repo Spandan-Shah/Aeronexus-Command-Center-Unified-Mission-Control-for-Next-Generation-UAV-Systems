@@ -49,3 +49,24 @@ The principal innovation of AeroNexus lies not merely in using a commercially av
 | **Transport independence**              | The security architecture can theoretically operate over wireless, wired, radio, mesh, long-range, satellite-linked or software-based transports.                               |
 | **Human-in-the-loop operation**         | AI and automation assist operators but do not replace authorised human decision-making in critical operations.                                                                  |
 | **Operational accountability**          | Command logs, mission events, security records and maintenance history support traceability and post-incident investigation.                                                    |
+
+
+# Patent Integration Annotation
+## Existing patent-pending technology
+
+The existing patent application specifically concerns:
+
+Infrastructure-free secure peer communication;
+Persistent cryptographic identity;
+Trusted peer-fingerprint continuity;
+Authenticated key establishment;
+Forward-secure session material;
+Context-bound key derivation;
+Separate directional cryptographic contexts;
+Deterministic nonce construction;
+Independent monotonic counters;
+Ordered authentication and replay validation;
+Reset-safe session invalidation;
+Authenticated rekeying;
+Multi-peer isolation; and
+Transport-independent deployment.
