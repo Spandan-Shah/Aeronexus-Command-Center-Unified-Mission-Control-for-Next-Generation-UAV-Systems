@@ -12,6 +12,7 @@ import { AiAnalyticsPanel } from "../components/camera/AiAnalyticsPanel";
 import { AiRiskMatrix } from "../components/camera/AiRiskMatrix";
 import { AiVideoPanel } from "../components/camera/AiVideoPanel";
 import { CameraControls } from "../components/camera/CameraControls";
+import { DetectionAccuracyMonitor } from "../components/camera/DetectionAccuracyMonitor";
 import { DetectionEventLedger } from "../components/camera/DetectionEventLedger";
 import { DisasterFeatureMatrixPanel } from "../components/camera/DisasterFeatureMatrixPanel";
 import { ModelPerformancePanel } from "../components/camera/ModelPerformancePanel";
@@ -28,6 +29,7 @@ import { cameraStatus } from "../data/camera";
 import { useUnifiedTelemetry } from "../hooks/useUnifiedTelemetry";
 
 const BACKEND_URL = "http://127.0.0.1:8000";
+const STREAM_CONFIDENCE_THRESHOLD = 0.3;
 
 const videoSources: CameraVideoSource[] = [
   {
@@ -93,12 +95,14 @@ export function CameraAI() {
   const [selectedVideo, setSelectedVideo] = useState<CameraVideoSource>(
     videoSources[0]
   );
+
   const [openCvAnalysis, setOpenCvAnalysis] =
     useState<CameraOpenCvAnalysis | null>(null);
 
   const [annotatedVideoUrl, setAnnotatedVideoUrl] = useState<string | null>(
     null
   );
+
   const [isAnnotatingVideo, setIsAnnotatingVideo] = useState(false);
   const [annotatorError, setAnnotatorError] = useState<string | null>(null);
 
@@ -140,7 +144,7 @@ export function CameraAI() {
         },
         body: JSON.stringify({
           source_id: selectedVideo.id,
-          confidence_threshold: 0.30,
+          confidence_threshold: STREAM_CONFIDENCE_THRESHOLD,
           max_frames: 900,
         }),
       });
@@ -153,7 +157,11 @@ export function CameraAI() {
       const result: {
         annotated_video_url: string;
         mode?: string;
-        model?: string;
+        preferred_model?: string;
+        loaded_model?: string;
+        fallback_model?: string;
+        cuda_available?: boolean;
+        gpu?: string | null;
       } = await response.json();
 
       const separator = result.annotated_video_url.includes("?") ? "&" : "?";
@@ -182,9 +190,9 @@ export function CameraAI() {
             </h1>
 
             <p className="mt-1 text-sm text-(--muted)">
-              Live video HUD, YOLO object detection, OpenCV frame analysis,
-              disaster feature matrix, risk scoring, event ledger, and assisted
-              review.
+              Live video HUD, GPU YOLO detection, OpenCV frame analysis,
+              person/vehicle accuracy monitoring, disaster feature matrix, risk
+              scoring, event ledger, and assisted review.
             </p>
           </div>
 
@@ -301,6 +309,13 @@ export function CameraAI() {
             selectedVideoId={selectedVideo.id}
             videos={videoSources}
             onSelectVideo={selectVideo}
+          />
+        </section>
+
+        <section className="xl:col-span-4">
+          <DetectionAccuracyMonitor
+            selectedVideo={selectedVideo}
+            confidenceThreshold={STREAM_CONFIDENCE_THRESHOLD}
           />
         </section>
 
