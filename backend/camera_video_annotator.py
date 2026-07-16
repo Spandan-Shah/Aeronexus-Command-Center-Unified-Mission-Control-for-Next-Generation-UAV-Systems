@@ -1,4 +1,5 @@
 from pathlib import Path
+from time import perf_counter
 from typing import Any, Generator
 
 import cv2
@@ -44,8 +45,16 @@ PREFERRED_MODEL_PATH = (
 
 FALLBACK_MODEL_PATH = "yolo11m.pt"
 
+DEFAULT_CONFIDENCE_THRESHOLD = 0.30
+DEFAULT_FRAME_SKIP = 2
+
 # COCO class IDs:
-# 0 person, 1 bicycle, 2 car, 3 motorcycle, 5 bus, 7 truck
+# 0 = person
+# 1 = bicycle
+# 2 = car
+# 3 = motorcycle
+# 5 = bus
+# 7 = truck
 COCO_ALLOWED_CLASSES = [0, 1, 2, 3, 5, 7]
 
 _MODEL: Any | None = None
@@ -55,7 +64,7 @@ _MODEL_LOAD_ERROR: str | None = None
 
 class AnnotateVideoRequest(BaseModel):
     source_id: str
-    confidence_threshold: float = 0.30
+    confidence_threshold: float = DEFAULT_CONFIDENCE_THRESHOLD
     max_frames: int = 900
 
 
@@ -164,6 +173,56 @@ def is_valid_box(
     return True
 
 
+def summarize_values(values: list[float]) -> dict[str, float]:
+    if not values:
+        return {
+            "average": 0.0,
+            "minimum": 0.0,
+            "maximum": 0.0,
+        }
+
+    return {
+        "average": round(sum(values) / len(values), 4),
+        "minimum": round(min(values), 4),
+        "maximum": round(max(values), 4),
+    }
+
+
+def calculate_detection_quality(
+    average_confidence: float,
+    detection_rate: float,
+    detections_per_frame: float,
+    average_inference_ms: float,
+) -> dict[str, Any]:
+    confidence_score = average_confidence * 55
+    coverage_score = detection_rate * 25
+    density_score = min(detections_per_frame / 3.0, 1.0) * 10
+
+    speed_score = 10
+    if average_inference_ms > 120:
+        speed_score = 3
+    elif average_inference_ms > 80:
+        speed_score = 5
+    elif average_inference_ms > 45:
+        speed_score = 7
+
+    score = round(confidence_score + coverage_score + density_score + speed_score, 1)
+
+    if score >= 75:
+        level = "high"
+    elif score >= 55:
+        level = "medium"
+    elif score > 0:
+        level = "low"
+    else:
+        level = "no-detection"
+
+    return {
+        "score": score,
+        "level": level,
+    }
+
+
 def make_error_frame(message: str) -> bytes:
     frame = np.zeros((360, 640, 3), dtype=np.uint8)
     frame[:, :] = (5, 13, 24)
@@ -253,6 +312,8 @@ def draw_hud(
     source_id: str,
     frame_index: int,
     detections: int,
+    average_confidence: float,
+    inference_ms: float,
 ) -> None:
     _, width = frame.shape[:2]
 
@@ -264,13 +325,14 @@ def draw_hud(
 
     hud_text = (
         f"AERONEXUS LIVE YOLO STREAM | {source_id} | "
-        f"FRAME {frame_index} | DETECTIONS {detections} | "
-        f"{_LOADED_MODEL_NAME} | {device_name}"
+        f"FRAME {frame_index} | DET {detections} | "
+        f"CONF {average_confidence * 100:.0f}% | "
+        f"{inference_ms:.0f}ms | {_LOADED_MODEL_NAME} | {device_name}"
     )
 
     cv2.putText(
         frame,
-        hud_text[:135],
+        hud_text[:145],
         (14, 27),
         cv2.FONT_HERSHEY_SIMPLEX,
         0.55,
@@ -280,13 +342,13 @@ def draw_hud(
     )
 
 
-def detect_and_draw_frame(
+def run_yolo_prediction(
     frame: Any,
-    source_id: str,
-    frame_index: int,
     confidence_threshold: float,
-) -> int:
+) -> tuple[Any, float]:
     model = get_model()
+
+    started_at = perf_counter()
 
     results = model.predict(
         source=frame,
@@ -299,19 +361,26 @@ def detect_and_draw_frame(
         verbose=False,
     )
 
-    detection_count = 0
+    inference_ms = (perf_counter() - started_at) * 1000
+
+    return results, inference_ms
+
+
+def extract_valid_detections(
+    frame: Any,
+    results: Any,
+) -> list[dict[str, Any]]:
+    detections: list[dict[str, Any]] = []
     frame_height, frame_width = frame.shape[:2]
 
     if not results:
-        draw_hud(frame, source_id, frame_index, detection_count)
-        return detection_count
+        return detections
 
     result = results[0]
     names = result.names
 
     if result.boxes is None:
-        draw_hud(frame, source_id, frame_index, detection_count)
-        return detection_count
+        return detections
 
     for box in result.boxes:
         class_id = int(box.cls[0].cpu().item())
@@ -336,21 +405,87 @@ def detect_and_draw_frame(
         ):
             continue
 
-        draw_detection_box(
-            frame=frame,
-            label=label,
-            confidence=confidence,
-            x1=int(x1),
-            y1=int(y1),
-            x2=int(x2),
-            y2=int(y2),
+        box_width = max(0.0, x2 - x1)
+        box_height = max(0.0, y2 - y1)
+        box_area_ratio = (box_width * box_height) / max(
+            float(frame_width * frame_height),
+            1.0,
         )
 
-        detection_count += 1
+        detections.append(
+            {
+                "label": label,
+                "raw_label": raw_label,
+                "confidence": round(confidence, 4),
+                "area_ratio": round(box_area_ratio, 6),
+                "box": {
+                    "x1": round(x1, 2),
+                    "y1": round(y1, 2),
+                    "x2": round(x2, 2),
+                    "y2": round(y2, 2),
+                },
+            }
+        )
 
-    draw_hud(frame, source_id, frame_index, detection_count)
+    return detections
 
-    return detection_count
+
+def analyze_frame_detections(
+    frame: Any,
+    confidence_threshold: float,
+) -> tuple[list[dict[str, Any]], float]:
+    results, inference_ms = run_yolo_prediction(
+        frame=frame,
+        confidence_threshold=confidence_threshold,
+    )
+
+    detections = extract_valid_detections(
+        frame=frame,
+        results=results,
+    )
+
+    return detections, inference_ms
+
+
+def detect_and_draw_frame(
+    frame: Any,
+    source_id: str,
+    frame_index: int,
+    confidence_threshold: float,
+) -> int:
+    detections, inference_ms = analyze_frame_detections(
+        frame=frame,
+        confidence_threshold=confidence_threshold,
+    )
+
+    confidences = [float(detection["confidence"]) for detection in detections]
+    average_confidence = (
+        sum(confidences) / len(confidences) if confidences else 0.0
+    )
+
+    for detection in detections:
+        box = detection["box"]
+
+        draw_detection_box(
+            frame=frame,
+            label=str(detection["label"]),
+            confidence=float(detection["confidence"]),
+            x1=int(float(box["x1"])),
+            y1=int(float(box["y1"])),
+            x2=int(float(box["x2"])),
+            y2=int(float(box["y2"])),
+        )
+
+    draw_hud(
+        frame=frame,
+        source_id=source_id,
+        frame_index=frame_index,
+        detections=len(detections),
+        average_confidence=average_confidence,
+        inference_ms=inference_ms,
+    )
+
+    return len(detections)
 
 
 def validate_source(source_id: str) -> Path:
@@ -450,6 +585,12 @@ def annotator_health() -> dict[str, Any]:
         "torch_version": torch.__version__,
         "device": get_device(),
         "gpu": torch.cuda.get_device_name(0) if torch.cuda.is_available() else None,
+        "default_confidence_threshold": DEFAULT_CONFIDENCE_THRESHOLD,
+        "default_frame_skip": DEFAULT_FRAME_SKIP,
+        "allowed_classes": {
+            "person": [0],
+            "vehicle": [1, 2, 3, 5, 7],
+        },
         "sources": {
             source_id: {
                 "path": str(path),
@@ -510,6 +651,11 @@ def annotated_stream(
             frame_skip=frame_skip,
         ),
         media_type="multipart/x-mixed-replace; boundary=frame",
+        headers={
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0",
+        },
     )
 
 
@@ -520,7 +666,7 @@ def annotate_video(payload: AnnotateVideoRequest) -> dict[str, Any]:
     stream_url = (
         f"/api/camera-ai/annotated-stream/{payload.source_id}"
         f"?confidence_threshold={payload.confidence_threshold}"
-        f"&frame_skip=2"
+        f"&frame_skip={DEFAULT_FRAME_SKIP}"
     )
 
     return {
@@ -537,4 +683,146 @@ def annotate_video(payload: AnnotateVideoRequest) -> dict[str, Any]:
         "gpu": torch.cuda.get_device_name(0) if torch.cuda.is_available() else None,
         "mode": "mjpeg_stream",
         "annotated_video_url": stream_url,
+    }
+
+
+@router.get("/detection-stats/{source_id}")
+def detection_stats(
+    source_id: str,
+    confidence_threshold: float = Query(default=0.30, ge=0.1, le=0.95),
+    frames: int = Query(default=120, ge=10, le=600),
+    frame_skip: int = Query(default=5, ge=1, le=20),
+) -> dict[str, Any]:
+    video_path = validate_source(source_id)
+    capture = cv2.VideoCapture(str(video_path))
+
+    if not capture.isOpened():
+        raise HTTPException(
+            status_code=500,
+            detail=f"Could not open video: {video_path}",
+        )
+
+    frame_index = 0
+    analyzed_frames = 0
+    no_detection_frames = 0
+
+    all_confidences: list[float] = []
+    all_area_ratios: list[float] = []
+    inference_times: list[float] = []
+
+    class_stats: dict[str, dict[str, Any]] = {
+        "person": {
+            "count": 0,
+            "confidences": [],
+            "area_ratios": [],
+        },
+        "vehicle": {
+            "count": 0,
+            "confidences": [],
+            "area_ratios": [],
+        },
+    }
+
+    try:
+        while analyzed_frames < frames:
+            success, frame = capture.read()
+
+            if not success:
+                break
+
+            if frame_skip > 1 and frame_index % frame_skip != 0:
+                frame_index += 1
+                continue
+
+            detections, inference_ms = analyze_frame_detections(
+                frame=frame,
+                confidence_threshold=confidence_threshold,
+            )
+
+            inference_times.append(inference_ms)
+
+            if not detections:
+                no_detection_frames += 1
+
+            for detection in detections:
+                label = str(detection["label"])
+                confidence = float(detection["confidence"])
+                area_ratio = float(detection["area_ratio"])
+
+                if label not in class_stats:
+                    continue
+
+                class_stats[label]["count"] += 1
+                class_stats[label]["confidences"].append(confidence)
+                class_stats[label]["area_ratios"].append(area_ratio)
+
+                all_confidences.append(confidence)
+                all_area_ratios.append(area_ratio)
+
+            analyzed_frames += 1
+            frame_index += 1
+    finally:
+        capture.release()
+
+    total_detections = len(all_confidences)
+    detection_frames = analyzed_frames - no_detection_frames
+
+    detection_rate = (
+        detection_frames / analyzed_frames if analyzed_frames > 0 else 0.0
+    )
+    detections_per_frame = (
+        total_detections / analyzed_frames if analyzed_frames > 0 else 0.0
+    )
+
+    confidence_summary = summarize_values(all_confidences)
+    area_summary = summarize_values(all_area_ratios)
+    inference_summary = summarize_values(inference_times)
+
+    quality = calculate_detection_quality(
+        average_confidence=confidence_summary["average"],
+        detection_rate=detection_rate,
+        detections_per_frame=detections_per_frame,
+        average_inference_ms=inference_summary["average"],
+    )
+
+    cleaned_class_stats: dict[str, Any] = {}
+
+    for label, stats in class_stats.items():
+        cleaned_class_stats[label] = {
+            "count": stats["count"],
+            "confidence": summarize_values(stats["confidences"]),
+            "box_area": summarize_values(stats["area_ratios"]),
+        }
+
+    return {
+        "ok": True,
+        "source_id": source_id,
+        "video_path": str(video_path),
+        "preferred_model": PREFERRED_MODEL_PATH,
+        "loaded_model": _LOADED_MODEL_NAME,
+        "fallback_model": FALLBACK_MODEL_PATH,
+        "model_load_error": _MODEL_LOAD_ERROR,
+        "custom_model_exists": CUSTOM_MODEL_PATH.exists(),
+        "cuda_available": torch.cuda.is_available(),
+        "torch_version": torch.__version__,
+        "device": get_device(),
+        "gpu": torch.cuda.get_device_name(0) if torch.cuda.is_available() else None,
+        "confidence_threshold": confidence_threshold,
+        "frames_requested": frames,
+        "frames_analyzed": analyzed_frames,
+        "frame_skip": frame_skip,
+        "total_detections": total_detections,
+        "detection_frames": detection_frames,
+        "no_detection_frames": no_detection_frames,
+        "detection_rate": round(detection_rate, 4),
+        "detections_per_frame": round(detections_per_frame, 4),
+        "confidence": confidence_summary,
+        "box_area": area_summary,
+        "inference_ms": inference_summary,
+        "quality": quality,
+        "classes": cleaned_class_stats,
+        "accuracy_note": (
+            "These are confidence-based live detection stats. True accuracy "
+            "requires manually labeled validation data."
+        ),
     }
