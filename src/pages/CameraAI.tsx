@@ -140,7 +140,7 @@ export function CameraAI() {
         },
         body: JSON.stringify({
           source_id: selectedVideo.id,
-          confidence_threshold: 0.45,
+          confidence_threshold: 0.30,
           max_frames: 900,
         }),
       });
