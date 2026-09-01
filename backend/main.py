@@ -1,5 +1,4 @@
 import asyncio
-from camera_cv_analytics import router as camera_ai_router
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,7 +13,10 @@ from alert_system import (
     init_alert_database,
     seed_demo_alert_contacts,
 )
+from camera_cv_analytics import router as camera_ai_router
+from camera_video_annotator import router as camera_video_annotator_router
 from database import get_events, init_database, insert_command, insert_event
+from logs_python_analytics import router as logs_python_analytics_router
 from mavlink_adapter import MavlinkAdapter
 from simulator import now_time, run_command, simulator_state, update_simulator
 from telemetry_hub import (
@@ -22,11 +24,8 @@ from telemetry_hub import (
     get_source_statuses,
     ingest_telemetry,
 )
-from camera_video_annotator import router as camera_video_annotator_router
 
 app = FastAPI(title="AeroNexus Backend")
-app.include_router(camera_ai_router)
-app.include_router(camera_video_annotator_router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -35,6 +34,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(camera_ai_router)
+app.include_router(camera_video_annotator_router)
+app.include_router(logs_python_analytics_router)
 
 mavlink = MavlinkAdapter()
 
@@ -57,6 +60,14 @@ def root():
         "name": "AeroNexus Backend",
         "status": "running",
         "mode": "simulator",
+        "services": {
+            "camera_ai": "enabled",
+            "camera_video_annotator": "enabled",
+            "logs_python_analytics": "enabled",
+            "telemetry": "enabled",
+            "alerts": "enabled",
+            "mavlink": "simulated",
+        },
     }
 
 
@@ -181,7 +192,10 @@ def send_emergency_alert(payload: dict):
         insert_event(
             now_time(),
             "EMERGENCY_ALERT",
-            f"{payload.get('alert_type', 'alert')} alert sent to {result['matched_contacts']} contacts",
+            (
+                f"{payload.get('alert_type', 'alert')} alert sent to "
+                f"{result['matched_contacts']} contacts"
+            ),
         )
 
         return {
