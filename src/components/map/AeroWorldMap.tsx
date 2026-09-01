@@ -38,7 +38,6 @@ type LayerId =
   | "home";
 
 type LayerState = Record<LayerId, boolean>;
-
 type BaseMapId = "osm" | "hot";
 
 const defaultLayerState: LayerState = {
@@ -67,17 +66,20 @@ const baseMaps: Record<
   BaseMapId,
   {
     label: string;
+    shortLabel: string;
     url: string;
     attribution: string;
   }
 > = {
   osm: {
     label: "OpenStreetMap",
+    shortLabel: "OSM",
     url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
     attribution: "© OpenStreetMap contributors",
   },
   hot: {
     label: "OSM Humanitarian",
+    shortLabel: "HOT",
     url: "https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png",
     attribution: "© OpenStreetMap contributors · HOT",
   },
@@ -334,9 +336,7 @@ export function AeroWorldMap() {
       pointToLayer: (feature, latlng) => {
         const name = escapeHtml(feature.properties?.name ?? "Drone");
         const status = escapeHtml(String(feature.properties?.status ?? "N/A"));
-        const battery = escapeHtml(
-          String(feature.properties?.battery ?? "N/A")
-        );
+        const battery = escapeHtml(String(feature.properties?.battery ?? "N/A"));
         const altitude = escapeHtml(
           String(feature.properties?.altitude ?? "N/A")
         );
@@ -525,21 +525,21 @@ export function AeroWorldMap() {
 
       <div className="pointer-events-none absolute inset-0 z-10 bg-[linear-gradient(to_bottom,rgba(5,13,24,0.02),rgba(5,13,24,0.08))]" />
 
-      <div className="absolute left-3 top-3 z-20 rounded border border-(--border) bg-[#050d18]/90 px-3 py-2 backdrop-blur">
-        <div className="flex items-center gap-2 text-hud text-[10px] text-(--primary)">
-          <Globe2 size={14} />
-          AERONEXUS OPEN LIVE OPS MAP
+      <div className="absolute left-4 top-4 z-20 rounded-lg border border-[#1d2533] bg-[#050609]/92 px-3 py-2 backdrop-blur">
+        <div className="flex items-center gap-1.5 text-hud text-[8px] text-(--primary)">
+          <Globe2 size={12} />
+          Aeronexus Open Live Ops Map
         </div>
 
-        <div className="mt-1 text-hud text-[9px] text-(--muted)">
-          {baseMaps[baseMapId].label.toUpperCase()} · OPENSTREETMAP · WGS-84 ·
-          ZOOM {zoom} · LIVE {telemetry?.gps ? "GPS LOCK" : "NO GPS"}
+        <div className="mt-1 text-hud text-[7px] text-(--muted)">
+          {baseMaps[baseMapId].shortLabel} · OpenStreetMap · WGS-84 · Zoom{" "}
+          {zoom} · {telemetry?.gps ? "GPS Lock" : "No GPS"}
         </div>
       </div>
 
-      <div className="absolute right-3 top-3 z-20 w-52 rounded border border-(--border) bg-[#050d18]/90 p-3 backdrop-blur">
-        <div className="mb-2 flex items-center gap-2 text-hud text-[10px] text-(--foreground)">
-          <Layers size={14} className="text-(--primary)" />
+      <div className="absolute right-5 top-7 z-20 w-[10.5rem] rounded-lg border border-[#1d2533] bg-[#050609]/92 p-2 backdrop-blur">
+        <div className="mb-1.5 flex items-center gap-1.5 text-hud text-[8px] text-(--foreground)">
+          <Layers size={11} className="text-(--primary)" />
           Map Layers
         </div>
 
@@ -548,22 +548,22 @@ export function AeroWorldMap() {
           onClick={() =>
             setBaseMapId((current) => (current === "osm" ? "hot" : "osm"))
           }
-          className="mb-2 flex w-full items-center justify-between rounded border border-(--primary) bg-[rgba(41,211,255,0.08)] px-2 py-1.5 text-hud text-[9px] text-(--primary)"
+          className="mb-1.5 flex w-full items-center justify-between rounded border border-(--primary) bg-[rgba(246,178,60,0.08)] px-2 py-1 text-hud text-[7px] text-(--primary)"
         >
-          <span>Base Map</span>
-          <span>{baseMaps[baseMapId].label}</span>
+          <span>Base</span>
+          <span>{baseMaps[baseMapId].shortLabel}</span>
         </button>
 
-        <div className="space-y-1.5">
+        <div className="space-y-1">
           {layerButtons.map((layer) => (
             <button
               key={layer.id}
               type="button"
               onClick={() => toggleLayer(layer.id)}
-              className={`flex w-full items-center justify-between rounded border px-2 py-1.5 text-hud text-[9px] transition ${
+              className={`flex w-full items-center justify-between rounded border px-2 py-1 text-hud text-[7px] transition ${
                 layers[layer.id]
-                  ? "border-(--primary) bg-[rgba(41,211,255,0.08)] text-(--primary)"
-                  : "border-(--border) bg-[#081320] text-(--muted)"
+                  ? "border-(--primary) bg-[rgba(246,178,60,0.08)] text-(--primary)"
+                  : "border-[#1d2533] bg-[#070a10] text-(--muted)"
               }`}
             >
               <span>{layer.label}</span>
@@ -573,47 +573,47 @@ export function AeroWorldMap() {
         </div>
       </div>
 
-      <div className="absolute bottom-3 left-3 z-20 rounded border border-(--border) bg-[#050d18]/90 px-3 py-2 backdrop-blur">
-        <div className="flex items-center gap-2 text-hud text-[10px] text-(--foreground)">
-          <Crosshair size={14} className="text-(--primary)" />
+      <div className="absolute bottom-14 left-5 z-20 rounded border border-[#1d2533] bg-[#050609]/92 px-2.5 py-1.5 backdrop-blur">
+        <div className="flex items-center gap-1.5 text-hud text-[8px] text-(--foreground)">
+          <Crosshair size={12} className="text-(--primary)" />
           {coordinates}
         </div>
       </div>
 
-      <div className="absolute bottom-3 right-3 z-20 flex gap-2">
+      <div className="absolute bottom-14 right-5 z-20 flex gap-2">
         <button
           type="button"
           onClick={flyToAoi}
-          className="flex items-center gap-2 rounded border border-(--border) bg-[#050d18]/90 px-3 py-2 text-hud text-[10px] text-(--foreground) backdrop-blur hover:border-(--primary)"
+          className="flex items-center gap-1.5 rounded border border-[#1d2533] bg-[#050609]/92 px-2.5 py-1.5 text-hud text-[8px] text-(--foreground) backdrop-blur transition hover:border-(--primary)"
         >
-          <MapPinned size={14} />
+          <MapPinned size={12} />
           AOI
         </button>
 
         <button
           type="button"
           onClick={flyToHome}
-          className="flex items-center gap-2 rounded border border-(--border) bg-[#050d18]/90 px-3 py-2 text-hud text-[10px] text-(--foreground) backdrop-blur hover:border-(--nominal)"
+          className="flex items-center gap-1.5 rounded border border-[#1d2533] bg-[#050609]/92 px-2.5 py-1.5 text-hud text-[8px] text-(--foreground) backdrop-blur transition hover:border-(--nominal)"
         >
-          <Home size={14} />
+          <Home size={12} />
           Home
         </button>
 
         <button
           type="button"
           onClick={flyToMission}
-          className="flex items-center gap-2 rounded bg-(--primary) px-3 py-2 text-hud text-[10px] font-bold text-[#07111f] hover:opacity-90"
+          className="flex items-center gap-1.5 rounded bg-(--primary) px-2.5 py-1.5 text-hud text-[8px] font-bold text-black transition hover:opacity-90"
         >
-          <Plane size={14} />
+          <Plane size={12} />
           Mission
         </button>
 
         <button
           type="button"
           onClick={flyToUav}
-          className="flex items-center gap-2 rounded border border-(--border) bg-[#050d18]/90 px-3 py-2 text-hud text-[10px] text-(--foreground) backdrop-blur hover:border-(--primary)"
+          className="flex items-center gap-1.5 rounded border border-[#1d2533] bg-[#050609]/92 px-2.5 py-1.5 text-hud text-[8px] text-(--foreground) backdrop-blur transition hover:border-(--primary)"
         >
-          <LocateFixed size={14} />
+          <LocateFixed size={12} />
           UAV
         </button>
       </div>
