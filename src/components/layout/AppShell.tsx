@@ -19,8 +19,9 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-import aeroNexusLogo from "../../assets/aeronexus-logo.png";
-import { pageDetails, type PageId } from "../../data/navigation";
+import aeronexusWordmark from "../../assets/aeronexus-wordmark-dark.png";
+import aeronexusFooterLogo from "../../assets/aeronexus-footer-logo.png";
+import { type PageId } from "../../data/navigation";
 import { telemetry } from "../../data/telemetry";
 
 type AppShellProps = {
@@ -35,16 +36,13 @@ type NavItem = {
   icon: LucideIcon;
 };
 
-const primaryNavItems: NavItem[] = [
+const navItems: NavItem[] = [
   { id: "live-ops", label: "Live Ops", icon: Radar },
   { id: "mission-planner", label: "Mission Planner", icon: Map },
   { id: "drone-control", label: "Drone Control", icon: Gamepad2 },
   { id: "fleet", label: "Fleet", icon: Plane },
   { id: "camera-ai", label: "Camera AI", icon: Camera },
   { id: "pre-flight", label: "Pre-Flight", icon: ClipboardCheck },
-];
-
-const secondaryNavItems: NavItem[] = [
   { id: "drone-health", label: "Health", icon: Gauge },
   { id: "battery", label: "Battery", icon: Battery },
   { id: "logs", label: "Logs", icon: FileText },
@@ -53,8 +51,6 @@ const secondaryNavItems: NavItem[] = [
   { id: "security", label: "Security", icon: ShieldCheck },
   { id: "settings", label: "Settings", icon: Settings },
 ];
-
-const navItems = [...primaryNavItems, ...secondaryNavItems];
 
 function getStatusTone(value: number) {
   if (value >= 80) return "text-(--nominal)";
@@ -74,10 +70,14 @@ function StatusPill({
   tone?: string;
 }) {
   return (
-    <div className="flex items-center gap-2 rounded-full border border-(--border) bg-[#050d18]/80 px-3 py-1.5">
+    <div className="flex shrink-0 items-center gap-2 rounded-full border border-(--border) bg-black px-3 py-1.5">
       <Icon size={14} className={tone} />
-      <span className="text-hud text-[9px] text-(--muted)">{label}</span>
-      <span className={`text-hud text-[10px] font-bold ${tone}`}>{value}</span>
+
+      <span className="text-hud text-[9px] uppercase tracking-[0.14em] text-(--muted)">
+        {label}
+      </span>
+
+      <span className={`text-hud text-xs font-bold ${tone}`}>{value}</span>
     </div>
   );
 }
@@ -88,7 +88,6 @@ export function AppShell({
   onPageChange,
 }: AppShellProps) {
   const [time, setTime] = useState("--:--:--");
-  const activeDetails = pageDetails[activePage];
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -99,44 +98,56 @@ export function AppShell({
   }, []);
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-(--background) text-(--foreground)">
-      <header className="shrink-0 border-b border-(--border) bg-[#050d18]">
-        <div className="flex h-18 items-center gap-4 px-4">
+    <div className="min-h-screen bg-black text-(--foreground)">
+      <header className="fixed left-0 right-0 top-0 z-50 border-b border-(--border) bg-black">
+        <div className="mx-auto flex h-24 max-w-[1680px] items-center gap-7 px-8">
           <button
             type="button"
             onClick={() => onPageChange("live-ops")}
-            className="flex min-w-0 items-center gap-3 rounded border border-transparent p-1 pr-4 transition hover:border-(--border) hover:bg-(--panel)"
+            className="flex h-20 w-84 shrink-0 items-center justify-start bg-black"
             title="Go to Live Ops"
           >
-            <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded border border-(--primary) bg-black">
-              <img
-                src={aeroNexusLogo}
-                alt="Aeronexus Logo"
-                className="h-10 w-10 object-contain"
-              />
-              <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-(--nominal)" />
-            </div>
-
-            <div className="hidden min-w-0 text-left sm:block">
-              <div className="text-hud text-sm font-black tracking-[0.18em] text-(--foreground)">
-                AERONEXUS
-              </div>
-              <div className="text-hud text-[9px] tracking-[0.12em] text-(--muted)">
-                Unified UAV Mission Control
-              </div>
-            </div>
+            <img
+              src={aeronexusWordmark}
+              alt="Aeronexus"
+              className="h-14 w-auto object-contain"
+            />
           </button>
 
-          <div className="hidden min-w-0 flex-1 border-l border-(--border) pl-4 lg:block">
-            <div className="text-hud text-xs font-bold text-(--foreground)">
-              {activeDetails.title}
-            </div>
-            <div className="mt-1 truncate text-hud text-[9px] text-(--muted)">
-              {activeDetails.subtitle}
-            </div>
-          </div>
+          <nav className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const active = activePage === item.id;
 
-          <div className="ml-auto hidden items-center gap-2 xl:flex">
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => onPageChange(item.id)}
+                  className={`group flex shrink-0 items-center gap-2 rounded-sm border px-4 py-3 text-hud text-xs transition ${
+                    active
+                      ? "border-(--primary) bg-[rgba(246,178,60,0.14)] text-(--primary)"
+                      : "border-transparent text-(--muted) hover:border-(--border) hover:bg-(--panel) hover:text-(--foreground)"
+                  }`}
+                >
+                  <Icon
+                    size={16}
+                    className={
+                      active
+                        ? "text-(--primary)"
+                        : "text-(--muted) group-hover:text-(--foreground)"
+                    }
+                  />
+
+                  <span className="whitespace-nowrap uppercase tracking-[0.13em]">
+                    {item.label}
+                  </span>
+                </button>
+              );
+            })}
+          </nav>
+
+          <div className="hidden shrink-0 items-center gap-2 2xl:flex">
             <StatusPill
               icon={ShieldCheck}
               label="Secure"
@@ -173,65 +184,115 @@ export function AppShell({
             />
           </div>
         </div>
-
-        <nav className="flex h-12 items-center gap-2 overflow-x-auto border-t border-(--border) bg-[#07111f]/96 px-3">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const active = activePage === item.id;
-
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => onPageChange(item.id)}
-                className={`group flex shrink-0 items-center gap-2 rounded border px-3 py-2 text-hud text-[10px] transition ${
-                  active
-                    ? "border-(--primary) bg-[rgba(246,178,60,0.14)] text-(--primary)"
-                    : "border-transparent text-(--muted) hover:border-(--border) hover:bg-(--panel) hover:text-(--foreground)"
-                }`}
-              >
-                <Icon
-                  size={14}
-                  className={
-                    active
-                      ? "text-(--primary)"
-                      : "text-(--muted) group-hover:text-(--foreground)"
-                  }
-                />
-                <span>{item.label}</span>
-              </button>
-            );
-          })}
-        </nav>
       </header>
 
-      <main className="min-h-0 flex-1 overflow-hidden bg-[#07111f]">
-        {children}
-      </main>
+      <main className="min-h-screen bg-[#07111f] pt-24">{children}</main>
 
-      <footer className="flex h-10 shrink-0 items-center gap-3 border-t border-(--border) bg-[#050d18] px-4">
-        <div className="flex items-center gap-2">
-          <img
-            src={aeroNexusLogo}
-            alt="Aeronexus Logo"
-            className="h-6 w-6 object-contain"
-          />
+      <footer className="border-t border-(--border) bg-black">
+        <div className="mx-auto grid max-w-[1680px] gap-10 px-8 py-12 lg:grid-cols-[360px_1fr]">
+          <div>
+            <div className="flex h-44 w-64 items-center justify-center rounded-sm bg-white p-4">
+              <img
+                src={aeronexusFooterLogo}
+                alt="Aeronexus"
+                className="max-h-full max-w-full object-contain"
+              />
+            </div>
 
-          <span className="text-hud text-[10px] font-bold text-(--foreground)">
-            AERONEXUS
-          </span>
+            <p className="mt-6 max-w-sm text-sm leading-relaxed text-(--muted)">
+              Autonomous UAV operations, mission planning, secure telemetry,
+              aerial intelligence and command-control software.
+            </p>
 
-          <span className="hidden text-hud text-[9px] text-(--muted) sm:inline">
-            Aerospace Mission Systems
-          </span>
+            <p className="mt-6 text-sm leading-relaxed text-(--muted)">
+              Gujarat, India
+              <br />
+              General enquiries: via the contact form
+            </p>
+          </div>
+
+          <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <h3 className="text-hud text-[11px] tracking-[0.28em] text-(--muted)">
+                Products
+              </h3>
+
+              <div className="mt-6 space-y-4 text-sm text-(--foreground)">
+                <button onClick={() => onPageChange("mission-planner")}>
+                  Mission Planner
+                </button>
+                <button onClick={() => onPageChange("drone-control")}>
+                  Drone Control
+                </button>
+                <button onClick={() => onPageChange("camera-ai")}>
+                  VisionOps AI
+                </button>
+                <button onClick={() => onPageChange("security")}>
+                  Secure Access
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-hud text-[11px] tracking-[0.28em] text-(--muted)">
+                Operations
+              </h3>
+
+              <div className="mt-6 space-y-4 text-sm text-(--foreground)">
+                <button onClick={() => onPageChange("live-ops")}>
+                  Live Ops
+                </button>
+                <button onClick={() => onPageChange("fleet")}>Fleet</button>
+                <button onClick={() => onPageChange("pre-flight")}>
+                  Pre-Flight
+                </button>
+                <button onClick={() => onPageChange("logs")}>
+                  Logs & Debrief
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-hud text-[11px] tracking-[0.28em] text-(--muted)">
+                Systems
+              </h3>
+
+              <div className="mt-6 space-y-4 text-sm text-(--foreground)">
+                <button onClick={() => onPageChange("drone-health")}>
+                  Drone Health
+                </button>
+                <button onClick={() => onPageChange("battery")}>
+                  Battery & Power
+                </button>
+                <button onClick={() => onPageChange("maintenance")}>
+                  Maintenance
+                </button>
+                <button onClick={() => onPageChange("inventory")}>
+                  Inventory
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-hud text-[11px] tracking-[0.28em] text-(--muted)">
+                Mission State
+              </h3>
+
+              <div className="mt-6 space-y-4 text-sm text-(--foreground)">
+                <div>Drone: {telemetry.droneId}</div>
+                <div>Platform: {telemetry.model}</div>
+                <div>Mission: {telemetry.mission}</div>
+                <div className="text-(--nominal)">Mode: Simulation</div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div className="ml-auto flex items-center gap-4 text-hud text-[9px] text-(--muted)">
-          <span>{telemetry.droneId}</span>
-          <span className="hidden sm:inline">{telemetry.model}</span>
-          <span className="hidden md:inline">{telemetry.mission}</span>
-          <span className="text-(--nominal)">Simulation Mode</span>
-          <span>v0.1.0</span>
+        <div className="border-t border-(--border)">
+          <div className="mx-auto flex max-w-[1680px] items-center justify-between px-8 py-6 text-xs text-(--muted)">
+            <span>© 2026 Aeronexus. All rights reserved.</span>
+            <span className="text-hud">v0.1.0</span>
+          </div>
         </div>
       </footer>
     </div>
