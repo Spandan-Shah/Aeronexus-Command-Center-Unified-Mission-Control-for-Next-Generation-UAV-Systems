@@ -786,66 +786,6 @@ git push origin main
 
 ---
 
-## Recommended Clean Commit Structure
-
-Use separate commits for clean Git history.
-
-### Commit 1: Camera AI Frontend
-
-```cmd
-git add src/pages/CameraAI.tsx src/components/camera/AiVideoPanel.tsx src/components/camera/OpenCvAnalysisPanel.tsx
-git commit -m "feat: improve camera ai dashboard"
-```
-
-### Commit 2: Camera AI Backend
-
-```cmd
-git add backend/camera_cv_analytics.py backend/camera_video_annotator.py
-git commit -m "feat: add fire response video analysis backend"
-```
-
-### Commit 3: Logs Analytics
-
-```cmd
-git add backend/main.py backend/logs_python_analytics.py src/pages/LogsDebrief.tsx
-git commit -m "feat: add logs python analytics debrief"
-```
-
-### Commit 4: Mission Planner
-
-```cmd
-git add src/pages/MissionPlanner.tsx src/components/mission/MissionPlanningMap.tsx
-git commit -m "style: improve mission planner interface"
-```
-
-### Commit 5: Live Operations
-
-```cmd
-git add src/components/layout/AppShell.tsx src/components/common/MetricCard.tsx src/components/live/AlertsPanel.tsx src/components/live/TelemetryGrid.tsx src/pages/LiveOps.tsx
-git commit -m "style: polish live operations layout"
-```
-
-### Commit 6: Systems Pages
-
-```cmd
-git add src/pages/BatteryPower.tsx src/pages/DashboardSettings.tsx src/pages/DroneHealth.tsx src/pages/Security.tsx
-git commit -m "style: redesign systems dashboard pages"
-```
-
-### Commit 7: README Documentation
-
-```cmd
-git add README.md
-git commit -m "docs: add project readme"
-```
-
-### Push All Commits
-
-```cmd
-git push origin main
-```
-
----
 
 ## Git Notes
 
@@ -1063,15 +1003,6 @@ cd /d "M:\Project\Aeronexus Command Center — Unified Mission Control for Next-
 npm run dev
 ```
 
-### Commit README
-
-```cmd
-git add README.md
-git commit -m "docs: add project readme"
-git push origin main
-```
-
----
 
 ## Current Prototype Status
 
