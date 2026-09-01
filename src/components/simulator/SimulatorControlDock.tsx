@@ -20,7 +20,7 @@ export function SimulatorControlDock({
   const { state, connected, lastResult, sendCommand } = useSimulator();
 
   return (
-    <div className="fixed bottom-3 right-3 z-50 w-[360px] rounded border border-(--border) bg-[#050d18]/95 shadow-2xl backdrop-blur">
+    <div className="fixed bottom-3 right-3 z-50 w-90 rounded border border-(--border) bg-[#050d18]/95 shadow-2xl backdrop-blur">
       <div className="flex items-center justify-between border-b border-(--border) px-3 py-2">
         <div>
           <div className="text-hud text-[11px] font-bold text-(--foreground)">

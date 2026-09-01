@@ -23,7 +23,7 @@ export function LowStockPanel() {
       }
       className="h-full"
     >
-      <div className="max-h-[420px] overflow-auto">
+      <div className="max-h-105 overflow-auto">
         {lowStockParts.map((part) => (
           <article
             key={part.id}

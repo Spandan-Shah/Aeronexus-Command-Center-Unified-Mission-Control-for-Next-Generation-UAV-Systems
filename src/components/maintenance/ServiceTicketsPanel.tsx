@@ -23,7 +23,7 @@ export function ServiceTicketsPanel() {
       }
       className="h-full"
     >
-      <div className="max-h-[420px] overflow-auto">
+      <div className="max-h-105 overflow-auto">
         {serviceTickets.map((ticket) => (
           <article
             key={ticket.id}

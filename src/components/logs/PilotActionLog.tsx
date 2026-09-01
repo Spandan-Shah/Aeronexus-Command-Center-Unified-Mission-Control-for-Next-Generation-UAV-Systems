@@ -13,7 +13,7 @@ export function PilotActionLog() {
       }
       className="h-full"
     >
-      <div className="max-h-[360px] overflow-auto">
+      <div className="max-h-90 overflow-auto">
         {pilotActions.map((action) => (
           <article
             key={action.id}

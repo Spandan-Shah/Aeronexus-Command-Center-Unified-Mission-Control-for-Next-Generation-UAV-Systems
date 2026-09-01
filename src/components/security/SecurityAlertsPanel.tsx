@@ -42,7 +42,7 @@ export function SecurityAlertsPanel() {
       }
       className="h-full"
     >
-      <div className="max-h-[430px] overflow-auto">
+      <div className="max-h-107.5 overflow-auto">
         {securityAlerts.map((alert) => {
           const config = alertConfig[alert.severity];
           const Icon = config.Icon;

@@ -28,7 +28,7 @@ export function DetectionEventLedger() {
       }
       className="h-full"
     >
-      <div className="max-h-[390px] overflow-auto">
+      <div className="max-h-97.5 overflow-auto">
         <table className="w-full text-left text-[11px]">
           <thead className="sticky top-0 bg-(--panel) text-hud text-[10px] text-(--muted)">
             <tr className="border-b border-(--border)">

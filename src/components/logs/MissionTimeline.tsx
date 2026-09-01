@@ -42,7 +42,7 @@ export function MissionTimeline() {
       }
       className="h-full"
     >
-      <div className="max-h-[520px] overflow-auto p-3">
+      <div className="max-h-130 overflow-auto p-3">
         <div className="space-y-3">
           {timelineEvents.map((event) => {
             const config = severityConfig[event.severity];

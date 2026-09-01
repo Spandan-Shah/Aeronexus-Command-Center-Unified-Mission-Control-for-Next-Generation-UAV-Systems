@@ -20,7 +20,7 @@ export function SupplierOrdersPanel() {
       }
       className="h-full"
     >
-      <div className="max-h-[420px] overflow-auto">
+      <div className="max-h-105 overflow-auto">
         {supplierOrders.map((order) => (
           <article
             key={order.id}

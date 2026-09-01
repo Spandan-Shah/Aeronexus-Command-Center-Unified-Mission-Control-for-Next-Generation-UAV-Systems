@@ -33,4 +33,14 @@ datasets/aeronexus_disaster/train/
 datasets/aeronexus_disaster/val/
 datasets/aeronexus_disaster/valid/
 runs/
+*.ptpublic/videos/drone-forest-patrol.mp4
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+*.pyc
+*.pyo
 *.pt
+*.db
+*.mp4

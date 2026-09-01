@@ -24,7 +24,7 @@ export function ActiveSessionsPanel() {
       }
       className="h-full"
     >
-      <div className="max-h-[430px] overflow-auto">
+      <div className="max-h-107.5 overflow-auto">
         {activeSessions.map((session) => {
           const DeviceIcon = getDeviceIcon(session.device);
 
