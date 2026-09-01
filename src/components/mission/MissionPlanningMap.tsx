@@ -1,19 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import L, {
-  type Layer,
-  type Map as LeafletMap,
-  type TileLayer,
-} from "leaflet";
+import L, { type Layer, type Map as LeafletMap } from "leaflet";
 import "leaflet/dist/leaflet.css";
-import {
-  Crosshair,
-  Home,
-  Layers,
-  LocateFixed,
-  MapPinned,
-  Plane,
-  Route,
-} from "lucide-react";
 
 import {
   geofenceZone,
@@ -33,30 +20,34 @@ type MissionPlanningMapProps = {
   onSelectWaypoint: (waypointId: string | null) => void;
 };
 
-type BaseMapId = "osm" | "hot";
+type BaseMapId = "openstreetmap" | "hot";
 
 const baseMaps: Record<
   BaseMapId,
   {
     label: string;
+    shortLabel: string;
     url: string;
     attribution: string;
   }
 > = {
-  osm: {
+  openstreetmap: {
     label: "OpenStreetMap",
+    shortLabel: "OSM",
     url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
     attribution: "© OpenStreetMap contributors",
   },
   hot: {
-    label: "OSM Humanitarian",
+    label: "OpenStreetMap HOT",
+    shortLabel: "HOT",
     url: "https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png",
     attribution: "© OpenStreetMap contributors · HOT",
   },
 };
 
 const mapColors = {
-  route: "#29d3ff",
+  route: "#050505",
+  routeHalo: "rgba(255,255,255,0.9)",
   waypoint: "#f6b23c",
   selectedWaypoint: "#49e58f",
   home: "#49e58f",
@@ -64,10 +55,6 @@ const mapColors = {
   restricted: "#ff4d4d",
   stroke: "#050d18",
 };
-
-function createWorldBounds() {
-  return L.latLngBounds(L.latLng(-85, -180), L.latLng(85, 180));
-}
 
 function escapeHtml(value: string) {
   return value
@@ -80,19 +67,17 @@ function escapeHtml(value: string) {
 
 function createWaypointIcon(index: number, selected: boolean) {
   const color = selected ? mapColors.selectedWaypoint : mapColors.waypoint;
-  const size = selected ? 38 : 34;
 
   return L.divIcon({
     className: "aeronexus-waypoint-marker",
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],
-    popupAnchor: [0, -size / 2],
+    iconSize: [34, 34],
+    iconAnchor: [17, 17],
+    popupAnchor: [0, -17],
     html: `
       <div
         style="
-          position: relative;
-          width: ${size}px;
-          height: ${size}px;
+          width: 34px;
+          height: 34px;
           border-radius: 999px;
           background: rgba(5, 13, 24, 0.96);
           border: 2px solid ${color};
@@ -103,7 +88,7 @@ function createWaypointIcon(index: number, selected: boolean) {
           font-family: monospace;
           font-size: 11px;
           font-weight: 900;
-          box-shadow: 0 0 18px ${color}99;
+          box-shadow: 0 0 16px ${color}88;
         "
       >
         ${index + 1}
@@ -131,7 +116,7 @@ function createHomeIcon() {
           align-items: center;
           justify-content: center;
           font-family: monospace;
-          font-size: 9px;
+          font-size: 10px;
           font-weight: 900;
           box-shadow: 0 0 16px ${mapColors.home}88;
         "
@@ -150,7 +135,7 @@ export function MissionPlanningMap({
 }: MissionPlanningMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<LeafletMap | null>(null);
-  const baseTileRef = useRef<TileLayer | null>(null);
+  const baseTileLayerRef = useRef<L.TileLayer | null>(null);
   const waypointLayerRef = useRef<L.LayerGroup | null>(null);
   const routeLayerRef = useRef<L.LayerGroup | null>(null);
 
@@ -158,9 +143,9 @@ export function MissionPlanningMap({
   const onWaypointsChangeRef = useRef(onWaypointsChange);
   const onSelectWaypointRef = useRef(onSelectWaypoint);
 
-  const [baseMapId, setBaseMapId] = useState<BaseMapId>("osm");
+  const [baseMapId, setBaseMapId] = useState<BaseMapId>("openstreetmap");
   const [coordinates, setCoordinates] = useState("23.02250°N · 72.57140°E");
-  const [zoom, setZoom] = useState(String(Math.max(initialMapView.zoom, 13)));
+  const [zoom, setZoom] = useState(Math.max(initialMapView.zoom, 15));
 
   useEffect(() => {
     waypointsRef.current = waypoints;
@@ -169,20 +154,33 @@ export function MissionPlanningMap({
   }, [waypoints, onWaypointsChange, onSelectWaypoint]);
 
   useEffect(() => {
-    if (!containerRef.current || mapRef.current) return;
+    const map = mapRef.current;
 
-    const worldBounds = createWorldBounds();
+    if (!map) return;
+
+    if (baseTileLayerRef.current) {
+      map.removeLayer(baseTileLayerRef.current);
+    }
+
+    const baseMap = baseMaps[baseMapId];
+
+    baseTileLayerRef.current = L.tileLayer(baseMap.url, {
+      minZoom: 11,
+      maxZoom: 19,
+      attribution: baseMap.attribution,
+    }).addTo(map);
+  }, [baseMapId]);
+
+  useEffect(() => {
+    if (!containerRef.current || mapRef.current) return;
 
     const map = L.map(containerRef.current, {
       center: [initialMapView.latitude, initialMapView.longitude],
-      zoom: Math.max(initialMapView.zoom, 13),
+      zoom: Math.max(initialMapView.zoom, 15),
       minZoom: 11,
       maxZoom: 19,
       zoomControl: true,
       attributionControl: false,
-      maxBounds: worldBounds,
-      maxBoundsViscosity: 1.0,
-      worldCopyJump: false,
     });
 
     mapRef.current = map;
@@ -194,16 +192,13 @@ export function MissionPlanningMap({
       })
       .addTo(map);
 
-    const baseLayer = L.tileLayer(baseMaps[baseMapId].url, {
+    baseTileLayerRef.current = L.tileLayer(baseMaps.openstreetmap.url, {
       minZoom: 11,
       maxZoom: 19,
-      noWrap: true,
-      bounds: worldBounds,
-      attribution: baseMaps[baseMapId].attribution,
-    });
+      attribution: baseMaps.openstreetmap.attribution,
+    }).addTo(map);
 
-    baseLayer.addTo(map);
-    baseTileRef.current = baseLayer;
+    const staticLayers: Layer[] = [];
 
     const geofenceLayer = L.geoJSON(geofenceZone, {
       style: {
@@ -211,7 +206,7 @@ export function MissionPlanningMap({
         weight: 2.5,
         dashArray: "6 6",
         fillColor: mapColors.geofence,
-        fillOpacity: 0.08,
+        fillOpacity: 0.06,
       },
       onEachFeature: (feature, layer) => {
         layer.bindPopup(
@@ -222,12 +217,14 @@ export function MissionPlanningMap({
       },
     }).addTo(map);
 
+    staticLayers.push(geofenceLayer);
+
     const restrictedLayer = L.geoJSON(restrictedZones, {
       style: {
         color: mapColors.restricted,
         weight: 2,
         fillColor: mapColors.restricted,
-        fillOpacity: 0.18,
+        fillOpacity: 0.16,
       },
       onEachFeature: (feature, layer) => {
         layer.bindPopup(
@@ -237,6 +234,8 @@ export function MissionPlanningMap({
         );
       },
     }).addTo(map);
+
+    staticLayers.push(restrictedLayer);
 
     const homeLayer = L.geoJSON(homePoint, {
       pointToLayer: (_feature, latlng) =>
@@ -252,7 +251,8 @@ export function MissionPlanningMap({
       },
     }).addTo(map);
 
-    const staticLayers: Layer[] = [geofenceLayer, restrictedLayer, homeLayer];
+    staticLayers.push(homeLayer);
+
     routeLayerRef.current = L.layerGroup().addTo(map);
     waypointLayerRef.current = L.layerGroup().addTo(map);
 
@@ -274,7 +274,7 @@ export function MissionPlanningMap({
     });
 
     map.on("zoomend", () => {
-      setZoom(map.getZoom().toFixed(1));
+      setZoom(Number(map.getZoom().toFixed(1)));
     });
 
     const resizeOne = window.setTimeout(() => map.invalidateSize(), 100);
@@ -285,44 +285,13 @@ export function MissionPlanningMap({
       window.clearTimeout(resizeOne);
       window.clearTimeout(resizeTwo);
       window.clearTimeout(resizeThree);
-
-      staticLayers.forEach((layer) => {
-        if (map.hasLayer(layer)) {
-          map.removeLayer(layer);
-        }
-      });
-
       map.remove();
       mapRef.current = null;
-      baseTileRef.current = null;
+      baseTileLayerRef.current = null;
       waypointLayerRef.current = null;
       routeLayerRef.current = null;
     };
   }, []);
-
-  useEffect(() => {
-    const map = mapRef.current;
-
-    if (!map) return;
-
-    const worldBounds = createWorldBounds();
-
-    if (baseTileRef.current) {
-      map.removeLayer(baseTileRef.current);
-    }
-
-    const nextBaseLayer = L.tileLayer(baseMaps[baseMapId].url, {
-      minZoom: 11,
-      maxZoom: 19,
-      noWrap: true,
-      bounds: worldBounds,
-      attribution: baseMaps[baseMapId].attribution,
-    });
-
-    nextBaseLayer.addTo(map);
-    nextBaseLayer.bringToBack();
-    baseTileRef.current = nextBaseLayer;
-  }, [baseMapId]);
 
   useEffect(() => {
     const waypointLayer = waypointLayerRef.current;
@@ -340,10 +309,21 @@ export function MissionPlanningMap({
       ]) as [number, number][];
 
       L.polyline(routeCoordinates, {
+        color: mapColors.routeHalo,
+        weight: 8,
+        opacity: 0.95,
+        dashArray: "1 13",
+        lineCap: "round",
+        lineJoin: "round",
+      }).addTo(routeLayer);
+
+      L.polyline(routeCoordinates, {
         color: mapColors.route,
         weight: 4,
-        dashArray: "7 7",
-        opacity: 0.95,
+        opacity: 1,
+        dashArray: "1 13",
+        lineCap: "round",
+        lineJoin: "round",
       }).addTo(routeLayer);
     }
 
@@ -353,7 +333,6 @@ export function MissionPlanningMap({
       const marker = L.marker([waypoint.lat, waypoint.lng], {
         icon: createWaypointIcon(index, selected),
         draggable: true,
-        zIndexOffset: selected ? 1000 : 500,
       });
 
       marker.bindPopup(
@@ -389,142 +368,95 @@ export function MissionPlanningMap({
     });
   }, [waypoints, selectedWaypointId, onSelectWaypoint]);
 
-  function flyToAoi() {
-    mapRef.current?.flyTo([23.0225, 72.5714], 12, {
-      duration: 1.2,
-    });
-  }
-
-  function flyToHome() {
-    mapRef.current?.flyTo([23.0225, 72.5714], 15, {
-      duration: 1.2,
-    });
-  }
-
-  function flyToRoute() {
-    const map = mapRef.current;
-
-    if (!map || waypoints.length === 0) return;
-
-    const bounds = L.latLngBounds(
-      waypoints.map((waypoint) => [waypoint.lat, waypoint.lng])
-    );
-
-    map.fitBounds(bounds, {
-      padding: [80, 80],
-      maxZoom: 16,
-    });
-  }
-
-  function flyToSelectedWaypoint() {
-    const selectedWaypoint = waypoints.find(
-      (waypoint) => waypoint.id === selectedWaypointId
-    );
-
-    if (!selectedWaypoint) {
-      flyToRoute();
-      return;
-    }
-
-    mapRef.current?.flyTo([selectedWaypoint.lat, selectedWaypoint.lng], 17, {
-      duration: 1.2,
-    });
-  }
-
   return (
-    <div className="relative h-full min-h-130 overflow-hidden rounded border border-(--border) bg-[#050d18]">
+    <div className="relative h-full min-h-[620px] overflow-hidden rounded-xl border border-[#1d2533] bg-[#050d18]">
       <div ref={containerRef} className="absolute inset-0 z-0" />
 
-      <div className="pointer-events-none absolute inset-0 z-10 bg-[linear-gradient(to_bottom,rgba(5,13,24,0.02),rgba(5,13,24,0.08))]" />
+      <div className="pointer-events-none absolute left-4 top-4 z-20 max-w-[calc(100%-2rem)] rounded-lg border border-[#1d2533] bg-[#050d18]/92 px-4 py-3 backdrop-blur">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-(--primary)">
+            Aeronexus Open Mission Planner
+          </div>
 
-      <div className="absolute left-3 top-3 z-20 rounded border border-(--border) bg-[#050d18]/90 px-3 py-2 backdrop-blur">
-        <div className="flex items-center gap-2 text-hud text-[10px] text-(--primary)">
-          <Route size={14} />
-          AERONEXUS OPEN MISSION PLANNER
+          <div className="rounded-full border border-[#243147] bg-black px-2 py-0.5 font-mono text-[8px] font-bold uppercase tracking-[0.1em] text-(--muted)">
+            OpenStreetMap
+          </div>
         </div>
 
-        <div className="mt-1 text-hud text-[9px] text-(--muted)">
-          {baseMaps[baseMapId].label.toUpperCase()} · OPENSTREETMAP · WGS-84 ·
-          ZOOM {zoom} · CLICK TO ADD WP · DRAG TO EDIT ROUTE
+        <div className="mt-1 font-mono text-[9px] uppercase tracking-[0.08em] text-(--muted)">
+          Click to add waypoint · Drag marker to edit route · Black dotted
+          route line
         </div>
       </div>
 
-      <div className="absolute right-3 top-3 z-20 w-52 rounded border border-(--border) bg-[#050d18]/90 p-3 backdrop-blur">
-        <div className="mb-2 flex items-center gap-2 text-hud text-[10px] text-(--foreground)">
-          <Layers size={14} className="text-(--primary)" />
+      <div className="absolute right-4 top-4 z-20 w-[13.5rem] rounded-lg border border-[#1d2533] bg-[#050d18]/94 p-3 backdrop-blur">
+        <div className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-(--foreground)">
           Planner Map
         </div>
 
         <button
           type="button"
           onClick={() =>
-            setBaseMapId((current) => (current === "osm" ? "hot" : "osm"))
+            setBaseMapId((current) =>
+              current === "openstreetmap" ? "hot" : "openstreetmap"
+            )
           }
-          className="mb-2 flex w-full items-center justify-between rounded border border-(--primary) bg-[rgba(41,211,255,0.08)] px-2 py-1.5 text-hud text-[9px] text-(--primary)"
+          className="mt-3 w-full rounded border border-(--primary) bg-[rgba(246,178,60,0.08)] px-3 py-3 text-left font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-(--primary) transition hover:bg-[rgba(246,178,60,0.12)]"
         >
-          <span>Base Map</span>
-          <span>{baseMaps[baseMapId].label}</span>
+          <span className="block text-[8px] text-(--muted)">Base Map</span>
+          {baseMaps[baseMapId].label}
         </button>
 
-        <div className="rounded border border-(--border) bg-[#081320] p-2">
-          <div className="text-hud text-[9px] text-(--muted)">Waypoints</div>
-          <div className="mt-1 text-hud text-lg text-(--foreground)">
-            {waypoints.length}
-          </div>
-        </div>
+        <div className="mt-3 grid gap-2">
+          <div className="rounded border border-[#1d2533] bg-black px-3 py-2">
+            <div className="font-mono text-[8px] font-bold uppercase tracking-[0.12em] text-(--muted)">
+              Waypoints
+            </div>
 
-        <div className="mt-2 rounded border border-(--border) bg-[#081320] p-2">
-          <div className="text-hud text-[9px] text-(--muted)">Selected</div>
-          <div className="mt-1 truncate text-hud text-[10px] text-(--foreground)">
-            {waypoints.find((waypoint) => waypoint.id === selectedWaypointId)
-              ?.name ?? "None"}
+            <div className="mt-1 font-mono text-[18px] font-bold text-(--foreground)">
+              {waypoints.length}
+            </div>
+          </div>
+
+          <div className="rounded border border-[#1d2533] bg-black px-3 py-2">
+            <div className="font-mono text-[8px] font-bold uppercase tracking-[0.12em] text-(--muted)">
+              Selected
+            </div>
+
+            <div className="mt-1 truncate font-mono text-[12px] font-bold text-(--foreground)">
+              {waypoints.find((waypoint) => waypoint.id === selectedWaypointId)
+                ?.name ?? "None"}
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="absolute bottom-3 left-3 z-20 rounded border border-(--border) bg-[#050d18]/90 px-3 py-2 backdrop-blur">
-        <div className="flex items-center gap-2 text-hud text-[10px] text-(--foreground)">
-          <Crosshair size={14} className="text-(--primary)" />
+      <div className="pointer-events-none absolute bottom-4 left-4 z-20 rounded-lg border border-[#1d2533] bg-[#050d18]/92 px-4 py-3 backdrop-blur">
+        <div className="font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-(--foreground)">
           {coordinates}
         </div>
+
+        <div className="mt-1 font-mono text-[8px] uppercase tracking-[0.1em] text-(--muted)">
+          WGS-84 · Zoom {zoom}
+        </div>
       </div>
 
-      <div className="absolute bottom-3 right-3 z-20 flex gap-2">
-        <button
-          type="button"
-          onClick={flyToAoi}
-          className="flex items-center gap-2 rounded border border-(--border) bg-[#050d18]/90 px-3 py-2 text-hud text-[10px] text-(--foreground) backdrop-blur hover:border-(--primary)"
-        >
-          <MapPinned size={14} />
+      <div className="pointer-events-none absolute bottom-4 right-4 z-20 flex flex-wrap items-center gap-2">
+        <div className="rounded-lg border border-[#1d2533] bg-[#050d18]/92 px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-(--muted) backdrop-blur">
           AOI
-        </button>
+        </div>
 
-        <button
-          type="button"
-          onClick={flyToHome}
-          className="flex items-center gap-2 rounded border border-(--border) bg-[#050d18]/90 px-3 py-2 text-hud text-[10px] text-(--foreground) backdrop-blur hover:border-(--nominal)"
-        >
-          <Home size={14} />
+        <div className="rounded-lg border border-[#1d2533] bg-[#050d18]/92 px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-(--muted) backdrop-blur">
           Home
-        </button>
+        </div>
 
-        <button
-          type="button"
-          onClick={flyToRoute}
-          className="flex items-center gap-2 rounded bg-(--primary) px-3 py-2 text-hud text-[10px] font-bold text-[#07111f] hover:opacity-90"
-        >
-          <Plane size={14} />
-          Route
-        </button>
+        <div className="rounded-lg border border-[#050505] bg-[rgba(255,255,255,0.86)] px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-black backdrop-blur">
+          Black Dotted Route
+        </div>
 
-        <button
-          type="button"
-          onClick={flyToSelectedWaypoint}
-          className="flex items-center gap-2 rounded border border-(--border) bg-[#050d18]/90 px-3 py-2 text-hud text-[10px] text-(--foreground) backdrop-blur hover:border-(--primary)"
-        >
-          <LocateFixed size={14} />
+        <div className="rounded-lg border border-[#1d2533] bg-[#050d18]/92 px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-(--muted) backdrop-blur">
           Selected
-        </button>
+        </div>
       </div>
     </div>
   );
