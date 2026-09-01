@@ -11,16 +11,22 @@ export function LiveOps() {
   );
 
   return (
-    <div className="min-h-screen bg-[#07111f] p-5">
+    <div className="min-h-screen bg-[#09090b] p-5">
       <div className="mx-auto grid max-w-[1680px] items-start gap-5 xl:grid-cols-12">
-        <section className="xl:col-span-8">
+        <section className="flex flex-col gap-5 xl:col-span-8">
           <div className="h-[760px] overflow-hidden rounded border border-(--border) bg-black">
             <AeroWorldMap />
           </div>
+
+          <CommandDeck />
         </section>
 
         <section className="flex flex-col gap-5 xl:col-span-4">
           <TelemetryGrid />
+
+          <div className="min-h-[360px]">
+            <AlertsPanel />
+          </div>
 
           <DataSourcePanel />
 
@@ -48,7 +54,7 @@ export function LiveOps() {
               </div>
             </div>
 
-            <div className="mt-4 h-2 overflow-hidden rounded bg-[#07111f]">
+            <div className="mt-4 h-2 overflow-hidden rounded bg-black">
               <div
                 className="h-full bg-(--primary)"
                 style={{
@@ -57,12 +63,6 @@ export function LiveOps() {
               />
             </div>
           </div>
-
-          <div className="min-h-[340px]">
-            <AlertsPanel />
-          </div>
-
-          <CommandDeck />
         </section>
       </div>
     </div>
