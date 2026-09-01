@@ -1,52 +1,134 @@
-import { AlertTriangle, CheckCircle2, Info, ShieldAlert } from "lucide-react";
-import { alerts } from "../../data/alerts";
+import {
+  CheckCircle2,
+  Info,
+  ShieldAlert,
+  TriangleAlert,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
-const iconMap = {
-  critical: ShieldAlert,
-  caution: AlertTriangle,
-  info: Info,
-  nominal: CheckCircle2,
+type AlertTone = "critical" | "caution" | "info" | "nominal";
+
+type AlertItem = {
+  time: string;
+  label: string;
+  source: string;
+  message: string;
+  tone: AlertTone;
+  icon: LucideIcon;
 };
 
-const colorMap = {
-  critical: "text-[var(--critical)] border-l-[var(--critical)]",
-  caution: "text-[var(--caution)] border-l-[var(--caution)]",
-  info: "text-[var(--info)] border-l-[var(--info)]",
-  nominal: "text-[var(--nominal)] border-l-[var(--nominal)]",
+const alerts: AlertItem[] = [
+  {
+    time: "14:22:41",
+    label: "Geofence",
+    source: "Safety Engine",
+    message: "Drone is close to restricted boundary.",
+    tone: "critical",
+    icon: ShieldAlert,
+  },
+  {
+    time: "14:21:08",
+    label: "Link",
+    source: "Telemetry Link",
+    message: "Signal strength dropped to 92%.",
+    tone: "caution",
+    icon: TriangleAlert,
+  },
+  {
+    time: "14:19:52",
+    label: "Waypoint",
+    source: "Mission Planner",
+    message: "Waypoint 04 reached successfully.",
+    tone: "info",
+    icon: Info,
+  },
+  {
+    time: "14:18:03",
+    label: "System",
+    source: "Health Monitor",
+    message: "All drone systems are running normally.",
+    tone: "nominal",
+    icon: CheckCircle2,
+  },
+];
+
+const toneClass = {
+  critical: {
+    border: "border-[rgba(255,77,77,0.75)]",
+    bg: "bg-[rgba(255,77,77,0.045)]",
+    icon: "text-(--critical)",
+    label: "text-(--critical)",
+  },
+  caution: {
+    border: "border-[rgba(246,178,60,0.75)]",
+    bg: "bg-[rgba(246,178,60,0.045)]",
+    icon: "text-(--caution)",
+    label: "text-(--caution)",
+  },
+  info: {
+    border: "border-[rgba(90,169,255,0.75)]",
+    bg: "bg-[rgba(90,169,255,0.045)]",
+    icon: "text-(--info)",
+    label: "text-(--info)",
+  },
+  nominal: {
+    border: "border-[rgba(73,229,143,0.75)]",
+    bg: "bg-[rgba(73,229,143,0.045)]",
+    icon: "text-(--nominal)",
+    label: "text-(--nominal)",
+  },
 };
 
 export function AlertsPanel() {
   return (
-    <div className="h-full rounded border border-[(--border)] bg-[(--panel)] flex flex-col">
-      <div className="h-9 border-b border-[(--border)] px-3 flex items-center justify-between">
-        <h2 className="text-hud text-xs">Alert Stream</h2>
-        <span className="text-hud text-[10px] text-[(--muted)]">
+    <div className="flex h-full min-h-[360px] flex-col overflow-hidden rounded-lg border border-[#2a3547] bg-[#070a10]">
+      <div className="flex items-center justify-between border-b border-[#2a3547] bg-black px-4 py-3">
+        <div className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-(--foreground)">
+          Alert Stream
+        </div>
+
+        <div className="font-mono text-[9px] font-bold uppercase tracking-[0.16em] text-(--foreground)">
           {alerts.length} Active
-        </span>
+        </div>
       </div>
 
-      <div className="flex-1 overflow-auto">
+      <div className="grid flex-1 grid-rows-4">
         {alerts.map((alert) => {
-          const Icon = iconMap[alert.severity];
+          const Icon = alert.icon;
+          const tone = toneClass[alert.tone];
 
           return (
             <div
-              key={alert.id}
-              className={`border-l-2 border-b border-[(--border)] px-3 py-2 ${colorMap[alert.severity]}`}
+              key={`${alert.time}-${alert.label}`}
+              className={`flex min-h-0 border-b last:border-b-0 ${tone.border} ${tone.bg}`}
             >
-              <div className="flex gap-2">
-                <Icon size={15} className="mt-0.5 shrink-0" />
+              <div className="flex w-full items-start gap-3 px-4 py-4">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded border border-[#2a3547] bg-black">
+                  <Icon size={15} className={tone.icon} />
+                </div>
 
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 text-hud text-[9px]">
-                    <span className="text-[(--muted)]">{alert.time}</span>
-                    <span className="font-bold">{alert.code}</span>
-                    <span className="ml-auto text-[(--muted)]">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <span className="font-mono text-[9px] font-bold text-(--muted)">
+                        {alert.time}
+                      </span>
+
+                      <span
+                        className={`font-mono text-[9px] font-bold uppercase tracking-[0.12em] ${tone.label}`}
+                      >
+                        {alert.label}
+                      </span>
+                    </div>
+
+                    <span
+                      className={`shrink-0 font-mono text-[8px] font-bold uppercase tracking-[0.12em] ${tone.label}`}
+                    >
                       {alert.source}
                     </span>
                   </div>
 
-                  <p className="mt-1 text-xs text-[(--foreground)]">
+                  <p className={`mt-2 text-[13px] leading-relaxed ${tone.label}`}>
                     {alert.message}
                   </p>
                 </div>

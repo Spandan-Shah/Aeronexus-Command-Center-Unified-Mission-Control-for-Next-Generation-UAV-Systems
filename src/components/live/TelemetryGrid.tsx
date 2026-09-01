@@ -7,6 +7,7 @@ import {
   Satellite,
   Thermometer,
 } from "lucide-react";
+
 import { telemetry as fallbackTelemetry } from "../../data/telemetry";
 import { useUnifiedTelemetry } from "../../hooks/useUnifiedTelemetry";
 import { MetricCard } from "../common/MetricCard";
@@ -17,9 +18,9 @@ function getBatteryStatus(battery: number) {
   return "nominal";
 }
 
-function getLinkStatus(link: number) {
-  if (link <= 45) return "critical";
-  if (link <= 70) return "caution";
+function getLinkStatus(linkRssi: number) {
+  if (linkRssi >= 85) return "critical";
+  if (linkRssi >= 70) return "caution";
   return "nominal";
 }
 
@@ -44,17 +45,20 @@ export function TelemetryGrid() {
   const { telemetry } = useUnifiedTelemetry();
 
   const battery = roundValue(telemetry?.battery ?? fallbackTelemetry.battery);
-  const altitude = roundValue(telemetry?.altitude ?? fallbackTelemetry.altitude);
+  const altitude = roundValue(
+    telemetry?.altitude ?? fallbackTelemetry.altitude
+  );
   const speed = roundValue(telemetry?.speed ?? fallbackTelemetry.speed);
   const heading = fallbackTelemetry.heading;
-  const gpsStatus = telemetry?.gps ? "LOCK" : fallbackTelemetry.gpsSatellites;
-  const link = roundValue(telemetry?.link ?? Math.abs(fallbackTelemetry.rssi));
+  const gpsSatellites = fallbackTelemetry.gpsSatellites;
+  const linkRssi = Math.abs(fallbackTelemetry.rssi);
   const temperature = roundValue(
     telemetry?.temperature ?? fallbackTelemetry.escTemp
   );
+  const risk = (telemetry?.risk ?? "low").toUpperCase();
 
   return (
-    <div className="grid grid-cols-2 gap-2 xl:grid-cols-3">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
       <MetricCard
         label="Battery"
         value={battery}
@@ -89,18 +93,18 @@ export function TelemetryGrid() {
 
       <MetricCard
         label="GPS"
-        value={gpsStatus}
-        unit={telemetry?.gps ? "" : "sats"}
+        value={gpsSatellites}
+        unit="sats"
         icon={Satellite}
-        status={telemetry?.gps ? "nominal" : "caution"}
+        status="caution"
       />
 
       <MetricCard
-        label={telemetry ? "Link Quality" : "Link RSSI"}
-        value={link}
-        unit={telemetry ? "%" : "dBm"}
+        label="Link RSSI"
+        value={linkRssi}
+        unit="dBm"
         icon={Radio}
-        status={getLinkStatus(link)}
+        status={getLinkStatus(linkRssi)}
       />
 
       <MetricCard
@@ -113,7 +117,7 @@ export function TelemetryGrid() {
 
       <MetricCard
         label="Risk Level"
-        value={(telemetry?.risk ?? "low").toUpperCase()}
+        value={risk}
         icon={Gauge}
         status={getRiskStatus(telemetry?.risk)}
       />

@@ -188,7 +188,7 @@ export function AppShell({
           <button
             type="button"
             onClick={() => onPageChange("live-ops")}
-            className="mr-12 flex h-16 w-72 shrink-0 items-center justify-start bg-black"
+            className="mr-6 flex h-16 w-64 shrink-0 items-center justify-start bg-black"
             title="Go to Live Ops"
           >
             <img
@@ -198,7 +198,7 @@ export function AppShell({
             />
           </button>
 
-          <nav className="flex flex-1 items-center justify-center gap-8">
+          <nav className="flex flex-1 items-center justify-center gap-5">
             {navGroups.map((group) => {
               const active = isGroupActive(group, activePage);
 
@@ -268,7 +268,7 @@ export function AppShell({
           <button
             type="button"
             onClick={() => onPageChange("live-ops")}
-            className="ml-12 flex shrink-0 items-center gap-2 rounded-sm bg-[#0537d8] px-5 py-3 text-hud text-[10px] font-bold tracking-[0.16em] text-white transition hover:bg-[#0b46ff]"
+            className="ml-6 flex shrink-0 items-center gap-2 rounded-sm bg-[#0537d8] px-5 py-3 text-hud text-[10px] font-bold tracking-[0.16em] text-white transition hover:bg-[#0b46ff]"
           >
             Mission Console
             <ArrowRight size={14} />
@@ -279,80 +279,80 @@ export function AppShell({
       <main className="min-h-screen bg-[#09090b] pt-20">{children}</main>
 
       <footer className="border-t border-[#151923] bg-black">
-        <div className="mx-auto max-w-[1680px] px-8 py-10">
-          <div className="grid gap-10 lg:grid-cols-[330px_1fr_320px]">
-            <div>
-              <div className="flex h-36 w-56 items-center justify-center rounded-sm bg-white p-4">
+        <div className="mx-auto max-w-[1680px] px-8 py-12">
+          <div className="grid items-start gap-10 lg:grid-cols-5">
+            <div className="min-w-0">
+              <div className="flex h-36 w-56 items-center justify-center overflow-hidden rounded-sm bg-white p-4">
                 <img
                   src={aeronexusFooterLogo}
                   alt="Aeronexus"
-                  className="max-h-full max-w-full object-contain"
+                  className="block max-h-full max-w-full object-contain"
                 />
               </div>
 
-              <p className="mt-5 max-w-sm text-sm leading-relaxed text-(--muted)">
+              <p className="mt-5 max-w-[220px] text-left text-sm leading-relaxed text-(--muted)">
                 Aeronexus develops mission-focused UAV software for planning,
                 monitoring, telemetry awareness, aerial intelligence and
                 command-control workflows.
               </p>
             </div>
 
-            <div className="grid gap-8 sm:grid-cols-3">
-              {footerColumns.map((column) => (
-                <div key={column.title}>
-                  <h3 className="text-hud text-[10px] font-bold tracking-[0.22em] text-(--primary)">
-                    {column.title}
-                  </h3>
+            {footerColumns.map((column) => (
+              <div key={column.title} className="min-w-0">
+                <h3 className="text-hud text-[10px] font-bold tracking-[0.22em] text-(--primary)">
+                  {column.title}
+                </h3>
 
-                  <div className="mt-5 flex flex-col gap-3">
-                    {column.links.map((link) => (
-                      <span
-                        key={link}
-                        className="block text-sm leading-relaxed text-(--foreground)"
-                      >
-                        {link}
-                      </span>
-                    ))}
-                  </div>
+                <div className="mt-5 flex flex-col gap-3">
+                  {column.links.map((link) => (
+                    <span
+                      key={link}
+                      className="block text-sm leading-relaxed text-(--foreground)"
+                    >
+                      {link}
+                    </span>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
 
-            <div>
+            <div className="min-w-0">
               <h3 className="text-hud text-[10px] font-bold tracking-[0.22em] text-(--primary)">
                 Mission State
               </h3>
 
               <div className="mt-5 flex flex-col gap-3 text-sm">
-                <div className="flex justify-between gap-4">
+                <div className="grid grid-cols-[1fr_auto] gap-4">
                   <span className="text-(--muted)">Drone</span>
-                  <span className="text-(--foreground)">
+                  <span className="text-right text-(--foreground)">
                     {telemetry.droneId}
                   </span>
                 </div>
 
-                <div className="flex justify-between gap-4">
+                <div className="grid grid-cols-[1fr_auto] gap-4">
                   <span className="text-(--muted)">Platform</span>
-                  <span className="text-(--foreground)">
+                  <span className="text-right text-(--foreground)">
                     {telemetry.model}
                   </span>
                 </div>
 
-                <div className="flex justify-between gap-4">
+                <div className="grid grid-cols-[1fr_auto] gap-4">
                   <span className="text-(--muted)">Mission</span>
-                  <span className="text-(--foreground)">
+                  <span className="text-right text-(--foreground)">
                     {telemetry.mission}
                   </span>
                 </div>
 
-                <div className="flex justify-between gap-4">
+                <div className="grid grid-cols-[1fr_auto] gap-4">
                   <span className="text-(--muted)">Operating Mode</span>
-                  <span className="text-(--nominal)">Simulation</span>
+                  <span className="text-right text-(--nominal)">
+                    Simulation
+                  </span>
                 </div>
 
-                <div className="flex justify-between gap-4">
+                <div className="grid grid-cols-[1fr_auto] gap-4">
                   <span className="text-(--muted)">Interface Build</span>
-                  <span className="text-(--foreground)">v0.1.0</span>
+                  <span className="text-right text-(--foreground)">v0.1.0</span>
                 </div>
               </div>
             </div>
