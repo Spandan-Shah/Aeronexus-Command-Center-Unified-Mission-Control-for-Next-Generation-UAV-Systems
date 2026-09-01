@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { Camera, ExternalLink } from "lucide-react";
-import type {
-  CameraDetectionBox,
-  CameraOpenCvAnalysis,
-} from "./OpenCvAnalysisPanel";
+import {
+  Camera,
+  ExternalLink,
+  Radar,
+  ScanLine,
+  ShieldCheck,
+} from "lucide-react";
+import type { CameraOpenCvAnalysis } from "./OpenCvAnalysisPanel";
 
 type AiVideoPanelProps = {
   videoSrc?: string;
@@ -27,6 +30,56 @@ function getRiskBorderClass(risk?: string) {
   return "border-(--nominal)";
 }
 
+function GeneratedMissionFeed({
+  videoTitle,
+  videoSourceName,
+  videoFailed,
+}: {
+  videoTitle: string;
+  videoSourceName: string;
+  videoFailed: boolean;
+}) {
+  return (
+    <div className="absolute inset-0 overflow-hidden bg-[#061018]">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_52%_48%,rgba(73,229,143,0.22),rgba(5,13,24,0.96)_58%)]" />
+      <div className="absolute inset-0 opacity-[0.18] [background-image:linear-gradient(rgba(143,163,184,0.22)_1px,transparent_1px),linear-gradient(90deg,rgba(143,163,184,0.22)_1px,transparent_1px)] [background-size:42px_42px]" />
+
+      <div className="absolute left-[44%] top-[42%] h-24 w-24 rounded-full border border-[rgba(246,178,60,0.5)] bg-[rgba(246,178,60,0.08)]">
+        <div className="absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-(--primary)" />
+      </div>
+
+      <div className="absolute left-5 top-5 rounded border border-[#1d2533] bg-[#050609]/88 px-3 py-2 backdrop-blur">
+        <div className="flex items-center gap-2 font-mono text-[9px] font-bold uppercase tracking-[0.14em] text-(--primary)">
+          <Camera size={13} />
+          {videoSourceName}
+        </div>
+
+        <div className="mt-1 font-mono text-[8px] uppercase tracking-[0.1em] text-(--muted)">
+          {videoTitle}
+        </div>
+      </div>
+
+      <div className="absolute right-5 top-5 rounded border border-[#1d2533] bg-[#050609]/88 px-3 py-2 text-right backdrop-blur">
+        <div className="font-mono text-[9px] font-bold uppercase tracking-[0.14em] text-(--nominal)">
+          Generated mission feed
+        </div>
+
+        <div className="mt-1 font-mono text-[8px] uppercase text-(--muted)">
+          Live tactical simulation
+        </div>
+      </div>
+
+      {videoFailed && (
+        <div className="absolute left-5 bottom-16 rounded border border-[rgba(246,178,60,0.34)] bg-[rgba(246,178,60,0.08)] px-3 py-2 backdrop-blur">
+          <div className="font-mono text-[9px] font-bold uppercase tracking-[0.12em] text-(--primary)">
+            MP4 unavailable · check public/videos path
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function AiVideoPanel({
   videoSrc,
   videoTitle = "Simulated EO/IR Feed",
@@ -45,17 +98,27 @@ export function AiVideoPanel({
     setVideoFailed(false);
     setVideoLoaded(isMjpegStream);
 
-    if (!videoSrc || isMjpegStream) return;
-
     const videoElement = videoRef.current;
 
     if (videoElement) {
+      videoElement.pause();
+      videoElement.removeAttribute("src");
       videoElement.load();
-
-      void videoElement.play().catch(() => {
-        // Muted autoplay should normally work.
-      });
     }
+
+    if (!videoSrc || isMjpegStream) return;
+
+    window.setTimeout(() => {
+      const nextVideoElement = videoRef.current;
+
+      if (!nextVideoElement) return;
+
+      nextVideoElement.load();
+
+      void nextVideoElement.play().catch(() => {
+        setVideoLoaded(false);
+      });
+    }, 60);
   }, [videoSrc, isMjpegStream]);
 
   const showVideo = Boolean(videoSrc) && !videoFailed;
@@ -64,18 +127,14 @@ export function AiVideoPanel({
     (openCvAnalysis?.detections.confidence ?? 0) * 100
   );
 
-  // Static HTML overlay boxes are disabled.
-  // Moving boxes must come only from backend MJPEG frames.
-  const detectionBoxes: CameraDetectionBox[] = [];
-
   return (
-    <div className="relative h-135 overflow-hidden rounded border border-(--border) bg-[#07111f]">
+    <div className="relative min-h-[520px] overflow-hidden rounded-xl border border-[#1d2533] bg-black 2xl:min-h-[620px]">
       {showVideo && isMjpegStream ? (
         <img
           key={videoSrc}
           src={videoSrc}
           alt="Frame-by-frame YOLO annotated stream"
-          className="absolute inset-0 h-full w-full object-cover opacity-90"
+          className="absolute inset-0 h-full w-full bg-black object-contain"
           onLoad={() => setVideoLoaded(true)}
           onError={() => {
             setVideoFailed(true);
@@ -86,12 +145,12 @@ export function AiVideoPanel({
         <video
           ref={videoRef}
           key={videoSrc}
-          className="absolute inset-0 h-full w-full object-cover opacity-90"
+          className="absolute inset-0 h-full w-full bg-black object-contain"
           autoPlay
           muted
           loop
           playsInline
-          preload="auto"
+          preload="metadata"
           onCanPlay={() => setVideoLoaded(true)}
           onLoadedData={() => setVideoLoaded(true)}
           onError={() => {
@@ -103,27 +162,39 @@ export function AiVideoPanel({
           Your browser does not support MP4 video playback.
         </video>
       ) : (
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(73,229,143,0.18),rgba(5,13,24,0.96)_58%)]" />
+        <GeneratedMissionFeed
+          videoTitle={videoTitle}
+          videoSourceName={videoSourceName}
+          videoFailed={videoFailed}
+        />
       )}
 
-      <div className="absolute inset-0 bg-[rgba(5,13,24,0.08)]" />
+      {videoFailed && (
+        <GeneratedMissionFeed
+          videoTitle={videoTitle}
+          videoSourceName={videoSourceName}
+          videoFailed={videoFailed}
+        />
+      )}
 
-      <div className="absolute left-3 top-3 z-30 flex max-w-[78%] flex-wrap gap-2">
-        <span className="flex items-center gap-2 rounded bg-[#050d18]/85 px-3 py-1.5 text-hud text-[10px] text-(--primary)">
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.025)_1px,transparent_1px)] [background-size:100%_5px] opacity-20" />
+
+      <div className="absolute left-4 top-4 z-30 flex max-w-[78%] flex-wrap gap-2">
+        <span className="flex items-center gap-2 rounded bg-[#050609]/88 px-3 py-1.5 font-mono text-[9px] font-bold uppercase tracking-[0.1em] text-(--primary)">
           <Camera size={13} />
           {videoSourceName}
         </span>
 
-        <span className="rounded bg-[#050d18]/85 px-3 py-1.5 text-hud text-[10px] text-(--muted)">
+        <span className="rounded bg-[#050609]/88 px-3 py-1.5 font-mono text-[9px] font-bold uppercase tracking-[0.1em] text-(--muted)">
           {videoTitle}
         </span>
 
-        {videoSrc && (
+        {videoSrc && !videoFailed && (
           <a
             href={videoSrc}
             target="_blank"
             rel="noreferrer"
-            className="flex items-center gap-1 rounded bg-[#050d18]/85 px-3 py-1.5 text-hud text-[10px] text-(--nominal) hover:text-(--primary)"
+            className="flex items-center gap-1 rounded bg-[#050609]/88 px-3 py-1.5 font-mono text-[9px] font-bold uppercase tracking-[0.1em] text-(--nominal) hover:text-(--primary)"
           >
             <ExternalLink size={12} />
             Open Feed
@@ -131,56 +202,60 @@ export function AiVideoPanel({
         )}
       </div>
 
-      <div className="absolute right-3 top-3 z-30 text-right text-hud text-[10px]">
-        <div className="text-(--primary)">
-          {isMjpegStream ? "LIVE YOLO MJPEG STREAM" : "YOLO CAMERA FEED"}
+      <div className="absolute right-4 top-4 z-30 rounded border border-[#1d2533] bg-[#050609]/88 px-3 py-2 text-right backdrop-blur">
+        <div className="font-mono text-[9px] font-bold uppercase tracking-[0.14em] text-(--primary)">
+          {isMjpegStream
+            ? "Live YOLO MJPEG Stream"
+            : videoFailed || !videoSrc
+              ? "Generated Tactical Feed"
+              : "YOLO Camera Feed"}
         </div>
-        <div className="mt-1 text-(--muted)">Model Ready</div>
-        <div className="mt-1 text-(--muted)">
-          {isMjpegStream ? "Frame-by-frame" : "Best-frame analysis"}
+
+        <div className="mt-1 font-mono text-[8px] uppercase tracking-[0.08em] text-(--muted)">
+          {isMjpegStream
+            ? "Frame-by-frame boxes"
+            : videoFailed || !videoSrc
+              ? "Fallback mode"
+              : "Source video"}
         </div>
       </div>
 
       {openCvAnalysis && !isAnnotatedPlayback && (
         <div
-          className={`absolute right-3 top-20 z-30 rounded border bg-[#050d18]/90 px-3 py-2 backdrop-blur ${getRiskBorderClass(
+          className={`absolute right-4 top-24 z-30 rounded border bg-[#050609]/90 px-3 py-2 backdrop-blur ${getRiskBorderClass(
             openCvAnalysis.risk
           )}`}
         >
           <div
-            className={`text-hud text-[10px] uppercase ${getRiskClass(
+            className={`font-mono text-[9px] font-bold uppercase tracking-[0.12em] ${getRiskClass(
               openCvAnalysis.risk
             )}`}
           >
-            YOLO · {openCvAnalysis.risk} RISK
+            YOLO · {openCvAnalysis.risk} Risk
           </div>
 
-          <div className="mt-1 text-hud text-[9px] text-(--muted)">
-            Confidence {confidence}% · Static boxes hidden
+          <div className="mt-1 font-mono text-[8px] uppercase text-(--muted)">
+            Confidence {confidence}% · source video preserved
           </div>
         </div>
       )}
 
       {isAnnotatedPlayback && (
-        <div className="absolute right-3 top-20 z-30 rounded border border-(--nominal) bg-[#050d18]/90 px-3 py-2 backdrop-blur">
-          <div className="text-hud text-[10px] uppercase text-(--nominal)">
-            FRAME-BY-FRAME YOLO
+        <div className="absolute right-4 top-24 z-30 rounded border border-(--nominal) bg-[#050609]/90 px-3 py-2 backdrop-blur">
+          <div className="font-mono text-[9px] font-bold uppercase tracking-[0.12em] text-(--nominal)">
+            Frame-by-frame YOLO
           </div>
 
-          <div className="mt-1 text-hud text-[9px] text-(--muted)">
+          <div className="mt-1 font-mono text-[8px] uppercase text-(--muted)">
             Boxes are drawn inside streamed frames
           </div>
         </div>
       )}
 
-      {detectionBoxes.map((detection) => (
-        <div key={detection.label} />
-      ))}
-
       {videoSrc && !videoFailed && !videoLoaded && (
-        <div className="absolute left-1/2 top-1/2 z-40 w-80 -translate-x-1/2 -translate-y-1/2 rounded border border-(--primary) bg-[#050d18]/95 p-4 text-center">
-          <div className="text-hud text-sm text-(--primary)">
-            Loading camera feed...
+        <div className="absolute left-1/2 top-1/2 z-40 w-80 -translate-x-1/2 -translate-y-1/2 rounded border border-(--primary) bg-[#050609]/95 p-4 text-center">
+          <div className="font-mono text-[12px] font-bold uppercase text-(--primary)">
+            Loading camera feed
           </div>
 
           <div className="mt-2 break-all text-xs text-(--muted)">
@@ -189,45 +264,35 @@ export function AiVideoPanel({
         </div>
       )}
 
-      {videoFailed && (
-        <div className="absolute left-1/2 top-1/2 z-40 w-96 -translate-x-1/2 -translate-y-1/2 rounded border border-(--critical) bg-[#050d18]/95 p-4 text-center">
-          <div className="text-hud text-sm text-(--critical)">
-            Feed failed to load
-          </div>
-
-          <div className="mt-2 text-xs leading-relaxed text-(--muted)">
-            The backend stream is offline, the video file is missing, or the
-            selected source is invalid.
-          </div>
-
-          {videoSrc && (
-            <div className="mt-3 break-all rounded border border-(--border) bg-[#07111f] p-2 text-[10px] text-(--caution)">
-              {videoSrc}
-            </div>
-          )}
-        </div>
-      )}
-
-      <div className="absolute bottom-3 left-3 z-30 text-hud text-[10px]">
-        <div className="text-(--caution)">
+      <div className="absolute bottom-4 left-4 z-30 rounded border border-[#1d2533] bg-[#050609]/88 px-3 py-2 backdrop-blur">
+        <div className="flex items-center gap-2 font-mono text-[9px] font-bold uppercase tracking-[0.12em] text-(--primary)">
+          <Radar size={12} />
           {isMjpegStream
-            ? "MODEL: BASE YOLO · LIVE MJPEG MODE"
-            : "MODEL: YOLO · BEST FRAME MODE"}
+            ? "Model: YOLO + fire mode · live MJPEG"
+            : videoFailed || !videoSrc
+              ? "Model: simulated vision feed"
+              : "Model: source video"}
         </div>
 
-        <div className="mt-1 text-(--muted)">
+        <div className="mt-1 font-mono text-[8px] uppercase tracking-[0.08em] text-(--muted)">
           {isMjpegStream
             ? "Moving boxes are drawn into each streamed frame"
             : openCvAnalysis
-              ? `Best frame: ${
+              ? `Best frame ${
                   openCvAnalysis.frame?.best_frame_index ?? "-"
-                } · Static overlay disabled`
-              : "Use Live YOLO Video for moving detection boxes"}
+                } · source video not blurred`
+              : "Select a feed above, then analyse with YOLO"}
         </div>
       </div>
 
-      <div className="absolute bottom-3 right-3 z-30 rounded border border-(--border) bg-[#050d18]/85 px-2 py-1 text-hud text-[9px] text-(--muted)">
-        640 × 360 analysis
+      <div className="absolute bottom-4 right-4 z-30 flex items-center gap-2 rounded border border-[#1d2533] bg-[#050609]/88 px-3 py-2 font-mono text-[8px] font-bold uppercase tracking-[0.1em] text-(--muted) backdrop-blur">
+        <ScanLine size={12} className="text-(--primary)" />
+        Native fit display
+      </div>
+
+      <div className="absolute left-1/2 bottom-4 z-30 hidden -translate-x-1/2 items-center gap-2 rounded border border-[rgba(73,229,143,0.28)] bg-[rgba(73,229,143,0.08)] px-3 py-2 font-mono text-[8px] font-bold uppercase tracking-[0.1em] text-(--nominal) backdrop-blur md:flex">
+        <ShieldCheck size={12} />
+        Human-in-loop review
       </div>
     </div>
   );
