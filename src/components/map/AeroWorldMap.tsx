@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import type { FeatureCollection, Point } from "geojson";
 import L, {
   type Layer,
   type Map as LeafletMap,
@@ -12,10 +11,10 @@ import {
   Home,
   Layers,
   LocateFixed,
-  Moon,
+  MapPinned,
   Plane,
-  Sun,
 } from "lucide-react";
+
 import {
   contactPoints,
   dronePoints,
@@ -26,14 +25,7 @@ import {
   missionRoute,
   restrictedZones,
 } from "../../data/worldMap";
-import {
-  infrastructurePoints,
-  type InfrastructureProperties,
-  type InfrastructureType,
-} from "../../data/infrastructure";
 import { useUnifiedTelemetry } from "../../hooks/useUnifiedTelemetry";
-import { fetchInfrastructureFromOverpass } from "../../services/overpassInfrastructure";
-import { fetchOfficialAhmedabadPoliceFromOverpass } from "../../services/ahmedabadOfficialPolice";
 
 type LayerId =
   | "live-drone"
@@ -43,23 +35,11 @@ type LayerId =
   | "restricted"
   | "contacts"
   | "heat"
-  | "home"
-  | "infrastructure";
+  | "home";
 
 type LayerState = Record<LayerId, boolean>;
 
-type MapTheme = "dark" | "light";
-
-type InfrastructureCollection = FeatureCollection<
-  Point,
-  InfrastructureProperties
->;
-
-type PoliceStats = {
-  matched: number;
-  missing: number;
-  total: number;
-};
+type BaseMapId = "osm" | "hot";
 
 const defaultLayerState: LayerState = {
   "live-drone": true,
@@ -70,7 +50,6 @@ const defaultLayerState: LayerState = {
   contacts: true,
   heat: true,
   home: true,
-  infrastructure: true,
 };
 
 const layerButtons: { id: LayerId; label: string }[] = [
@@ -82,26 +61,25 @@ const layerButtons: { id: LayerId; label: string }[] = [
   { id: "contacts", label: "Contacts" },
   { id: "heat", label: "Heat Scan" },
   { id: "home", label: "Home" },
-  { id: "infrastructure", label: "Infrastructure" },
 ];
 
 const baseMaps: Record<
-  MapTheme,
+  BaseMapId,
   {
     label: string;
     url: string;
     attribution: string;
   }
 > = {
-  dark: {
-    label: "Dark Tactical",
-    url: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
-    attribution: "© OpenStreetMap contributors © CARTO",
+  osm: {
+    label: "OpenStreetMap",
+    url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    attribution: "© OpenStreetMap contributors",
   },
-  light: {
-    label: "Voyager Detail",
-    url: "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
-    attribution: "© OpenStreetMap contributors © CARTO",
+  hot: {
+    label: "OSM Humanitarian",
+    url: "https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png",
+    attribution: "© OpenStreetMap contributors · HOT",
   },
 };
 
@@ -117,73 +95,7 @@ const mapColors = {
   home: "#49e58f",
   contact: "#ff4d4d",
   drone: "#f6b23c",
-  liveDrone: "#29d3ff",
   mapStroke: "#050d18",
-};
-
-const infrastructureStyles: Record<
-  InfrastructureType,
-  {
-    label: string;
-    symbol: string;
-    color: string;
-  }
-> = {
-  police: {
-    label: "Police",
-    symbol: "🛡",
-    color: "#3b82f6",
-  },
-  hospital: {
-    label: "Hospital",
-    symbol: "✚",
-    color: "#ef4444",
-  },
-  fire: {
-    label: "Fire",
-    symbol: "🔥",
-    color: "#f97316",
-  },
-  airport: {
-    label: "Airport",
-    symbol: "✈",
-    color: "#38bdf8",
-  },
-  railway: {
-    label: "Railway",
-    symbol: "▣",
-    color: "#a78bfa",
-  },
-  government: {
-    label: "Government",
-    symbol: "🏛",
-    color: "#facc15",
-  },
-  power: {
-    label: "Power",
-    symbol: "⚡",
-    color: "#fbbf24",
-  },
-  fuel: {
-    label: "Fuel",
-    symbol: "⛽",
-    color: "#22c55e",
-  },
-  school: {
-    label: "School",
-    symbol: "🎓",
-    color: "#14b8a6",
-  },
-  water: {
-    label: "Water",
-    symbol: "💧",
-    color: "#06b6d4",
-  },
-  telecom: {
-    label: "Telecom",
-    symbol: "📡",
-    color: "#ec4899",
-  },
 };
 
 function createWorldBounds() {
@@ -199,32 +111,6 @@ function escapeHtml(value: string) {
     .replaceAll("'", "&#039;");
 }
 
-function normalizeInfrastructureType(type: unknown): InfrastructureType {
-  if (typeof type === "string" && type in infrastructureStyles) {
-    return type as InfrastructureType;
-  }
-
-  return "government";
-}
-
-function normalizePriority(
-  priority: unknown
-): InfrastructureProperties["priority"] {
-  if (
-    priority === "critical" ||
-    priority === "high" ||
-    priority === "medium"
-  ) {
-    return priority;
-  }
-
-  return "medium";
-}
-
-function getInfrastructureStyle(type: InfrastructureType) {
-  return infrastructureStyles[type] ?? infrastructureStyles.government;
-}
-
 function getRiskColor(risk?: string) {
   if (risk === "critical") return "#ff4d4d";
   if (risk === "high") return "#f6b23c";
@@ -232,57 +118,20 @@ function getRiskColor(risk?: string) {
   return "#49e58f";
 }
 
-function createInfrastructureIcon(
-  type: InfrastructureType,
-  priority: InfrastructureProperties["priority"]
-) {
-  const style = getInfrastructureStyle(type);
-  const size = priority === "critical" ? 32 : priority === "high" ? 28 : 24;
-
-  return L.divIcon({
-    className: "aeronexus-infrastructure-marker",
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],
-    popupAnchor: [0, -size / 2],
-    html: `
-      <div
-        style="
-          width: ${size}px;
-          height: ${size}px;
-          border-radius: 999px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: rgba(5, 13, 24, 0.92);
-          border: 2px solid ${style.color};
-          color: ${style.color};
-          box-shadow: 0 0 14px ${style.color}66;
-          font-size: ${Math.round(size * 0.5)}px;
-          font-weight: 800;
-          line-height: 1;
-        "
-        title="${style.label}"
-      >
-        ${style.symbol}
-      </div>
-    `,
-  });
-}
-
 function createLiveDroneIcon(risk?: string) {
   const color = getRiskColor(risk);
 
   return L.divIcon({
     className: "aeronexus-live-drone-marker",
-    iconSize: [44, 44],
-    iconAnchor: [22, 22],
-    popupAnchor: [0, -22],
+    iconSize: [46, 46],
+    iconAnchor: [23, 23],
+    popupAnchor: [0, -23],
     html: `
       <div
         style="
           position: relative;
-          width: 44px;
-          height: 44px;
+          width: 46px;
+          height: 46px;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -291,8 +140,8 @@ function createLiveDroneIcon(risk?: string) {
         <div
           style="
             position: absolute;
-            width: 44px;
-            height: 44px;
+            width: 46px;
+            height: 46px;
             border-radius: 999px;
             background: ${color}22;
             border: 1px solid ${color};
@@ -303,8 +152,8 @@ function createLiveDroneIcon(risk?: string) {
         <div
           style="
             position: absolute;
-            width: 22px;
-            height: 22px;
+            width: 23px;
+            height: 23px;
             transform: rotate(45deg);
             background: rgba(5, 13, 24, 0.96);
             border: 2px solid ${color};
@@ -317,7 +166,7 @@ function createLiveDroneIcon(risk?: string) {
             position: relative;
             z-index: 2;
             color: ${color};
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 900;
             transform: rotate(-45deg);
             font-family: monospace;
@@ -328,41 +177,6 @@ function createLiveDroneIcon(risk?: string) {
       </div>
     `,
   });
-}
-
-function createInfrastructureKey(
-  feature: InfrastructureCollection["features"][number]
-) {
-  const type = feature.properties.type;
-  const name = feature.properties.name.toLowerCase().trim();
-  const [longitude, latitude] = feature.geometry.coordinates;
-
-  return `${type}-${name}-${longitude.toFixed(5)}-${latitude.toFixed(5)}`;
-}
-
-function mergeInfrastructureCollections(
-  collections: InfrastructureCollection[]
-): InfrastructureCollection {
-  const seen = new Set<string>();
-  const features: InfrastructureCollection["features"] = [];
-
-  for (const collection of collections) {
-    for (const feature of collection.features) {
-      const key = createInfrastructureKey(feature);
-
-      if (seen.has(key)) {
-        continue;
-      }
-
-      seen.add(key);
-      features.push(feature);
-    }
-  }
-
-  return {
-    type: "FeatureCollection",
-    features,
-  };
 }
 
 export function AeroWorldMap() {
@@ -382,27 +196,15 @@ export function AeroWorldMap() {
     contacts: null,
     heat: null,
     home: null,
-    infrastructure: null,
   });
 
-  const [mapTheme, setMapTheme] = useState<MapTheme>("dark");
+  const [baseMapId, setBaseMapId] = useState<BaseMapId>("osm");
   const [layers, setLayers] = useState<LayerState>(defaultLayerState);
   const [coordinates, setCoordinates] = useState("23.02250°N · 72.57140°E");
   const [zoom, setZoom] = useState(initialMapView.zoom.toFixed(1));
-  const [infrastructureCount, setInfrastructureCount] = useState(
-    infrastructurePoints.features.length
-  );
-  const [policeStats, setPoliceStats] = useState<PoliceStats>({
-    matched: 0,
-    missing: 0,
-    total: 0,
-  });
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
-
-    let isMounted = true;
-    let infrastructureTimer: number | undefined;
 
     const worldBounds = createWorldBounds();
 
@@ -427,12 +229,12 @@ export function AeroWorldMap() {
 
     mapRef.current = map;
 
-    const baseLayer = L.tileLayer(baseMaps[mapTheme].url, {
+    const baseLayer = L.tileLayer(baseMaps[baseMapId].url, {
       minZoom: 2,
       maxZoom: 19,
       noWrap: true,
       bounds: worldBounds,
-      attribution: baseMaps[mapTheme].attribution,
+      attribution: baseMaps[baseMapId].attribution,
     });
 
     baseLayer.addTo(map);
@@ -528,25 +330,6 @@ export function AeroWorldMap() {
       },
     }).addTo(map);
 
-    const infrastructureLayer = L.geoJSON(infrastructurePoints, {
-      pointToLayer: (feature, latlng) => {
-        const type = normalizeInfrastructureType(feature.properties?.type);
-        const priority = normalizePriority(feature.properties?.priority);
-        const style = getInfrastructureStyle(type);
-        const name = escapeHtml(
-          feature.properties?.name ?? "Infrastructure Node"
-        );
-
-        return L.marker(latlng, {
-          icon: createInfrastructureIcon(type, priority),
-        }).bindPopup(
-          `<b>${name}</b><br/>
-          Category: ${style.label}<br/>
-          Priority: ${priority.toUpperCase()}`
-        );
-      },
-    }).addTo(map);
-
     const droneLayer = L.geoJSON(dronePoints, {
       pointToLayer: (feature, latlng) => {
         const name = escapeHtml(feature.properties?.name ?? "Drone");
@@ -582,81 +365,7 @@ export function AeroWorldMap() {
       contacts: contactLayer,
       heat: heatLayer,
       home: homeLayer,
-      infrastructure: infrastructureLayer,
     };
-
-    async function loadInfrastructureFromMapBounds() {
-      if (map.getZoom() < 10) {
-        if (!isMounted) return;
-
-        infrastructureLayer.clearLayers();
-        infrastructureLayer.addData(infrastructurePoints);
-        setInfrastructureCount(infrastructurePoints.features.length);
-
-        return;
-      }
-
-      let liveInfrastructure: InfrastructureCollection = infrastructurePoints;
-
-      try {
-        const bounds = map.getBounds();
-
-        liveInfrastructure = await fetchInfrastructureFromOverpass({
-          south: bounds.getSouth(),
-          west: bounds.getWest(),
-          north: bounds.getNorth(),
-          east: bounds.getEast(),
-        });
-      } catch (error) {
-        console.error("Failed to load live infrastructure data:", error);
-      }
-
-      let officialPoliceInfrastructure: InfrastructureCollection = {
-        type: "FeatureCollection",
-        features: [],
-      };
-
-      try {
-        const officialPolice =
-          await fetchOfficialAhmedabadPoliceFromOverpass();
-
-        officialPoliceInfrastructure =
-          officialPolice.collection as InfrastructureCollection;
-
-        if (isMounted) {
-          setPoliceStats({
-            matched: officialPolice.matched,
-            missing: officialPolice.missing.length,
-            total: officialPolice.total,
-          });
-        }
-      } catch (error) {
-        console.error("Failed to load official Ahmedabad police data:", error);
-      }
-
-      if (!isMounted) return;
-
-      const mergedInfrastructure = mergeInfrastructureCollections([
-        liveInfrastructure,
-        officialPoliceInfrastructure,
-      ]);
-
-      infrastructureLayer.clearLayers();
-      infrastructureLayer.addData(mergedInfrastructure);
-      setInfrastructureCount(mergedInfrastructure.features.length);
-    }
-
-    function scheduleInfrastructureLoad() {
-      window.clearTimeout(infrastructureTimer);
-
-      infrastructureTimer = window.setTimeout(() => {
-        void loadInfrastructureFromMapBounds();
-      }, 900);
-    }
-
-    void loadInfrastructureFromMapBounds();
-
-    map.on("moveend", scheduleInfrastructureLoad);
 
     map.on("mousemove", (event) => {
       setCoordinates(
@@ -673,12 +382,9 @@ export function AeroWorldMap() {
     const resizeThree = window.setTimeout(() => map.invalidateSize(), 1000);
 
     return () => {
-      isMounted = false;
       window.clearTimeout(resizeOne);
       window.clearTimeout(resizeTwo);
       window.clearTimeout(resizeThree);
-      window.clearTimeout(infrastructureTimer);
-      map.off("moveend", scheduleInfrastructureLoad);
       map.remove();
       mapRef.current = null;
       baseTileRef.current = null;
@@ -688,10 +394,12 @@ export function AeroWorldMap() {
 
   useEffect(() => {
     const map = mapRef.current;
+
     if (!map) return;
 
     for (const layerId of Object.keys(layers) as LayerId[]) {
       const layer = layerRefs.current[layerId];
+
       if (!layer) continue;
 
       if (layers[layerId]) {
@@ -706,6 +414,7 @@ export function AeroWorldMap() {
 
   useEffect(() => {
     const map = mapRef.current;
+
     if (!map) return;
 
     const worldBounds = createWorldBounds();
@@ -714,18 +423,18 @@ export function AeroWorldMap() {
       map.removeLayer(baseTileRef.current);
     }
 
-    const nextBaseLayer = L.tileLayer(baseMaps[mapTheme].url, {
+    const nextBaseLayer = L.tileLayer(baseMaps[baseMapId].url, {
       minZoom: 2,
       maxZoom: 19,
       noWrap: true,
       bounds: worldBounds,
-      attribution: baseMaps[mapTheme].attribution,
+      attribution: baseMaps[baseMapId].attribution,
     });
 
     nextBaseLayer.addTo(map);
     nextBaseLayer.bringToBack();
     baseTileRef.current = nextBaseLayer;
-  }, [mapTheme]);
+  }, [baseMapId]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -778,12 +487,8 @@ export function AeroWorldMap() {
     }));
   }
 
-  function toggleMapTheme() {
-    setMapTheme((current) => (current === "dark" ? "light" : "dark"));
-  }
-
-  function flyToWorld() {
-    mapRef.current?.flyTo([22, 20], 2.4, {
+  function flyToAoi() {
+    mapRef.current?.flyTo([23.0225, 72.5714], 11.5, {
       duration: 1.2,
     });
   }
@@ -811,9 +516,7 @@ export function AeroWorldMap() {
       return;
     }
 
-    mapRef.current?.flyTo([23.0302, 72.5815], 16, {
-      duration: 1.2,
-    });
+    flyToMission();
   }
 
   return (
@@ -825,15 +528,12 @@ export function AeroWorldMap() {
       <div className="absolute left-3 top-3 z-20 rounded border border-(--border) bg-[#050d18]/90 px-3 py-2 backdrop-blur">
         <div className="flex items-center gap-2 text-hud text-[10px] text-(--primary)">
           <Globe2 size={14} />
-          AERONEXUS WORLD OPS MAP
+          AERONEXUS OPEN LIVE OPS MAP
         </div>
 
         <div className="mt-1 text-hud text-[9px] text-(--muted)">
-          {baseMaps[mapTheme].label.toUpperCase()} · WGS-84 · NO WORLD WRAP ·
-          ZOOM {zoom} · INFRA {infrastructureCount} · POLICE{" "}
-          {policeStats.matched}/{policeStats.total} · MISS{" "}
-          {policeStats.missing} · LIVE{" "}
-          {telemetry?.gps ? "GPS LOCK" : "NO GPS"}
+          {baseMaps[baseMapId].label.toUpperCase()} · OPENSTREETMAP · WGS-84 ·
+          ZOOM {zoom} · LIVE {telemetry?.gps ? "GPS LOCK" : "NO GPS"}
         </div>
       </div>
 
@@ -844,24 +544,25 @@ export function AeroWorldMap() {
         </div>
 
         <button
-          onClick={toggleMapTheme}
-          className="mb-2 flex w-full items-center justify-between rounded border border-(--primary) bg-[rgba(246,178,60,0.08)] px-2 py-1.5 text-hud text-[9px] text-(--primary)"
+          type="button"
+          onClick={() =>
+            setBaseMapId((current) => (current === "osm" ? "hot" : "osm"))
+          }
+          className="mb-2 flex w-full items-center justify-between rounded border border-(--primary) bg-[rgba(41,211,255,0.08)] px-2 py-1.5 text-hud text-[9px] text-(--primary)"
         >
-          <span className="flex items-center gap-1.5">
-            {mapTheme === "dark" ? <Moon size={12} /> : <Sun size={12} />}
-            Map Theme
-          </span>
-          <span>{mapTheme === "dark" ? "Dark" : "Detailed"}</span>
+          <span>Base Map</span>
+          <span>{baseMaps[baseMapId].label}</span>
         </button>
 
         <div className="space-y-1.5">
           {layerButtons.map((layer) => (
             <button
               key={layer.id}
+              type="button"
               onClick={() => toggleLayer(layer.id)}
               className={`flex w-full items-center justify-between rounded border px-2 py-1.5 text-hud text-[9px] transition ${
                 layers[layer.id]
-                  ? "border-(--primary) bg-[rgba(246,178,60,0.08)] text-(--primary)"
+                  ? "border-(--primary) bg-[rgba(41,211,255,0.08)] text-(--primary)"
                   : "border-(--border) bg-[#081320] text-(--muted)"
               }`}
             >
@@ -881,14 +582,16 @@ export function AeroWorldMap() {
 
       <div className="absolute bottom-3 right-3 z-20 flex gap-2">
         <button
-          onClick={flyToWorld}
+          type="button"
+          onClick={flyToAoi}
           className="flex items-center gap-2 rounded border border-(--border) bg-[#050d18]/90 px-3 py-2 text-hud text-[10px] text-(--foreground) backdrop-blur hover:border-(--primary)"
         >
-          <Globe2 size={14} />
-          World
+          <MapPinned size={14} />
+          AOI
         </button>
 
         <button
+          type="button"
           onClick={flyToHome}
           className="flex items-center gap-2 rounded border border-(--border) bg-[#050d18]/90 px-3 py-2 text-hud text-[10px] text-(--foreground) backdrop-blur hover:border-(--nominal)"
         >
@@ -897,6 +600,7 @@ export function AeroWorldMap() {
         </button>
 
         <button
+          type="button"
           onClick={flyToMission}
           className="flex items-center gap-2 rounded bg-(--primary) px-3 py-2 text-hud text-[10px] font-bold text-[#07111f] hover:opacity-90"
         >
@@ -905,6 +609,7 @@ export function AeroWorldMap() {
         </button>
 
         <button
+          type="button"
           onClick={flyToUav}
           className="flex items-center gap-2 rounded border border-(--border) bg-[#050d18]/90 px-3 py-2 text-hud text-[10px] text-(--foreground) backdrop-blur hover:border-(--primary)"
         >
