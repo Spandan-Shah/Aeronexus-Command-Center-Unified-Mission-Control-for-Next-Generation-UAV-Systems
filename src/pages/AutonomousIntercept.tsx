@@ -1,11 +1,11 @@
 import {
-  Activity,
   AlertTriangle,
   BrainCircuit,
   CirclePause,
   Cpu,
   Gauge,
   Home,
+  MapPinned,
   Navigation,
   Pause,
   Plane,
@@ -13,6 +13,7 @@ import {
   Radio,
   RotateCcw,
   Route,
+  Satellite,
   ShieldCheck,
   Target,
   Usb,
@@ -35,7 +36,7 @@ import type {
 } from "../hooks/useInterceptSimulation";
 
 /* =========================================================
-   Helpers
+   Types
    ========================================================= */
 
 type MetricTone =
@@ -72,6 +73,10 @@ const toneClass:
   muted:
     "text-white/38",
 };
+
+/* =========================================================
+   Formatting
+   ========================================================= */
 
 function formatDistance(
   meters: number,
@@ -151,9 +156,7 @@ function MetricCell({
     <div className="flex min-w-0 items-center justify-between gap-2 border-r border-white/[0.07] px-3 last:border-r-0">
       <div className="min-w-0">
         <div className="font-mono text-[9px] font-semibold uppercase tracking-[0.065em] text-white/36">
-          {
-            metric.label
-          }
+          {metric.label}
         </div>
 
         <div
@@ -163,9 +166,7 @@ function MetricCell({
             tone,
           ].join(" ")}
         >
-          {
-            metric.value
-          }
+          {metric.value}
         </div>
       </div>
 
@@ -182,7 +183,7 @@ function MetricCell({
 }
 
 /* =========================================================
-   Small State Row
+   State Row
    ========================================================= */
 
 function StateRow({
@@ -246,9 +247,7 @@ function CommandButton({
   return (
     <button
       type="button"
-      onClick={
-        onClick
-      }
+      onClick={onClick}
       className={[
         "flex h-[38px] items-center justify-center gap-2 rounded-[5px] border px-2",
 
@@ -287,9 +286,7 @@ function PredictorButton({
   return (
     <button
       type="button"
-      onClick={
-        onClick
-      }
+      onClick={onClick}
       className={[
         "rounded-[5px] border p-2.5 text-left transition-colors",
 
@@ -318,6 +315,77 @@ function PredictorButton({
 }
 
 /* =========================================================
+   Evidence Metric
+   ========================================================= */
+
+function EvidenceMetric({
+  label,
+  value,
+  description,
+  tone,
+}: {
+  label: string;
+  value: string;
+  description: string;
+
+  tone:
+    | "neutral"
+    | "green"
+    | "amber"
+    | "red";
+}) {
+  const valueClass =
+    tone ===
+    "green"
+      ? "text-[#59D99A]"
+      : tone ===
+          "amber"
+        ? "text-[#F6B23C]"
+        : tone ===
+            "red"
+          ? "text-[#FF5A63]"
+          : "text-white/66";
+
+  const borderClass =
+    tone ===
+    "green"
+      ? "border-[rgba(89,217,154,0.20)] bg-[rgba(89,217,154,0.03)]"
+      : tone ===
+          "amber"
+        ? "border-[rgba(246,178,60,0.20)] bg-[rgba(246,178,60,0.03)]"
+        : tone ===
+            "red"
+          ? "border-[rgba(255,90,99,0.20)] bg-[rgba(255,90,99,0.03)]"
+          : "border-white/[0.07] bg-[#05060d]";
+
+  return (
+    <div
+      className={[
+        "rounded-[5px] border p-3",
+        borderClass,
+      ].join(" ")}
+    >
+      <div className="font-mono text-[9px] uppercase tracking-[0.04em] text-white/34">
+        {label}
+      </div>
+
+      <div
+        className={[
+          "mt-2 font-mono text-[18px] font-semibold",
+          valueClass,
+        ].join(" ")}
+      >
+        {value}
+      </div>
+
+      <div className="mt-1 text-[10px] leading-[1.45] text-white/30">
+        {description}
+      </div>
+    </div>
+  );
+}
+
+/* =========================================================
    Autonomous Intercept
    ========================================================= */
 
@@ -338,6 +406,39 @@ export function AutonomousIntercept() {
   const improvement =
     snapshot.performance
       .improvementPercent;
+
+  const evidenceReady =
+    snapshot.performance
+      .validationSamples >=
+    3;
+
+  const mlImproving =
+    evidenceReady &&
+    improvement !==
+      null &&
+    improvement >
+      0;
+
+  const improvementTone:
+    | "green"
+    | "amber"
+    | "red" =
+    !evidenceReady
+      ? "amber"
+      : mlImproving
+        ? "green"
+        : "red";
+
+  const improvementValue =
+    improvement ===
+    null
+      ? "WARMING"
+      : `${improvement >=
+          0
+          ? "+"
+          : ""}${improvement.toFixed(
+          1,
+        )}%`;
 
   const metrics:
     Metric[] = [
@@ -493,7 +594,9 @@ export function AutonomousIntercept() {
             "2xl:px-14",
           ].join(" ")}
         >
-          {/* Header */}
+          {/* =================================================
+              Header
+              ================================================= */}
 
           <header className="flex min-w-0 items-center justify-between gap-4 border-b border-white/[0.08]">
             <div className="min-w-0">
@@ -502,7 +605,7 @@ export function AutonomousIntercept() {
               </h1>
 
               <p className="mt-0.5 hidden truncate text-[11px] text-white/42 sm:block">
-                ArduPlane leader–follower AI guidance · non-contact rendezvous and shadow simulation
+                Fixed-wing leader–follower AI guidance · trajectory prediction · non-contact shadowing
               </p>
             </div>
 
@@ -510,10 +613,18 @@ export function AutonomousIntercept() {
               <div className="flex h-[30px] items-center gap-2 rounded-[4px] border border-[rgba(89,217,154,0.22)] bg-[rgba(89,217,154,0.04)] px-2.5 font-mono text-[9px] font-semibold uppercase tracking-[0.05em] text-[#59D99A]">
                 <span className="h-1.5 w-1.5 rounded-full bg-[#59D99A]" />
 
-                Built-in Simulation
+                Phase 1 Simulation
               </div>
 
-              <div className="hidden h-[30px] items-center gap-2 rounded-[4px] border border-[rgba(90,169,255,0.22)] bg-[rgba(90,169,255,0.04)] px-2.5 font-mono text-[9px] font-semibold uppercase tracking-[0.05em] text-[#5AA9FF] md:flex">
+              <div className="hidden h-[30px] items-center gap-2 rounded-[4px] border border-[rgba(246,178,60,0.22)] bg-[rgba(246,178,60,0.04)] px-2.5 font-mono text-[9px] font-semibold uppercase tracking-[0.05em] text-[#F6B23C] md:flex">
+                <Satellite
+                  size={11}
+                />
+
+                Real Satellite Map
+              </div>
+
+              <div className="hidden h-[30px] items-center gap-2 rounded-[4px] border border-[rgba(90,169,255,0.22)] bg-[rgba(90,169,255,0.04)] px-2.5 font-mono text-[9px] font-semibold uppercase tracking-[0.05em] text-[#5AA9FF] lg:flex">
                 <ShieldCheck
                   size={11}
                 />
@@ -523,9 +634,11 @@ export function AutonomousIntercept() {
             </div>
           </header>
 
-          {/* Metrics */}
+          {/* =================================================
+              Metrics
+              ================================================= */}
 
-          <section className="my-2 grid overflow-hidden rounded-[6px] border border-white/[0.08] bg-[#07090d] grid-cols-2 md:grid-cols-3 xl:my-0 xl:grid-cols-6">
+          <section className="my-2 grid grid-cols-2 overflow-hidden rounded-[6px] border border-white/[0.08] bg-[#07090d] md:grid-cols-3 xl:my-0 xl:grid-cols-6">
             {metrics.map(
               (
                 metric,
@@ -542,21 +655,29 @@ export function AutonomousIntercept() {
             )}
           </section>
 
-          {/* Workspace */}
+          {/* =================================================
+              Workspace
+              ================================================= */}
 
           <section className="mt-3 grid min-h-[780px] overflow-hidden rounded-[6px] border border-white/[0.09] bg-[#020304] xl:mt-0 xl:min-h-0 xl:grid-cols-[minmax(0,1fr)_410px] 2xl:grid-cols-[minmax(0,1fr)_430px]">
-            {/* Map */}
+            {/* ===============================================
+                Map
+                =============================================== */}
 
             <div className="grid min-h-0 grid-rows-[42px_minmax(0,1fr)]">
               <div className="flex items-center justify-between gap-3 border-b border-white/[0.08] bg-[#06080b] px-3">
-                <div className="flex items-center gap-2">
-                  <Route
+                <div className="flex min-w-0 items-center gap-2">
+                  <MapPinned
                     size={13}
-                    className="text-[#F6B23C]"
+                    className="shrink-0 text-[#F6B23C]"
                   />
 
-                  <span className="text-[12px] font-medium text-white/84">
-                    Leader–Follower Intercept Map
+                  <span className="truncate text-[12px] font-medium text-white/84">
+                    Geospatial Intercept Workspace
+                  </span>
+
+                  <span className="hidden rounded-[3px] border border-[rgba(89,217,154,0.18)] bg-[rgba(89,217,154,0.035)] px-1.5 py-0.5 font-mono text-[8px] uppercase text-[#59D99A] lg:inline">
+                    Live
                   </span>
                 </div>
 
@@ -576,7 +697,7 @@ export function AutonomousIntercept() {
                     onClick={
                       actions.toggleRunning
                     }
-                    className="flex h-[28px] items-center gap-1.5 rounded-[4px] border border-white/[0.08] bg-[#05060d] px-2.5 font-mono text-[8px] font-semibold uppercase text-white/54 transition hover:text-white"
+                    className="flex h-[28px] items-center gap-1.5 rounded-[4px] border border-white/[0.08] bg-[#05060d] px-2.5 font-mono text-[8px] font-semibold uppercase text-white/54 transition hover:border-white/[0.16] hover:text-white"
                   >
                     {snapshot.running ? (
                       <Pause
@@ -598,7 +719,7 @@ export function AutonomousIntercept() {
                     onClick={
                       actions.reset
                     }
-                    className="flex h-[28px] items-center gap-1.5 rounded-[4px] border border-white/[0.08] bg-[#05060d] px-2.5 font-mono text-[8px] font-semibold uppercase text-white/54 transition hover:text-white"
+                    className="flex h-[28px] items-center gap-1.5 rounded-[4px] border border-white/[0.08] bg-[#05060d] px-2.5 font-mono text-[8px] font-semibold uppercase text-white/54 transition hover:border-white/[0.16] hover:text-white"
                   >
                     <RotateCcw
                       size={10}
@@ -616,12 +737,14 @@ export function AutonomousIntercept() {
               />
             </div>
 
-            {/* =============================================
+            {/* ===============================================
                 RIGHT RAIL
-                ============================================= */}
+                =============================================== */}
 
             <aside className="min-h-0 overflow-y-auto border-t border-white/[0.08] bg-[#07090d] xl:border-l xl:border-t-0">
-              {/* Mission state */}
+              {/* =============================================
+                  Mission State
+                  ============================================= */}
 
               <div className="border-b border-white/[0.08]">
                 <div className="flex h-[48px] items-center justify-between gap-3 px-3">
@@ -641,8 +764,8 @@ export function AutonomousIntercept() {
 
                       snapshot.mode ===
                       "ABORT"
-                        ? "border-[rgba(255,90,99,0.3)] text-[#FF5A63]"
-                        : "border-[rgba(90,169,255,0.25)] text-[#5AA9FF]",
+                        ? "border-[rgba(255,90,99,0.3)] bg-[rgba(255,90,99,0.04)] text-[#FF5A63]"
+                        : "border-[rgba(90,169,255,0.25)] bg-[rgba(90,169,255,0.04)] text-[#5AA9FF]",
                     ].join(" ")}
                   >
                     {
@@ -652,7 +775,9 @@ export function AutonomousIntercept() {
                 </div>
               </div>
 
-              {/* Leader */}
+              {/* =============================================
+                  Leader
+                  ============================================= */}
 
               <div className="border-b border-white/[0.08] px-3 py-3">
                 <div className="mb-2 flex items-center justify-between">
@@ -696,6 +821,13 @@ export function AutonomousIntercept() {
                 />
 
                 <StateRow
+                  label="Bank"
+                  value={`${snapshot.leader.bank.toFixed(
+                    1,
+                  )}°`}
+                />
+
+                <StateRow
                   label="Altitude"
                   value={`${snapshot.leader.altitude.toFixed(
                     1,
@@ -703,7 +835,9 @@ export function AutonomousIntercept() {
                 />
               </div>
 
-              {/* Follower */}
+              {/* =============================================
+                  Follower
+                  ============================================= */}
 
               <div className="border-b border-white/[0.08] px-3 py-3">
                 <div className="mb-2 flex items-center justify-between">
@@ -747,6 +881,13 @@ export function AutonomousIntercept() {
                 />
 
                 <StateRow
+                  label="Bank"
+                  value={`${snapshot.follower.bank.toFixed(
+                    1,
+                  )}°`}
+                />
+
+                <StateRow
                   label="Altitude"
                   value={`${snapshot.follower.altitude.toFixed(
                     1,
@@ -754,7 +895,9 @@ export function AutonomousIntercept() {
                 />
               </div>
 
-              {/* AI */}
+              {/* =============================================
+                  AI / ML
+                  ============================================= */}
 
               <div className="border-b border-white/[0.08] px-3 py-3">
                 <div className="mb-3 flex items-center justify-between gap-3">
@@ -793,7 +936,7 @@ export function AutonomousIntercept() {
 
                   <PredictorButton
                     label="ML Regression"
-                    description="Online curved trajectory prediction"
+                    description="Learned curved trajectory prediction"
                     active={
                       snapshot.predictorMode ===
                       "ml"
@@ -807,6 +950,14 @@ export function AutonomousIntercept() {
                 </div>
 
                 <div className="mt-3">
+                  <StateRow
+                    label="Model"
+                    value={
+                      snapshot.ai.model
+                    }
+                    valueClass="text-[#59D99A]"
+                  />
+
                   <StateRow
                     label="Prediction Horizon"
                     value={`${snapshot.ai.predictionHorizonSeconds}s`}
@@ -826,12 +977,24 @@ export function AutonomousIntercept() {
                     )} m`}
                     valueClass="text-[#59D99A]"
                   />
+
+                  <StateRow
+                    label="Protected Radius"
+                    value={`${snapshot.minimumSeparationMeters.toFixed(
+                      0,
+                    )} m`}
+                    valueClass={
+                      snapshot.separationSafe
+                        ? "text-[#59D99A]"
+                        : "text-[#FF5A63]"
+                    }
+                  />
                 </div>
 
                 <div className="mt-3">
                   <div className="mb-1.5 flex items-center justify-between font-mono text-[9px] uppercase text-white/34">
                     <span>
-                      Shadow separation
+                      Shadow Separation
                     </span>
 
                     <span className="text-[#F6B23C]">
@@ -864,11 +1027,19 @@ export function AutonomousIntercept() {
                 </div>
               </div>
 
-              {/* Commands */}
+              {/* =============================================
+                  Commands
+                  ============================================= */}
 
               <div className="border-b border-white/[0.08] px-3 py-3">
-                <div className="mb-2 text-[11px] font-medium text-white/72">
-                  Mission Commands
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-[11px] font-medium text-white/72">
+                    Mission Commands
+                  </span>
+
+                  <span className="font-mono text-[8px] uppercase tracking-[0.05em] text-white/28">
+                    Operator Authorized
+                  </span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
@@ -936,7 +1107,9 @@ export function AutonomousIntercept() {
                 </div>
               </div>
 
-              {/* RadioMaster */}
+              {/* =============================================
+                  RadioMaster
+                  ============================================= */}
 
               <div className="px-3 py-3">
                 <div className="flex items-start gap-3 rounded-[5px] border border-white/[0.08] bg-[#05060d] p-3">
@@ -945,7 +1118,7 @@ export function AutonomousIntercept() {
                       "flex h-8 w-8 shrink-0 items-center justify-center rounded-[4px] border",
 
                       snapshot.gamepad.connected
-                        ? "border-[rgba(89,217,154,0.24)] text-[#59D99A]"
+                        ? "border-[rgba(89,217,154,0.24)] bg-[rgba(89,217,154,0.035)] text-[#59D99A]"
                         : "border-white/[0.08] text-white/30",
                     ].join(" ")}
                   >
@@ -978,7 +1151,7 @@ export function AutonomousIntercept() {
                     <div className="mt-1 truncate text-[9px] text-white/30">
                       {snapshot.gamepad.connected
                         ? snapshot.gamepad.id
-                        : "Connect USB controller and move a stick/button."}
+                        : "Connect USB controller and move a stick or button."}
                     </div>
 
                     {snapshot.gamepad.connected ? (
@@ -989,7 +1162,9 @@ export function AutonomousIntercept() {
                             2,
                           )
                         }
+
                         {" · "}
+
                         A1 speed{" "}
                         {
                           snapshot.gamepad.speedAxis.toFixed(
@@ -1007,12 +1182,14 @@ export function AutonomousIntercept() {
       </section>
 
       {/* ===================================================
-          SECONDARY PROOF / EVIDENCE
+          SECONDARY TECHNICAL EVIDENCE
           =================================================== */}
 
       <section className="border-t border-white/[0.08] bg-[#05060d]">
         <div className="mx-auto grid w-full max-w-[1600px] gap-4 px-4 py-5 sm:px-6 lg:px-8 xl:grid-cols-2 xl:px-10 2xl:px-14">
-          {/* ML proof */}
+          {/* ===============================================
+              Prediction Evidence
+              =============================================== */}
 
           <section className="overflow-hidden rounded-[6px] border border-white/[0.08] bg-[#07090d]">
             <div className="flex min-h-[52px] items-center justify-between border-b border-white/[0.07] px-4">
@@ -1033,83 +1210,111 @@ export function AutonomousIntercept() {
             </div>
 
             <div className="grid gap-3 p-4 md:grid-cols-3">
-              <div className="rounded-[5px] border border-white/[0.07] bg-[#05060d] p-3">
-                <div className="font-mono text-[9px] uppercase text-white/34">
-                  Baseline Error
-                </div>
+              <EvidenceMetric
+                label="Baseline Error"
+                value={
+                  formatError(
+                    snapshot.performance
+                      .baselineErrorMeters,
+                  )
+                }
+                description="Constant-velocity future-position error"
+                tone="neutral"
+              />
 
-                <div className="mt-2 font-mono text-[18px] font-semibold text-white/64">
-                  {formatError(
-                    snapshot.performance.baselineErrorMeters,
-                  )}
-                </div>
+              <EvidenceMetric
+                label="ML Error"
+                value={
+                  formatError(
+                    snapshot.performance
+                      .mlErrorMeters,
+                  )
+                }
+                description="Learned curved-trajectory prediction error"
+                tone="green"
+              />
 
-                <div className="mt-1 text-[10px] text-white/30">
-                  Constant velocity predictor
-                </div>
-              </div>
-
-              <div className="rounded-[5px] border border-[rgba(89,217,154,0.22)] bg-[rgba(89,217,154,0.035)] p-3">
-                <div className="font-mono text-[9px] uppercase text-white/34">
-                  ML Error
-                </div>
-
-                <div className="mt-2 font-mono text-[18px] font-semibold text-[#59D99A]">
-                  {formatError(
-                    snapshot.performance.mlErrorMeters,
-                  )}
-                </div>
-
-                <div className="mt-1 text-[10px] text-white/30">
-                  Online quadratic regression
-                </div>
-              </div>
-
-              <div className="rounded-[5px] border border-[rgba(246,178,60,0.2)] bg-[rgba(246,178,60,0.035)] p-3">
-                <div className="font-mono text-[9px] uppercase text-white/34">
-                  Improvement
-                </div>
-
-                <div className="mt-2 font-mono text-[18px] font-semibold text-[#F6B23C]">
-                  {improvement ===
-                  null
-                    ? "WARMING"
-                    : `${improvement.toFixed(
-                        1,
-                      )}%`}
-                </div>
-
-                <div className="mt-1 text-[10px] text-white/30">
-                  {
-                    snapshot.performance.validationSamples
-                  }{" "}
-                  validated predictions
-                </div>
-              </div>
+              <EvidenceMetric
+                label="Measured Improvement"
+                value={
+                  improvementValue
+                }
+                description={`${snapshot.performance.validationSamples} validated future predictions`}
+                tone={
+                  improvementTone
+                }
+              />
             </div>
 
-            <div className="px-4 pb-4">
-              <div className="rounded-[5px] border border-white/[0.07] bg-[#05060d] p-3 text-[10px] leading-[1.55] text-white/38">
-                The ML predictor is an online quadratic regression model trained
-                continuously from the leader's recent motion history. The baseline
-                assumes constant velocity. Prediction errors are validated after
-                the configured future horizon so the demo produces measurable
-                evidence instead of a cosmetic AI label.
+            <div className="grid gap-3 px-4 pb-4 md:grid-cols-2">
+              <div className="rounded-[5px] border border-white/[0.07] bg-[#05060d] p-3">
+                <div className="font-mono text-[9px] font-semibold uppercase tracking-[0.05em] text-white/36">
+                  Evaluation Method
+                </div>
+
+                <p className="mt-2 text-[10px] leading-[1.55] text-white/38">
+                  Both predictors generate future leader positions over the same
+                  horizon. Once that horizon expires, MissionNexus compares each
+                  prediction against the leader's actual simulated position and
+                  records the measured position error.
+                </p>
+              </div>
+
+              <div
+                className={[
+                  "rounded-[5px] border p-3",
+
+                  !evidenceReady
+                    ? "border-[rgba(246,178,60,0.18)] bg-[rgba(246,178,60,0.025)]"
+                    : mlImproving
+                      ? "border-[rgba(89,217,154,0.18)] bg-[rgba(89,217,154,0.025)]"
+                      : "border-[rgba(255,90,99,0.18)] bg-[rgba(255,90,99,0.025)]",
+                ].join(" ")}
+              >
+                <div className="font-mono text-[9px] font-semibold uppercase tracking-[0.05em] text-white/36">
+                  Current Verdict
+                </div>
+
+                <div
+                  className={[
+                    "mt-2 font-mono text-[14px] font-semibold",
+
+                    !evidenceReady
+                      ? "text-[#F6B23C]"
+                      : mlImproving
+                        ? "text-[#59D99A]"
+                        : "text-[#FF5A63]",
+                  ].join(" ")}
+                >
+                  {!evidenceReady
+                    ? "MODEL WARMING"
+                    : mlImproving
+                      ? "ML PREDICTOR LEADING"
+                      : "BASELINE CURRENTLY LEADING"}
+                </div>
+
+                <p className="mt-2 text-[10px] leading-[1.5] text-white/36">
+                  MissionNexus reports the measured result directly. A learned
+                  predictor is not marked superior unless its validated position
+                  error is actually lower than the baseline.
+                </p>
               </div>
             </div>
           </section>
 
-          {/* Simulation integration */}
+          {/* ===============================================
+              Integration Status
+              =============================================== */}
 
           <section className="overflow-hidden rounded-[6px] border border-white/[0.08] bg-[#07090d]">
             <div className="flex min-h-[52px] items-center justify-between border-b border-white/[0.07] px-4">
               <div>
                 <div className="font-mono text-[9px] font-semibold uppercase tracking-[0.08em] text-[#F6B23C]">
-                  Simulation Integration
+                  Integration Status
                 </div>
 
                 <div className="mt-0.5 text-[14px] font-medium text-white/86">
-                  ArduPlane Phase-1 Interface
+                  Autonomous Intercept Architecture
                 </div>
               </div>
 
@@ -1122,7 +1327,7 @@ export function AutonomousIntercept() {
             <div className="p-4">
               <StateRow
                 label="Leader"
-                value="SYSID 1 · manual / demo"
+                value="SYSID 1 · manual / simulation"
                 valueClass="text-[#F6B23C]"
               />
 
@@ -1130,6 +1335,18 @@ export function AutonomousIntercept() {
                 label="Follower"
                 value="SYSID 2 · AI guided"
                 valueClass="text-[#5AA9FF]"
+              />
+
+              <StateRow
+                label="Basemap"
+                value="Real satellite imagery"
+                valueClass="text-[#59D99A]"
+              />
+
+              <StateRow
+                label="Phase-1 Coordinates"
+                value="Local ENU → geographic projection"
+                valueClass="text-white/62"
               />
 
               <StateRow
@@ -1144,9 +1361,25 @@ export function AutonomousIntercept() {
               />
 
               <StateRow
+                label="Prediction Horizon"
+                value={`${snapshot.ai.predictionHorizonSeconds}s`}
+                valueClass="text-white/62"
+              />
+
+              <StateRow
                 label="Safety Model"
-                value={`Non-contact · ${snapshot.minimumSeparationMeters} m floor`}
-                valueClass="text-[#59D99A]"
+                value={`Non-contact · ${snapshot.minimumSeparationMeters} m protected radius`}
+                valueClass={
+                  snapshot.separationSafe
+                    ? "text-[#59D99A]"
+                    : "text-[#FF5A63]"
+                }
+              />
+
+              <StateRow
+                label="Shadow Distance"
+                value={`${snapshot.desiredSeparationMeters} m`}
+                valueClass="text-[#F6B23C]"
               />
 
               <StateRow
@@ -1154,7 +1387,7 @@ export function AutonomousIntercept() {
                 value={
                   snapshot.gamepad.connected
                     ? "USB CONNECTED"
-                    : "Browser Gamepad API"
+                    : "Browser Gamepad API ready"
                 }
                 valueClass={
                   snapshot.gamepad.connected
@@ -1164,83 +1397,23 @@ export function AutonomousIntercept() {
               />
 
               <StateRow
-                label="Phase 2"
-                value="ArduPilot SITL + MAVLink"
+                label="Next Integration"
+                value="ArduPlane SITL · MAVLink GPS"
                 valueClass="text-[#F6B23C]"
               />
             </div>
-          </section>
 
-          {/* Demo video */}
-
-          <section className="overflow-hidden rounded-[6px] border border-white/[0.08] bg-[#07090d] xl:col-span-2">
-            <div className="flex min-h-[52px] items-center justify-between border-b border-white/[0.07] px-4">
-              <div>
-                <div className="font-mono text-[9px] font-semibold uppercase tracking-[0.08em] text-[#F6B23C]">
-                  Mission Evidence
+            <div className="px-4 pb-4">
+              <div className="rounded-[5px] border border-[rgba(90,169,255,0.16)] bg-[rgba(90,169,255,0.025)] p-3">
+                <div className="font-mono text-[9px] font-semibold uppercase tracking-[0.05em] text-[#5AA9FF]">
+                  Phase-2 Transition
                 </div>
 
-                <div className="mt-0.5 text-[14px] font-medium text-white/86">
-                  ArduPlane Leader–Follower Demonstration
-                </div>
-              </div>
-
-              <Activity
-                size={16}
-                className="text-[#5AA9FF]"
-              />
-            </div>
-
-            <div className="grid gap-4 p-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.6fr)]">
-              <div className="overflow-hidden rounded-[5px] border border-white/[0.08] bg-black">
-                <video
-                  src="/videos/autonomous-intercept-demo.mp4"
-                  controls
-                  muted
-                  loop
-                  playsInline
-                  className="aspect-video w-full bg-black object-contain"
-                />
-              </div>
-
-              <div className="rounded-[5px] border border-white/[0.07] bg-[#05060d] p-4">
-                <div className="flex items-center gap-2">
-                  <Activity
-                    size={14}
-                    className="text-[#F6B23C]"
-                  />
-
-                  <span className="text-[12px] font-medium text-white/76">
-                    What this proof demonstrates
-                  </span>
-                </div>
-
-                <p className="mt-3 text-[11px] leading-[1.65] text-white/40">
-                  Plane 1 acts as the leader while Plane 2 follows autonomously.
-                  Straight-line matching is comparatively simple; turning creates
-                  the more difficult guidance problem because naive look-ahead
-                  guidance can force the follower onto a longer outside arc.
+                <p className="mt-2 text-[10px] leading-[1.55] text-white/38">
+                  The map is already geographical. Phase 2 removes the temporary
+                  ENU-to-map projection and feeds the same visualization from
+                  leader and follower MAVLink GPS telemetry.
                 </p>
-
-                <p className="mt-3 text-[11px] leading-[1.65] text-white/40">
-                  MissionNexus Phase 1 now exposes that problem directly and
-                  compares a constant-velocity predictor against a learned
-                  trajectory regression model while maintaining a configurable
-                  non-contact shadow distance.
-                </p>
-
-                <div className="mt-4 flex items-start gap-2 rounded-[5px] border border-[rgba(89,217,154,0.2)] bg-[rgba(89,217,154,0.035)] p-3">
-                  <ShieldCheck
-                    size={14}
-                    className="mt-0.5 shrink-0 text-[#59D99A]"
-                  />
-
-                  <div className="text-[10px] leading-[1.5] text-white/42">
-                    Autonomous follower guidance is intentionally constrained to
-                    rendezvous and shadowing. The guidance target remains offset
-                    behind the leader rather than commanding contact.
-                  </div>
-                </div>
               </div>
             </div>
           </section>
