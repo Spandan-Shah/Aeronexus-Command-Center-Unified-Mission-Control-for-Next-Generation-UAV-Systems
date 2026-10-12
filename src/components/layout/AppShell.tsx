@@ -302,7 +302,7 @@ function DesktopNavGroup({
           /*
            * Compact right-side navigation.
            */
-          "text-[11px] font-semibold uppercase tracking-[0.065em]",
+          "text-[10px] font-semibold uppercase tracking-[0.06em]",
 
           "transition-colors duration-150",
 
