@@ -23,6 +23,11 @@ type AiAnalyticsPanelProps = {
   embedded?: boolean;
 };
 
+type DetectionTone =
+  | "info"
+  | "critical"
+  | "caution";
+
 function getRiskClass(
   risk?: string,
 ) {
@@ -56,46 +61,59 @@ function DetectionStatus({
   label: string;
   active: boolean;
   icon: LucideIcon;
-
-  tone:
-    | "info"
-    | "critical"
-    | "caution";
+  tone: DetectionTone;
 }) {
-  const activeClass =
+  const activeClasses =
     tone === "critical"
-      ? "border-[rgba(255,90,99,0.3)] bg-[rgba(255,90,99,0.055)] text-[#FF5A63]"
+      ? "border-[rgba(255,90,99,0.30)] bg-[rgba(255,90,99,0.055)]"
       : tone === "caution"
-        ? "border-[rgba(246,178,60,0.28)] bg-[rgba(246,178,60,0.055)] text-[#F6B23C]"
-        : "border-[rgba(90,169,255,0.28)] bg-[rgba(90,169,255,0.055)] text-[#5AA9FF]";
+        ? "border-[rgba(246,178,60,0.28)] bg-[rgba(246,178,60,0.055)]"
+        : "border-[rgba(90,169,255,0.28)] bg-[rgba(90,169,255,0.055)]";
+
+  const iconClasses =
+    tone === "critical"
+      ? "text-[#FF5A63]"
+      : tone === "caution"
+        ? "text-[#F6B23C]"
+        : "text-[#5AA9FF]";
 
   return (
     <div
       className={[
-        "rounded-[4px] border p-2",
+        "flex min-h-[66px] flex-col justify-between",
+        "rounded-[5px] border",
+        "px-2.5 py-2.5",
         active
-          ? activeClass
-          : "border-white/[0.07] bg-[#05060d] text-white/28",
+          ? activeClasses
+          : "border-white/[0.07] bg-[#05060d]",
       ].join(" ")}
     >
       <div className="flex items-center justify-between gap-2">
-        <Icon size={13} />
+        <Icon
+          size={15}
+          strokeWidth={1.65}
+          className={
+            active
+              ? iconClasses
+              : "text-white/32"
+          }
+        />
 
         <span
           className={[
-            "font-mono text-[7px] font-semibold uppercase tracking-[0.05em]",
+            "font-mono text-[9px] font-semibold uppercase tracking-[0.045em]",
             active
-              ? ""
+              ? iconClasses
               : "text-[#59D99A]",
           ].join(" ")}
         >
           {active
-            ? "DETECTED"
-            : "CLEAR"}
+            ? "Detected"
+            : "Clear"}
         </span>
       </div>
 
-      <div className="mt-2 truncate text-[10px] font-medium text-white/72">
+      <div className="mt-2 text-[11px] font-medium text-white/78">
         {label}
       </div>
     </div>
@@ -148,8 +166,8 @@ export function AiAnalyticsPanel({
     smokeDetected;
 
   const content = (
-    <div className="grid gap-2">
-      <div className="grid grid-cols-3 gap-1.5">
+    <div className="grid gap-3">
+      <div className="grid grid-cols-3 gap-2">
         <DetectionStatus
           label="Person"
           active={
@@ -184,51 +202,63 @@ export function AiAnalyticsPanel({
         />
       </div>
 
-      <div className="flex items-center justify-between gap-3 rounded-[4px] border border-white/[0.07] bg-[#05060d] px-3 py-2">
+      <div className="flex min-h-[58px] items-center justify-between gap-4 rounded-[5px] border border-white/[0.08] bg-[#05060d] px-3 py-2.5">
         <div className="min-w-0 flex-1">
-          <div className="flex items-center justify-between gap-2">
-            <span className="font-mono text-[8px] font-semibold uppercase tracking-[0.055em] text-white/32">
+          <div className="flex items-center justify-between gap-3">
+            <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.045em] text-white/42">
               AI Confidence
             </span>
 
-            <span className="font-mono text-[11px] font-semibold text-[#5AA9FF]">
+            <span className="font-mono text-[14px] font-semibold text-[#5AA9FF]">
               {confidence}%
             </span>
           </div>
 
-          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/[0.05]">
+          <div className="mt-2 h-[5px] overflow-hidden rounded-full bg-white/[0.06]">
             <div
               className="h-full rounded-full bg-[#5AA9FF]"
               style={{
                 width:
-                  `${confidence}%`,
+                  `${Math.max(
+                    0,
+                    Math.min(
+                      100,
+                      confidence,
+                    ),
+                  )}%`,
               }}
             />
           </div>
         </div>
 
-        {threatDetected ? (
-          <ShieldAlert
-            size={18}
-            className="shrink-0 text-[#FF5A63]"
-          />
-        ) : (
-          <ShieldCheck
-            size={18}
-            className="shrink-0 text-[#59D99A]"
-          />
-        )}
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[5px] border border-white/[0.08] bg-white/[0.015]">
+          {threatDetected ? (
+            <ShieldAlert
+              size={18}
+              strokeWidth={1.65}
+              className="text-[#FF5A63]"
+            />
+          ) : (
+            <ShieldCheck
+              size={18}
+              strokeWidth={1.65}
+              className="text-[#59D99A]"
+            />
+          )}
+        </div>
       </div>
 
       {error ? (
-        <div className="flex items-start gap-2 rounded-[4px] border border-[rgba(255,90,99,0.28)] bg-[rgba(255,90,99,0.05)] px-2.5 py-2 text-[9px] leading-[1.45] text-[#FF5A63]">
+        <div className="flex items-start gap-2 rounded-[5px] border border-[rgba(255,90,99,0.28)] bg-[rgba(255,90,99,0.05)] px-3 py-2.5 text-[10px] leading-[1.5] text-[#FF5A63]">
           <AlertTriangle
-            size={11}
+            size={13}
             className="mt-0.5 shrink-0"
           />
 
-          Backend offline:{" "}
-          {error}
+          <span>
+            Backend offline:{" "}
+            {error}
+          </span>
         </div>
       ) : null}
     </div>
@@ -246,7 +276,7 @@ export function AiAnalyticsPanel({
       right={
         <span
           className={[
-            "font-mono text-[9px] font-semibold uppercase",
+            "font-mono text-[10px] font-semibold uppercase tracking-[0.05em]",
             getRiskClass(
               risk,
             ),
