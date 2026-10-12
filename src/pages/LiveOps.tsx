@@ -1,1085 +1,729 @@
+import {
+  useRef,
+  useState,
+  type ReactNode,
+  type RefObject,
+} from "react";
+
+import {
+  Focus,
+  Globe2,
+  Home,
+  LocateFixed,
+  MapPinned,
+  Minus,
+  Navigation,
+  Plus,
+  Satellite,
+} from "lucide-react";
+
 import type {
   LucideIcon,
 } from "lucide-react";
 
 import {
-  Battery,
-  Gauge,
-  Navigation,
-  Radio,
-  Route,
-  Satellite,
-  ShieldCheck,
-  Thermometer,
-} from "lucide-react";
-
-import {
-  AlertsPanel,
-} from "../components/live/AlertsPanel";
-
-import {
-  CommandDeck,
-} from "../components/live/CommandDeck";
-
-import {
-  DataSourcePanel,
-} from "../components/live/DataSourcePanel";
-
-import {
   AeroWorldMap,
 } from "../components/map/AeroWorldMap";
 
-import {
-  telemetry,
-} from "../data/telemetry";
-
-import {
-  MissionBadge,
-  MissionPanel,
-  MissionSectionHeader,
-  MissionStatus,
-} from "../components/ui/mission";
-
 import type {
-  MissionTone,
-} from "../components/ui/mission";
+  AeroWorldMapHandle,
+  AeroWorldMapState,
+  MapLayerId,
+} from "../components/map/AeroWorldMap";
 
 /* =========================================================
    MissionNexus V2
-   Live Operations
+   Home / Tactical Mission Map
 
-   Final first-page layout foundation.
+   FIRST VIEWPORT
 
-   Visual direction:
-   - Aeronexus / GeoFusion density
-   - compact mission identity
-   - dominant mission map
-   - restrained operational rail
-   - compact command deck
-   - no oversized dashboard cards
-   - five system states remain in one line on desktop
+   ┌───────────────────────────────────────────────────────┐
+   │ Global Aeronexus Header                       70px   │
+   ├───────────────────────────────────────────────────────┤
+   │ Tactical Mission Map                                │
+   ├─────────────────────────────────────┬─────────────────┤
+   │                                     │ MAP CONTROLS    │
+   │                                     │                 │
+   │                                     │ UAV     AOI     │
+   │              MAP                    │ Mission Home    │
+   │                                     │                 │
+   │                                     │ Zoom / Base Map │
+   │                                     │                 │
+   │                                     │ Layers 2-col   │
+   │                                     │                 │
+   └─────────────────────────────────────┴─────────────────┘
+
+   Nothing inside this workspace scrolls.
+
+   The MissionNexus footer exists immediately below this
+   viewport and appears only when the document is scrolled.
    ========================================================= */
+
+const initialMapState: AeroWorldMapState = {
+  baseMap: "osm",
+
+  zoom: 12,
+
+  gpsAvailable: false,
+
+  layers: {
+    "live-drone": true,
+    drones: true,
+    route: true,
+    geofence: true,
+    restricted: true,
+    contacts: true,
+    heat: true,
+    home: true,
+  },
+};
 
 /* =========================================================
-   Utilities
+   Compact Action
    ========================================================= */
 
-function clamp(
-  value: number,
-  minimum: number,
-  maximum: number,
-) {
-  return Math.max(
-    minimum,
-    Math.min(
-      maximum,
-      value,
-    ),
-  );
-}
-
-function getRiskTone(
-  risk: string,
-): MissionTone {
-  const normalized =
-    risk.toLowerCase();
-
-  if (
-    normalized === "critical" ||
-    normalized === "high"
-  ) {
-    return "critical";
-  }
-
-  if (
-    normalized === "medium"
-  ) {
-    return "caution";
-  }
-
-  if (
-    normalized === "low"
-  ) {
-    return "nominal";
-  }
-
-  return "muted";
-}
-
-function getBatteryTone(
-  battery: number,
-): MissionTone {
-  if (
-    battery <= 20
-  ) {
-    return "critical";
-  }
-
-  if (
-    battery <= 40
-  ) {
-    return "caution";
-  }
-
-  return "nominal";
-}
-
-function getLinkTone(
-  link: number,
-): MissionTone {
-  if (
-    link < 55
-  ) {
-    return "critical";
-  }
-
-  if (
-    link < 75
-  ) {
-    return "caution";
-  }
-
-  return "nominal";
-}
-
-function getThermalTone(
-  temperature: number,
-): MissionTone {
-  if (
-    temperature >= 70
-  ) {
-    return "critical";
-  }
-
-  if (
-    temperature >= 55
-  ) {
-    return "caution";
-  }
-
-  return "nominal";
-}
-
-function toneTextClass(
-  tone: MissionTone,
-) {
-  switch (tone) {
-    case "primary":
-      return "text-(--primary)";
-
-    case "info":
-      return "text-(--info)";
-
-    case "nominal":
-      return "text-(--nominal)";
-
-    case "caution":
-      return "text-(--caution)";
-
-    case "critical":
-      return "text-(--critical)";
-
-    case "muted":
-      return "text-(--muted)";
-
-    default:
-      return "text-(--foreground)";
-  }
-}
-
-/* =========================================================
-   Mission Identity
-   ========================================================= */
-
-function MissionIdentityBar() {
-  const riskTone =
-    getRiskTone(
-      telemetry.risk,
-    );
-
-  return (
-    <section className="flex flex-col gap-3 border-b border-(--border-soft) pb-3 lg:flex-row lg:items-center lg:justify-between">
-      <div className="min-w-0">
-        <div className="flex flex-wrap items-center gap-2.5">
-          <span className="mn-eyebrow">
-            Operations · Active Mission
-          </span>
-
-          <span
-            aria-hidden="true"
-            className="h-3 w-px bg-white/10"
-          />
-
-          <MissionStatus
-            label="Mission Live"
-            tone="nominal"
-            pulse
-            compact
-          />
-        </div>
-
-        <div className="mt-1.5 flex flex-wrap items-baseline gap-x-4 gap-y-1">
-          <h1
-            className="text-[21px] font-normal tracking-[-0.035em] text-(--foreground)"
-            style={{
-              fontFamily:
-                '"Manrope", "Inter", ui-sans-serif, system-ui, sans-serif',
-            }}
-          >
-            Live Operations
-          </h1>
-
-          <span className="font-mono text-[8px] font-medium uppercase tracking-[0.09em] text-(--muted)">
-            {telemetry.mission}
-            {" · "}
-            {telemetry.droneId}
-            {" · "}
-            {telemetry.flightMode}
-          </span>
-        </div>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-2">
-        <MissionBadge
-          tone="info"
-          variant="outline"
-          size="sm"
-        >
-          GPS {telemetry.gpsSatellites}
-        </MissionBadge>
-
-        <MissionBadge
-          tone={
-            getLinkTone(
-              telemetry.linkQuality,
-            )
-          }
-          variant="outline"
-          size="sm"
-          dot
-        >
-          Link {telemetry.linkQuality}%
-        </MissionBadge>
-
-        <MissionBadge
-          tone={riskTone}
-          variant="soft"
-          size="sm"
-        >
-          Risk{" "}
-          {telemetry.risk}
-        </MissionBadge>
-      </div>
-    </section>
-  );
-}
-
-/* =========================================================
-   Telemetry Ribbon
-   ========================================================= */
-
-type TelemetryItemProps = {
+function CompactAction({
+  icon: Icon,
+  label,
+  onClick,
+  primary = false,
+}: {
   icon: LucideIcon;
 
   label: string;
 
-  value:
-    string | number;
+  onClick: () => void;
 
-  unit?: string;
-
-  helper?: string;
-
-  tone?: MissionTone;
-};
-
-function TelemetryItem({
-  icon: Icon,
-  label,
-  value,
-  unit,
-  helper,
-  tone = "default",
-}: TelemetryItemProps) {
+  primary?: boolean;
+}) {
   return (
-    <div
+    <button
+      type="button"
+      onClick={onClick}
       className={[
-        "flex min-w-0 items-center gap-3",
+        "group flex h-[42px] min-w-0 items-center gap-2.5",
 
-        "border-b border-(--border-soft)",
+        "rounded-[5px] border px-2.5",
 
-        "px-3 py-2.5",
+        "text-left",
 
-        "sm:border-b-0",
+        "transition-[background-color,border-color,color,transform] duration-150",
 
-        "xl:border-r xl:last:border-r-0",
+        "active:translate-y-px",
+
+        primary
+          ? "border-[rgba(246,178,60,0.32)] bg-[rgba(246,178,60,0.07)] text-(--primary)"
+          : "border-white/[0.08] bg-white/[0.018] text-white/66 hover:border-white/15 hover:bg-white/[0.035] hover:text-white",
       ].join(" ")}
     >
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[5px] border border-(--border-soft) bg-black">
+      <span
+        className={[
+          "flex h-7 w-7 shrink-0 items-center justify-center",
+
+          "rounded-[4px] border",
+
+          primary
+            ? "border-[rgba(246,178,60,0.25)] bg-[rgba(246,178,60,0.06)]"
+            : "border-white/[0.07] bg-black/30",
+        ].join(" ")}
+      >
         <Icon
           size={13}
           strokeWidth={1.6}
-          className={
-            toneTextClass(
-              tone,
-            )
-          }
         />
-      </div>
+      </span>
 
-      <div className="min-w-0">
-        <div className="font-mono text-[7px] font-semibold uppercase tracking-[0.12em] text-(--muted-soft)">
-          {label}
-        </div>
-
-        <div className="mt-0.5 flex items-baseline gap-1.5">
-          <span
-            className={[
-              "truncate font-mono text-[15px] font-semibold tabular-nums",
-
-              toneTextClass(
-                tone,
-              ),
-            ].join(" ")}
-          >
-            {value}
-          </span>
-
-          {unit ? (
-            <span className="shrink-0 font-mono text-[7px] uppercase tracking-[0.07em] text-(--muted-soft)">
-              {unit}
-            </span>
-          ) : null}
-        </div>
-
-        {helper ? (
-          <div className="mt-0.5 truncate text-[8px] text-(--muted)">
-            {helper}
-          </div>
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
-function TelemetryRibbon() {
-  return (
-    <MissionPanel className="overflow-hidden">
-      <div className="grid sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
-        <TelemetryItem
-          icon={Gauge}
-          label="Altitude"
-          value={
-            telemetry.altitude
-          }
-          unit="m"
-          tone="info"
-          helper="Aircraft altitude"
-        />
-
-        <TelemetryItem
-          icon={Navigation}
-          label="Ground Speed"
-          value={
-            telemetry.speed
-          }
-          unit="m/s"
-          helper="Current velocity"
-        />
-
-        <TelemetryItem
-          icon={Battery}
-          label="Battery"
-          value={
-            telemetry.battery
-          }
-          unit="%"
-          tone={
-            getBatteryTone(
-              telemetry.battery,
-            )
-          }
-          helper="Main power"
-        />
-
-        <TelemetryItem
-          icon={Radio}
-          label="Secure Link"
-          value={
-            telemetry.linkQuality
-          }
-          unit="%"
-          tone={
-            getLinkTone(
-              telemetry.linkQuality,
-            )
-          }
-          helper={`${telemetry.rssi} dBm`}
-        />
-
-        <TelemetryItem
-          icon={Satellite}
-          label="Navigation"
-          value={
-            telemetry.gpsSatellites
-          }
-          unit="SAT"
-          tone="nominal"
-          helper="GPS constellation"
-        />
-
-        <TelemetryItem
-          icon={ShieldCheck}
-          label="Mission Risk"
-          value={
-            telemetry.risk.toUpperCase()
-          }
-          tone={
-            getRiskTone(
-              telemetry.risk,
-            )
-          }
-          helper="Operational state"
-        />
-      </div>
-    </MissionPanel>
+      <span className="min-w-0 truncate text-[10px] font-medium">
+        {label}
+      </span>
+    </button>
   );
 }
 
 /* =========================================================
-   Tactical Map
+   Layer Toggle
    ========================================================= */
 
-function TacticalMapWorkspace() {
-  return (
-    <MissionPanel className="flex min-h-[520px] flex-1 flex-col overflow-hidden">
-      {/* Compact map header */}
-
-      <div className="flex h-[38px] shrink-0 items-center justify-between border-b border-(--border-soft) px-3.5">
-        <div className="flex min-w-0 items-center gap-3">
-          <span className="font-mono text-[8px] font-semibold uppercase tracking-[0.12em] text-(--primary)">
-            Tactical Operations
-          </span>
-
-          <span
-            aria-hidden="true"
-            className="h-3 w-px shrink-0 bg-white/10"
-          />
-
-          <span className="truncate font-mono text-[7px] uppercase tracking-[0.08em] text-(--muted-soft)">
-            Live mission map
-          </span>
-        </div>
-
-        <MissionStatus
-          label="Tracking"
-          tone="nominal"
-          pulse
-          compact
-        />
-      </div>
-
-      {/* Actual map */}
-
-      <div className="relative min-h-[460px] flex-1 overflow-hidden bg-[#020304]">
-        <AeroWorldMap />
-      </div>
-
-      {/* Compact map status rail */}
-
-      <div className="flex min-h-[34px] shrink-0 flex-wrap items-center justify-between gap-3 border-t border-(--border-soft) px-3.5 py-2">
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-          <MapState
-            label="Aircraft"
-            value={
-              telemetry.droneId
-            }
-          />
-
-          <MapState
-            label="Mode"
-            value={
-              telemetry.flightMode
-            }
-            tone="primary"
-          />
-
-          <MapState
-            label="Heading"
-            value={`${telemetry.heading}°`}
-          />
-
-          <MapState
-            label="Signal"
-            value={`${telemetry.rssi} dBm`}
-          />
-        </div>
-
-        <div className="flex items-center gap-2 font-mono text-[7px] uppercase tracking-[0.08em] text-(--muted-soft)">
-          <Satellite
-            size={10}
-            strokeWidth={1.6}
-            className="text-(--info)"
-          />
-
-          {
-            telemetry.gpsSatellites
-          }{" "}
-          satellites
-        </div>
-      </div>
-    </MissionPanel>
-  );
-}
-
-function MapState({
+function CompactLayer({
   label,
-  value,
-  tone = "default",
+  enabled,
+  onClick,
 }: {
   label: string;
 
-  value:
-    string | number;
+  enabled: boolean;
 
-  tone?:
-    "default" |
-    "primary";
+  onClick: () => void;
 }) {
   return (
-    <div className="flex items-center gap-2">
-      <span className="font-mono text-[7px] uppercase tracking-[0.1em] text-(--muted-soft)">
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={enabled}
+      className={[
+        "flex h-[32px] min-w-0 items-center justify-between",
+
+        "rounded-[4px] border px-2.5",
+
+        "font-mono text-[8px] font-semibold uppercase tracking-[0.055em]",
+
+        "transition-[background-color,border-color,color] duration-150",
+
+        enabled
+          ? "border-[rgba(246,178,60,0.22)] bg-[rgba(246,178,60,0.045)] text-(--primary)"
+          : "border-white/[0.065] bg-white/[0.01] text-white/34 hover:border-white/12 hover:text-white/64",
+      ].join(" ")}
+    >
+      <span className="truncate">
         {label}
       </span>
 
-      <span
-        className={[
-          "font-mono text-[8px] font-semibold uppercase",
-
-          tone === "primary"
-            ? "text-(--primary)"
-            : "text-(--foreground)",
-        ].join(" ")}
-      >
-        {value}
+      <span className="ml-2 shrink-0 text-[7px]">
+        {enabled
+          ? "ON"
+          : "OFF"}
       </span>
-    </div>
+    </button>
   );
 }
 
 /* =========================================================
-   Aircraft State
+   Control Section
    ========================================================= */
 
-function AircraftField({
-  label,
-  value,
-  tone = "default",
+function ControlSection({
+  title,
+  children,
 }: {
-  label: string;
+  title: string;
 
-  value:
-    string | number;
-
-  tone?: MissionTone;
+  children: ReactNode;
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 border-b border-(--border-soft) py-2 last:border-b-0">
-      <span className="font-mono text-[7px] font-semibold uppercase tracking-[0.11em] text-(--muted-soft)">
-        {label}
-      </span>
-
-      <span
-        className={[
-          "max-w-[165px] truncate text-right font-mono text-[9px] font-semibold tabular-nums",
-
-          toneTextClass(
-            tone,
-          ),
-        ].join(" ")}
-      >
-        {value}
-      </span>
-    </div>
-  );
-}
-
-function AircraftStatePanel() {
-  return (
-    <MissionPanel
-      padding="none"
-      accent
-    >
-      <MissionSectionHeader
-        eyebrow="Aircraft"
-        title={
-          telemetry.droneId
-        }
-        compact
-        action={
-          <MissionStatus
-            label="Connected"
-            tone="nominal"
-            pulse
-            compact
-          />
-        }
-      />
-
-      <div className="px-4 py-1">
-        <AircraftField
-          label="Platform"
-          value={
-            telemetry.model
-          }
-        />
-
-        <AircraftField
-          label="Flight Mode"
-          value={
-            telemetry.flightMode
-          }
-          tone="primary"
-        />
-
-        <AircraftField
-          label="GPS Lock"
-          value={`${telemetry.gpsSatellites} SAT`}
-          tone="info"
-        />
-
-        <AircraftField
-          label="Signal"
-          value={`${telemetry.rssi} dBm`}
-          tone={
-            getLinkTone(
-              telemetry.linkQuality,
-            )
-          }
-        />
-
-        <AircraftField
-          label="ESC Thermal"
-          value={`${telemetry.escTemp}°C`}
-          tone={
-            getThermalTone(
-              telemetry.escTemp,
-            )
-          }
-        />
-
-        <AircraftField
-          label="Risk"
-          value={
-            telemetry.risk.toUpperCase()
-          }
-          tone={
-            getRiskTone(
-              telemetry.risk,
-            )
-          }
-        />
-      </div>
-    </MissionPanel>
-  );
-}
-
-/* =========================================================
-   Mission Progress
-   ========================================================= */
-
-function MissionProgress() {
-  const progress =
-    telemetry.totalWaypoints >
-    0
-      ? clamp(
-          Math.round(
-            (
-              telemetry.currentWaypoint /
-              telemetry.totalWaypoints
-            ) *
-              100,
-          ),
-          0,
-          100,
-        )
-      : 0;
-
-  const remaining =
-    Math.max(
-      0,
-      telemetry.totalWaypoints -
-        telemetry.currentWaypoint,
-    );
-
-  return (
-    <MissionPanel
-      tone="primary"
-      padding="md"
-      accent
-    >
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <div className="mn-eyebrow">
-            Route Progress
-          </div>
-
-          <div className="mt-1 text-[13px] font-medium text-(--foreground)">
-            Mission execution
-          </div>
-
-          <div className="mt-1 font-mono text-[7px] uppercase tracking-[0.08em] text-(--muted)">
-            WP{" "}
-            {
-              telemetry.currentWaypoint
-            }
-            {" / "}
-            {
-              telemetry.totalWaypoints
-            }
-          </div>
-        </div>
-
-        <div className="text-right">
-          <div className="font-mono text-[21px] font-semibold tracking-[-0.04em] text-(--primary)">
-            {progress}%
-          </div>
-
-          <div className="font-mono text-[7px] uppercase tracking-[0.1em] text-(--muted-soft)">
-            Complete
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-3.5 h-[3px] overflow-hidden rounded-full bg-white/[0.07]">
-        <div
-          className="h-full rounded-full bg-(--primary) transition-[width] duration-300"
-          style={{
-            width:
-              `${progress}%`,
-          }}
-        />
-      </div>
-
-      <div className="mt-2.5 flex items-center justify-between font-mono text-[7px] uppercase tracking-[0.08em] text-(--muted-soft)">
-        <span>
-          WP{" "}
-          {
-            telemetry.currentWaypoint
-          }
+    <section className="min-w-0">
+      <div className="mb-2 flex items-center gap-2">
+        <span className="shrink-0 font-mono text-[8px] font-semibold uppercase tracking-[0.14em] text-white/38">
+          {title}
         </span>
 
-        <span>
-          {remaining} remaining
-        </span>
-      </div>
-    </MissionPanel>
-  );
-}
-
-/* =========================================================
-   Alerts
-   ========================================================= */
-
-function AlertsWorkspace() {
-  return (
-    <MissionPanel padding="none">
-      <MissionSectionHeader
-        eyebrow="Event Stream"
-        title="Active Alerts"
-        compact
-        action={
-          <MissionBadge
-            tone="caution"
-            variant="outline"
-            size="sm"
-          >
-            Live
-          </MissionBadge>
-        }
-      />
-
-      <div className="p-2.5">
-        <AlertsPanel />
-      </div>
-    </MissionPanel>
-  );
-}
-
-/* =========================================================
-   Data Sources
-   ========================================================= */
-
-function DataSourcesWorkspace() {
-  return (
-    <MissionPanel padding="none">
-      <MissionSectionHeader
-        eyebrow="Data Link"
-        title="Mission Sources"
-        compact
-      />
-
-      <div className="p-2.5">
-        <DataSourcePanel />
-      </div>
-    </MissionPanel>
-  );
-}
-
-/* =========================================================
-   Command Deck
-
-   Intentionally shallow.
-
-   CommandDeck keeps its existing operational functionality;
-   this page only controls the V2 placement and spacing.
-   ========================================================= */
-
-function CommandWorkspace() {
-  return (
-    <MissionPanel
-      tone="primary"
-      padding="none"
-      accent
-      className="shrink-0"
-    >
-      <div className="flex min-h-[42px] items-center justify-between gap-4 border-b border-(--border-soft) px-3.5">
-        <div className="flex min-w-0 items-center gap-3">
-          <div>
-            <div className="font-mono text-[7px] font-semibold uppercase tracking-[0.12em] text-(--primary)">
-              Flight Commands
-            </div>
-
-            <div className="mt-0.5 text-[12px] font-medium text-(--foreground)">
-              Action Console
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <MissionStatus
-            label="Authority Active"
-            tone="nominal"
-            compact
-          />
-
-          <MissionBadge
-            tone="primary"
-            variant="outline"
-            size="sm"
-          >
-            {
-              telemetry.flightMode
-            }
-          </MissionBadge>
-        </div>
+        <span className="h-px min-w-0 flex-1 bg-white/[0.06]" />
       </div>
 
-      <div className="p-2.5">
-        <CommandDeck />
-      </div>
-    </MissionPanel>
-  );
-}
-
-/* =========================================================
-   Bottom Operational State
-   ========================================================= */
-
-function OperationalState({
-  icon: Icon,
-  label,
-  value,
-  helper,
-  tone,
-}: {
-  icon: LucideIcon;
-
-  label: string;
-
-  value: string;
-
-  helper: string;
-
-  tone: MissionTone;
-}) {
-  return (
-    <MissionPanel
-      tone={tone}
-      padding="sm"
-      accent
-      className="min-w-0"
-    >
-      <div className="flex items-center gap-3">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[5px] border border-(--border-soft) bg-black">
-          <Icon
-            size={13}
-            strokeWidth={1.6}
-            className={
-              toneTextClass(
-                tone,
-              )
-            }
-          />
-        </div>
-
-        <div className="min-w-0">
-          <div className="font-mono text-[7px] font-semibold uppercase tracking-[0.11em] text-(--muted-soft)">
-            {label}
-          </div>
-
-          <div className="mt-0.5 truncate font-mono text-[10px] font-semibold text-(--foreground)">
-            {value}
-          </div>
-
-          <div className="mt-0.5 truncate text-[8px] text-(--muted)">
-            {helper}
-          </div>
-        </div>
-      </div>
-    </MissionPanel>
-  );
-}
-
-function OperationalStateStrip() {
-  return (
-    <section className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-      <OperationalState
-        icon={Route}
-        label="Mission"
-        value={
-          telemetry.mission
-        }
-        helper="Active route profile"
-        tone="primary"
-      />
-
-      <OperationalState
-        icon={Satellite}
-        label="Navigation"
-        value={`${telemetry.gpsSatellites} SAT`}
-        helper="GPS constellation lock"
-        tone="info"
-      />
-
-      <OperationalState
-        icon={Radio}
-        label="Telemetry"
-        value={`${telemetry.rssi} dBm`}
-        helper="Secure communication signal"
-        tone={
-          getLinkTone(
-            telemetry.linkQuality,
-          )
-        }
-      />
-
-      <OperationalState
-        icon={Thermometer}
-        label="Aircraft Thermal"
-        value={`${telemetry.escTemp}°C`}
-        helper={
-          telemetry.escTemp >= 55
-            ? "Thermal state under watch"
-            : "Thermal state nominal"
-        }
-        tone={
-          getThermalTone(
-            telemetry.escTemp,
-          )
-        }
-      />
-
-      <OperationalState
-        icon={ShieldCheck}
-        label="Operational Risk"
-        value={
-          telemetry.risk.toUpperCase()
-        }
-        helper="Current mission assessment"
-        tone={
-          getRiskTone(
-            telemetry.risk,
-          )
-        }
-      />
+      {children}
     </section>
   );
 }
 
 /* =========================================================
-   Main Page
+   Map Control Rail
+
+   Important:
+   - Entire rail remains visible in the first viewport.
+   - No overflow-y-auto.
+   - Navigation is 2 columns.
+   - Layer controls are 2 columns.
+   ========================================================= */
+
+function MapControlRail({
+  mapRef,
+  mapState,
+  toggleLayer,
+}: {
+  mapRef:
+    RefObject<AeroWorldMapHandle | null>;
+
+  mapState:
+    AeroWorldMapState;
+
+  toggleLayer: (
+    layer: MapLayerId,
+  ) => void;
+}) {
+  const gpsOnline =
+    mapState.gpsAvailable;
+
+  return (
+    <aside
+      className={[
+        "flex h-full min-h-0 flex-col",
+
+        "overflow-hidden",
+
+        "border-l border-white/[0.08]",
+
+        "bg-[#07090d]",
+      ].join(" ")}
+    >
+      {/* ===================================================
+          Rail Header
+          =================================================== */}
+
+      <div className="shrink-0 border-b border-white/[0.08] px-3.5 py-3">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="font-mono text-[9px] font-semibold uppercase tracking-[0.15em] text-(--primary)">
+              Map Controls
+            </div>
+
+            <div className="mt-1 truncate text-[10px] text-white/38">
+              Navigation · view · layers
+            </div>
+          </div>
+
+          <div
+            className={[
+              "flex shrink-0 items-center gap-1.5",
+
+              "font-mono text-[7px] font-semibold uppercase tracking-[0.09em]",
+
+              gpsOnline
+                ? "text-(--nominal)"
+                : "text-(--caution)",
+            ].join(" ")}
+          >
+            <span
+              className={[
+                "h-1.5 w-1.5 rounded-full",
+
+                gpsOnline
+                  ? "bg-(--nominal)"
+                  : "bg-(--caution)",
+              ].join(" ")}
+            />
+
+            {gpsOnline
+              ? "GPS LIVE"
+              : "GPS SEARCH"}
+          </div>
+        </div>
+      </div>
+
+      {/* ===================================================
+          Rail Content
+
+          Fits inside available height.
+          =================================================== */}
+
+      <div className="flex min-h-0 flex-1 flex-col gap-3 p-3">
+        {/* ===============================================
+            Navigation
+            =============================================== */}
+
+        <ControlSection title="Navigation">
+          <div className="grid grid-cols-2 gap-1.5">
+            <CompactAction
+              icon={LocateFixed}
+              label="Follow UAV"
+              primary
+              onClick={() =>
+                mapRef.current?.focusUav()
+              }
+            />
+
+            <CompactAction
+              icon={Focus}
+              label="AOI"
+              onClick={() =>
+                mapRef.current?.focusAoi()
+              }
+            />
+
+            <CompactAction
+              icon={MapPinned}
+              label="Mission"
+              onClick={() =>
+                mapRef.current?.focusMission()
+              }
+            />
+
+            <CompactAction
+              icon={Home}
+              label="Home"
+              onClick={() =>
+                mapRef.current?.focusHome()
+              }
+            />
+          </div>
+        </ControlSection>
+
+        {/* ===============================================
+            View
+            =============================================== */}
+
+        <ControlSection title="Map View">
+          <div className="grid grid-cols-2 gap-1.5">
+            <CompactAction
+              icon={Plus}
+              label="Zoom In"
+              onClick={() =>
+                mapRef.current?.zoomIn()
+              }
+            />
+
+            <CompactAction
+              icon={Minus}
+              label="Zoom Out"
+              onClick={() =>
+                mapRef.current?.zoomOut()
+              }
+            />
+          </div>
+
+          <button
+            type="button"
+            onClick={() =>
+              mapRef.current?.toggleBaseMap()
+            }
+            className={[
+              "mt-1.5 flex h-[34px] w-full items-center justify-between",
+
+              "rounded-[4px] border border-[rgba(90,169,255,0.2)]",
+
+              "bg-[rgba(90,169,255,0.04)] px-2.5",
+
+              "text-(--info)",
+
+              "transition-[background-color,border-color] duration-150",
+
+              "hover:border-[rgba(90,169,255,0.36)]",
+
+              "hover:bg-[rgba(90,169,255,0.07)]",
+            ].join(" ")}
+          >
+            <span className="flex items-center gap-2 text-[9px] font-medium">
+              <Globe2
+                size={12}
+                strokeWidth={1.6}
+              />
+
+              Base Map
+            </span>
+
+            <span className="font-mono text-[8px] font-semibold uppercase">
+              {mapState.baseMap}
+            </span>
+          </button>
+        </ControlSection>
+
+        {/* ===============================================
+            Mission Layers
+            =============================================== */}
+
+        <ControlSection title="Mission Layers">
+          <div className="grid grid-cols-2 gap-1.5">
+            <CompactLayer
+              label="Aircraft"
+              enabled={
+                mapState.layers[
+                  "live-drone"
+                ]
+              }
+              onClick={() =>
+                toggleLayer(
+                  "live-drone",
+                )
+              }
+            />
+
+            <CompactLayer
+              label="Route"
+              enabled={
+                mapState.layers.route
+              }
+              onClick={() =>
+                toggleLayer(
+                  "route",
+                )
+              }
+            />
+
+            <CompactLayer
+              label="Geofence"
+              enabled={
+                mapState.layers.geofence
+              }
+              onClick={() =>
+                toggleLayer(
+                  "geofence",
+                )
+              }
+            />
+
+            <CompactLayer
+              label="Restricted"
+              enabled={
+                mapState.layers.restricted
+              }
+              onClick={() =>
+                toggleLayer(
+                  "restricted",
+                )
+              }
+            />
+
+            <CompactLayer
+              label="Contacts"
+              enabled={
+                mapState.layers.contacts
+              }
+              onClick={() =>
+                toggleLayer(
+                  "contacts",
+                )
+              }
+            />
+
+            <CompactLayer
+              label="Heat"
+              enabled={
+                mapState.layers.heat
+              }
+              onClick={() =>
+                toggleLayer(
+                  "heat",
+                )
+              }
+            />
+
+            <CompactLayer
+              label="Sim UAVs"
+              enabled={
+                mapState.layers.drones
+              }
+              onClick={() =>
+                toggleLayer(
+                  "drones",
+                )
+              }
+            />
+
+            <CompactLayer
+              label="Home"
+              enabled={
+                mapState.layers.home
+              }
+              onClick={() =>
+                toggleLayer(
+                  "home",
+                )
+              }
+            />
+          </div>
+        </ControlSection>
+
+        {/* ===============================================
+            Rail State
+
+            Pushed to bottom without making rail scroll.
+            =============================================== */}
+
+        <div className="mt-auto border-t border-white/[0.07] pt-2.5">
+          <div className="grid grid-cols-2 gap-2">
+            <div className="rounded-[4px] border border-white/[0.06] bg-black/20 px-2.5 py-2">
+              <div className="font-mono text-[7px] uppercase tracking-[0.1em] text-white/28">
+                Zoom
+              </div>
+
+              <div className="mt-0.5 font-mono text-[10px] font-semibold text-white/68">
+                {mapState.zoom.toFixed(
+                  1,
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-[4px] border border-white/[0.06] bg-black/20 px-2.5 py-2">
+              <div className="font-mono text-[7px] uppercase tracking-[0.1em] text-white/28">
+                Reference
+              </div>
+
+              <div className="mt-0.5 font-mono text-[10px] font-semibold text-white/68">
+                WGS-84
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-2 flex items-center gap-2 font-mono text-[7px] uppercase tracking-[0.08em] text-white/30">
+            <Satellite
+              size={10}
+              strokeWidth={1.6}
+              className={
+                gpsOnline
+                  ? "text-(--nominal)"
+                  : "text-(--caution)"
+              }
+            />
+
+            Mission map workspace
+          </div>
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+/* =========================================================
+   Live Operations / Home
    ========================================================= */
 
 export function LiveOps() {
+  const mapRef =
+    useRef<AeroWorldMapHandle | null>(
+      null,
+    );
+
+  const [
+    mapState,
+    setMapState,
+  ] =
+    useState<AeroWorldMapState>(
+      initialMapState,
+    );
+
+  function toggleLayer(
+    layer: MapLayerId,
+  ) {
+    mapRef.current?.toggleLayer(
+      layer,
+    );
+  }
+
   return (
-    <div className="min-h-[calc(100vh-70px)] bg-(--background)">
-      {/*
-        Wider than ordinary content pages because this is
-        MissionNexus's primary command workspace.
-      */}
+    /*
+     * This section occupies EXACTLY the browser area below
+     * the fixed 70px global header.
+     *
+     * The footer is the next element in AppShell.
+     *
+     * Therefore:
+     *
+     * 70px header
+     * +
+     * calc(100vh - 70px) home workspace
+     * =
+     * exactly 100vh.
+     */
+    <section className="h-[calc(100vh-70px)] w-full overflow-hidden bg-[#05060d]">
+      <div
+        className={[
+          "mx-auto grid h-full w-full max-w-[1600px]",
 
-      <div className="mx-auto w-full max-w-[1920px] px-3 py-3 sm:px-4 lg:px-5 2xl:px-6">
-        {/* ===============================================
-            Mission identity
-            =============================================== */}
+          "grid-rows-[46px_minmax(0,1fr)]",
 
-        <MissionIdentityBar />
+          "px-4 pb-3",
 
-        {/* ===============================================
-            Telemetry
-            =============================================== */}
+          "sm:px-6",
 
-        <div className="mt-3">
-          <TelemetryRibbon />
-        </div>
+          "lg:px-8",
 
-        {/* ===============================================
-            Main mission workspace
+          "xl:px-10",
 
-            1fr + 320 px gives the tactical map clear visual
-            priority while keeping the operational rail dense.
-            =============================================== */}
+          "2xl:px-14",
+        ].join(" ")}
+      >
+        {/* =================================================
+            Tactical Map Header
+            ================================================= */}
 
-        <section className="mt-3 grid items-start gap-3 xl:grid-cols-[minmax(0,1fr)_320px]">
-          {/* =============================================
-              Primary workspace
-              ============================================= */}
+        <header className="flex min-w-0 items-center justify-between border-b border-white/[0.08]">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <Navigation
+              size={14}
+              strokeWidth={1.6}
+              className="shrink-0 text-(--info)"
+            />
 
-          <div className="flex min-w-0 flex-col gap-3">
-            <TacticalMapWorkspace />
+            <h1
+              className="truncate text-[15px] font-medium tracking-[-0.02em] text-white"
+              style={{
+                fontFamily:
+                  '"Manrope", "Inter", ui-sans-serif, system-ui, sans-serif',
+              }}
+            >
+              Tactical Mission Map
+            </h1>
 
-            <CommandWorkspace />
+            <span
+              aria-hidden="true"
+              className="hidden h-3 w-px bg-white/10 sm:block"
+            />
+
+            <span className="hidden font-mono text-[8px] uppercase tracking-[0.08em] text-white/30 sm:block">
+              Live Operations
+            </span>
           </div>
 
-          {/* =============================================
-              Operational rail
-              ============================================= */}
+          <div className="flex shrink-0 items-center gap-2">
+            <span className="h-1.5 w-1.5 rounded-full bg-(--nominal)" />
 
-          <aside className="grid min-w-0 content-start gap-3">
-            <AircraftStatePanel />
+            <span className="font-mono text-[8px] font-semibold uppercase tracking-[0.1em] text-(--nominal)">
+              Map Ready
+            </span>
+          </div>
+        </header>
 
-            <MissionProgress />
+        {/* =================================================
+            Map Workspace
 
-            <AlertsWorkspace />
+            Both map and right rail are forced to exactly
+            the same available height.
 
-            <DataSourcesWorkspace />
-          </aside>
-        </section>
+            No child scrollbars.
+            ================================================= */}
 
-        {/* ===============================================
-            Operational system strip
+        <div className="min-h-0 pt-3">
+          <div
+            className={[
+              "grid h-full min-h-0",
 
-            IMPORTANT:
-            five tiles = five desktop columns.
-            This fixes the LOW RISK tile wrapping onto a
-            second row in the current video.
-            =============================================== */}
+              "overflow-hidden",
 
-        <div className="mt-3">
-          <OperationalStateStrip />
+              "rounded-[6px]",
+
+              "border border-white/[0.09]",
+
+              "bg-[#020304]",
+
+              "shadow-[0_18px_48px_rgba(0,0,0,0.2)]",
+
+              /*
+               * Wider right rail allows controls to use
+               * compact two-column layout and remain inside
+               * the screen height.
+               */
+              "lg:grid-cols-[minmax(0,1fr)_350px]",
+
+              "xl:grid-cols-[minmax(0,1fr)_380px]",
+
+              "2xl:grid-cols-[minmax(0,1fr)_400px]",
+            ].join(" ")}
+          >
+            {/* =============================================
+                Pure Map Canvas
+                ============================================= */}
+
+            <div className="relative min-h-0 min-w-0 overflow-hidden">
+              <AeroWorldMap
+                ref={mapRef}
+                onStateChange={
+                  setMapState
+                }
+              />
+            </div>
+
+            {/* =============================================
+                Map Controls
+                ============================================= */}
+
+            <MapControlRail
+              mapRef={mapRef}
+              mapState={mapState}
+              toggleLayer={
+                toggleLayer
+              }
+            />
+          </div>
         </div>
       </div>
-    </div>
+    </section>
   );
 }
