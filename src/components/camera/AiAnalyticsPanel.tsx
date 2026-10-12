@@ -7,123 +7,266 @@ import {
   UserRound,
   Waves,
 } from "lucide-react";
-import { Panel } from "../common/Panel";
-import { useUnifiedTelemetry } from "../../hooks/useUnifiedTelemetry";
 
-function getRiskClass(risk?: string) {
-  if (risk === "critical") return "text-(--critical)";
-  if (risk === "high") return "text-(--caution)";
-  if (risk === "medium") return "text-(--info)";
-  return "text-(--nominal)";
+import type {
+  LucideIcon,
+} from "lucide-react";
+
+import {
+  Panel,
+} from "../common/Panel";
+
+import {
+  useUnifiedTelemetry,
+} from "../../hooks/useUnifiedTelemetry";
+
+type AiAnalyticsPanelProps = {
+  embedded?: boolean;
+};
+
+function getRiskClass(
+  risk?: string,
+) {
+  if (
+    risk === "critical"
+  ) {
+    return "text-[#FF5A63]";
+  }
+
+  if (
+    risk === "high"
+  ) {
+    return "text-[#F6B23C]";
+  }
+
+  if (
+    risk === "medium"
+  ) {
+    return "text-[#5AA9FF]";
+  }
+
+  return "text-[#59D99A]";
 }
 
 function DetectionStatus({
   label,
   active,
   icon: Icon,
+  tone,
 }: {
   label: string;
   active: boolean;
-  icon: typeof Camera;
+  icon: LucideIcon;
+
+  tone:
+    | "info"
+    | "critical"
+    | "caution";
 }) {
+  const activeClass =
+    tone ===
+    "critical"
+      ? "border-[rgba(255,90,99,0.3)] bg-[rgba(255,90,99,0.055)] text-[#FF5A63]"
+      : tone ===
+          "caution"
+        ? "border-[rgba(246,178,60,0.28)] bg-[rgba(246,178,60,0.055)] text-[#F6B23C]"
+        : "border-[rgba(90,169,255,0.28)] bg-[rgba(90,169,255,0.055)] text-[#5AA9FF]";
+
   return (
     <div
-      className={`rounded border p-3 ${
+      className={[
+        "rounded-[4px] border p-2",
+
         active
-          ? "border-(--critical) bg-[rgba(255,77,77,0.08)]"
-          : "border-(--border) bg-[#07111f]"
-      }`}
+          ? activeClass
+          : "border-white/[0.07] bg-[#05060d] text-white/28",
+      ].join(" ")}
     >
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <Icon
-          size={18}
-          className={active ? "text-(--critical)" : "text-(--muted)"}
+          size={13}
         />
 
         <span
-          className={`text-hud text-[10px] ${
-            active ? "text-(--critical)" : "text-(--nominal)"
-          }`}
+          className={[
+            "font-mono text-[7px] font-semibold uppercase tracking-[0.05em]",
+
+            active
+              ? ""
+              : "text-[#59D99A]",
+          ].join(" ")}
         >
-          {active ? "DETECTED" : "CLEAR"}
+          {active
+            ? "DETECTED"
+            : "CLEAR"}
         </span>
       </div>
 
-      <div className="mt-3 text-hud text-xs text-(--foreground)">
+      <div className="mt-2 truncate text-[10px] font-medium text-white/72">
         {label}
       </div>
     </div>
   );
 }
 
-export function AiAnalyticsPanel() {
-  const { telemetry, error } = useUnifiedTelemetry();
+export function AiAnalyticsPanel({
+  embedded = false,
+}: AiAnalyticsPanelProps) {
+  const {
+    telemetry,
+    error,
+  } =
+    useUnifiedTelemetry();
 
-  const ml = telemetry?.ml;
-  const risk = telemetry?.risk ?? "low";
-  const confidence = Math.round((ml?.confidence ?? 0) * 100);
+  const ml =
+    telemetry?.ml;
 
-  const personDetected = Boolean(ml?.person);
-  const fireDetected = Boolean(ml?.fire);
-  const smokeDetected = Boolean(ml?.smoke);
+  const risk =
+    telemetry?.risk ??
+    "low";
 
-  const threatDetected = personDetected || fireDetected || smokeDetected;
+  const confidence =
+    Math.round(
+      (
+        ml?.confidence ??
+        0
+      ) *
+        100,
+    );
+
+  const personDetected =
+    Boolean(
+      ml?.person,
+    );
+
+  const fireDetected =
+    Boolean(
+      ml?.fire,
+    );
+
+  const smokeDetected =
+    Boolean(
+      ml?.smoke,
+    );
+
+  const threatDetected =
+    personDetected ||
+    fireDetected ||
+    smokeDetected;
+
+  const content = (
+    <div className="grid gap-2">
+      <div className="grid grid-cols-3 gap-1.5">
+        <DetectionStatus
+          label="Person"
+          active={
+            personDetected
+          }
+          icon={
+            UserRound
+          }
+          tone="info"
+        />
+
+        <DetectionStatus
+          label="Fire"
+          active={
+            fireDetected
+          }
+          icon={
+            Flame
+          }
+          tone="critical"
+        />
+
+        <DetectionStatus
+          label="Smoke"
+          active={
+            smokeDetected
+          }
+          icon={
+            Waves
+          }
+          tone="caution"
+        />
+      </div>
+
+      <div className="flex items-center justify-between gap-3 rounded-[4px] border border-white/[0.07] bg-[#05060d] px-3 py-2">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-2">
+            <span className="font-mono text-[8px] font-semibold uppercase tracking-[0.055em] text-white/32">
+              AI Confidence
+            </span>
+
+            <span className="font-mono text-[11px] font-semibold text-[#5AA9FF]">
+              {confidence}%
+            </span>
+          </div>
+
+          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/[0.05]">
+            <div
+              className="h-full rounded-full bg-[#5AA9FF]"
+              style={{
+                width:
+                  `${confidence}%`,
+              }}
+            />
+          </div>
+        </div>
+
+        {threatDetected ? (
+          <ShieldAlert
+            size={18}
+            className="shrink-0 text-[#FF5A63]"
+          />
+        ) : (
+          <ShieldCheck
+            size={18}
+            className="shrink-0 text-[#59D99A]"
+          />
+        )}
+      </div>
+
+      {error ? (
+        <div className="flex items-start gap-2 rounded-[4px] border border-[rgba(255,90,99,0.28)] bg-[rgba(255,90,99,0.05)] px-2.5 py-2 text-[9px] leading-[1.45] text-[#FF5A63]">
+          <AlertTriangle
+            size={11}
+            className="mt-0.5 shrink-0"
+          />
+
+          Backend offline:
+          {" "}
+          {error}
+        </div>
+      ) : null}
+    </div>
+  );
+
+  if (
+    embedded
+  ) {
+    return content;
+  }
 
   return (
     <Panel
       title="AI Detection Analytics"
       right={
-        <span className={`text-hud text-[10px] uppercase ${getRiskClass(risk)}`}>
+        <span
+          className={[
+            "font-mono text-[9px] font-semibold uppercase",
+
+            getRiskClass(
+              risk,
+            ),
+          ].join(" ")}
+        >
           {risk}
         </span>
       }
     >
-      <div className="space-y-3 p-3">
-        <div className="grid grid-cols-3 gap-2">
-          <DetectionStatus
-            label="Person"
-            active={personDetected}
-            icon={UserRound}
-          />
-
-          <DetectionStatus label="Fire" active={fireDetected} icon={Flame} />
-
-          <DetectionStatus label="Smoke" active={smokeDetected} icon={Waves} />
-        </div>
-
-        <div className="rounded border border-(--border) bg-[#07111f] p-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-hud text-[10px] text-(--muted)">
-                AI Confidence
-              </div>
-
-              <div className="mt-1 text-hud text-xl text-(--primary)">
-                {confidence}%
-              </div>
-            </div>
-
-            {threatDetected ? (
-              <ShieldAlert size={24} className="text-(--critical)" />
-            ) : (
-              <ShieldCheck size={24} className="text-(--nominal)" />
-            )}
-          </div>
-
-          <div className="mt-3 h-2 overflow-hidden rounded bg-[#050d18]">
-            <div
-              className="h-full bg-(--primary)"
-              style={{ width: `${confidence}%` }}
-            />
-          </div>
-        </div>
-
-        {error && (
-          <div className="flex items-start gap-2 rounded border border-(--critical) bg-[rgba(255,77,77,0.08)] p-2 text-xs text-(--critical)">
-            <AlertTriangle size={14} />
-            Backend offline: {error}
-          </div>
-        )}
+      <div className="p-3">
+        {content}
       </div>
     </Panel>
   );
