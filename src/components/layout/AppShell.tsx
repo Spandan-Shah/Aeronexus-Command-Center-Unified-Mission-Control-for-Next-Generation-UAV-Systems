@@ -1,6 +1,6 @@
 import type {
-  LucideIcon,
-} from "lucide-react";
+  ReactNode,
+} from "react";
 
 import {
   ArrowRight,
@@ -21,11 +21,10 @@ import {
 } from "lucide-react";
 
 import type {
-  ReactNode,
-} from "react";
+  LucideIcon,
+} from "lucide-react";
 
 import aeronexusWordmark from "../../assets/aeronexus-wordmark-dark.png";
-import aeronexusFooterLogo from "../../assets/aeronexus-footer-logo.png";
 
 import type {
   PageId,
@@ -35,8 +34,25 @@ import {
   telemetry,
 } from "../../data/telemetry";
 
+import {
+  MissionButton,
+  MissionStatus,
+} from "../ui/mission";
+
 /* =========================================================
-   Types
+   MissionNexus V2
+   Global Application Shell
+
+   Product family:
+   AERONEXUS | MissionNexus
+
+   Design goals:
+   - same parent identity hierarchy as GeoFusion
+   - compact Aeronexus branding
+   - mission-first navigation
+   - graphite / black aerospace interface
+   - amber product identity
+   - semantic operational status colors
    ========================================================= */
 
 type AppShellProps = {
@@ -44,9 +60,10 @@ type AppShellProps = {
 
   activePage: PageId;
 
-  onPageChange: (
-    page: PageId,
-  ) => void;
+  onPageChange:
+    (
+      page: PageId,
+    ) => void;
 };
 
 type NavItem = {
@@ -62,7 +79,8 @@ type NavItem = {
 type NavGroup = {
   label: string;
 
-  items: NavItem[];
+  items:
+    NavItem[];
 };
 
 /* =========================================================
@@ -84,7 +102,7 @@ const navGroups:
             "Live Operations",
 
           description:
-            "Real-time UAV command and mission overview",
+            "Real-time aircraft command and mission awareness",
 
           icon:
             Radar,
@@ -98,7 +116,7 @@ const navGroups:
             "Mission Planner",
 
           description:
-            "Waypoints, routes and mission preparation",
+            "Waypoint planning, route design and geofencing",
 
           icon:
             Map,
@@ -112,7 +130,7 @@ const navGroups:
             "Drone Control",
 
           description:
-            "Flight commands and payload operations",
+            "Flight commands, payload control and aircraft state",
 
           icon:
             Gamepad2,
@@ -126,7 +144,7 @@ const navGroups:
             "Fleet",
 
           description:
-            "Aircraft and operational asset overview",
+            "Aircraft assets, assignment and readiness",
 
           icon:
             Plane,
@@ -140,7 +158,7 @@ const navGroups:
             "Pre-Flight",
 
           description:
-            "Mission readiness and validation",
+            "Aircraft readiness and launch validation",
 
           icon:
             ClipboardCheck,
@@ -161,7 +179,7 @@ const navGroups:
             "Vision Intelligence",
 
           description:
-            "AI-assisted aerial imagery and detection",
+            "YOLO, OpenCV and aerial detection workflows",
 
           icon:
             Camera,
@@ -172,10 +190,10 @@ const navGroups:
             "logs",
 
           label:
-            "Logs & Debrief",
+            "Mission Debrief",
 
           description:
-            "Mission records, telemetry and post-flight review",
+            "Logs, events, analytics and audit history",
 
           icon:
             FileText,
@@ -189,7 +207,7 @@ const navGroups:
             "Security",
 
           description:
-            "Secure command sessions and telemetry trust",
+            "Secure command sessions and telemetry integrity",
 
           icon:
             ShieldCheck,
@@ -210,7 +228,7 @@ const navGroups:
             "Drone Health",
 
           description:
-            "Airframe, sensor and system diagnostics",
+            "Aircraft diagnostics and system condition",
 
           icon:
             Gauge,
@@ -224,7 +242,7 @@ const navGroups:
             "Battery & Power",
 
           description:
-            "Electrical and battery-system monitoring",
+            "Power, thermal state and mission endurance",
 
           icon:
             Battery,
@@ -238,7 +256,7 @@ const navGroups:
             "Maintenance",
 
           description:
-            "Service, inspection and repair workflows",
+            "Service scheduling and component condition",
 
           icon:
             Wrench,
@@ -252,7 +270,7 @@ const navGroups:
             "Inventory",
 
           description:
-            "Parts, payloads and field assets",
+            "Parts, payloads and mission assets",
 
           icon:
             Package,
@@ -273,7 +291,7 @@ const navGroups:
             "Settings",
 
           description:
-            "MissionNexus platform configuration",
+            "MissionNexus system configuration",
 
           icon:
             Settings,
@@ -283,19 +301,46 @@ const navGroups:
   ];
 
 /* =========================================================
-   Footer
+   Footer Navigation
    ========================================================= */
 
-const footerColumns = [
+const footerSections = [
   {
     title:
       "Mission Platform",
 
-    links: [
-      "MissionNexus",
-      "Mission Planning",
-      "Live Operations",
-      "Secure Command",
+    pages: [
+      {
+        label:
+          "Live Operations",
+
+        id:
+          "live-ops" as PageId,
+      },
+
+      {
+        label:
+          "Mission Planning",
+
+        id:
+          "mission-planner" as PageId,
+      },
+
+      {
+        label:
+          "Drone Control",
+
+        id:
+          "drone-control" as PageId,
+      },
+
+      {
+        label:
+          "Pre-Flight",
+
+        id:
+          "pre-flight" as PageId,
+      },
     ],
   },
 
@@ -303,23 +348,77 @@ const footerColumns = [
     title:
       "Operational Systems",
 
-    links: [
-      "Fleet Intelligence",
-      "Pre-Flight Readiness",
-      "Drone Health",
-      "Mission Debrief",
+    pages: [
+      {
+        label:
+          "Fleet Intelligence",
+
+        id:
+          "fleet" as PageId,
+      },
+
+      {
+        label:
+          "Drone Health",
+
+        id:
+          "drone-health" as PageId,
+      },
+
+      {
+        label:
+          "Battery & Power",
+
+        id:
+          "battery" as PageId,
+      },
+
+      {
+        label:
+          "Maintenance",
+
+        id:
+          "maintenance" as PageId,
+      },
     ],
   },
 
   {
     title:
-      "Aerial Intelligence",
+      "Intelligence",
 
-    links: [
-      "Vision Intelligence",
-      "Camera Analytics",
-      "Risk Awareness",
-      "Mission Data",
+    pages: [
+      {
+        label:
+          "Vision Intelligence",
+
+        id:
+          "camera-ai" as PageId,
+      },
+
+      {
+        label:
+          "Mission Debrief",
+
+        id:
+          "logs" as PageId,
+      },
+
+      {
+        label:
+          "Security",
+
+        id:
+          "security" as PageId,
+      },
+
+      {
+        label:
+          "Inventory",
+
+        id:
+          "inventory" as PageId,
+      },
     ],
   },
 ];
@@ -329,18 +428,304 @@ const footerColumns = [
    ========================================================= */
 
 function isGroupActive(
-  group: NavGroup,
-  activePage: PageId,
+  group:
+    NavGroup,
+
+  activePage:
+    PageId,
 ) {
   return group.items.some(
-    (item) =>
+    (
+      item,
+    ) =>
       item.id ===
       activePage,
   );
 }
 
+function getActiveItem(
+  activePage:
+    PageId,
+) {
+  for (
+    const group of
+      navGroups
+  ) {
+    const item =
+      group.items.find(
+        (
+          candidate,
+        ) =>
+          candidate.id ===
+          activePage,
+      );
+
+    if (
+      item
+    ) {
+      return item;
+    }
+  }
+
+  return null;
+}
+
 /* =========================================================
-   App Shell
+   Desktop Navigation Group
+   ========================================================= */
+
+function DesktopNavGroup({
+  group,
+  activePage,
+  onPageChange,
+}: {
+  group: NavGroup;
+
+  activePage:
+    PageId;
+
+  onPageChange:
+    (
+      page:
+        PageId,
+    ) => void;
+}) {
+  const active =
+    isGroupActive(
+      group,
+      activePage,
+    );
+
+  return (
+    <div className="group relative flex h-full items-center">
+      <button
+        type="button"
+        className={[
+          "relative flex h-full items-center gap-1.5 px-1",
+
+          "font-mono text-[10px] font-semibold uppercase tracking-[0.12em]",
+
+          "transition-colors duration-150",
+
+          active
+            ? "text-(--primary)"
+            : "text-(--muted) hover:text-(--foreground)",
+        ].join(" ")}
+      >
+        {group.label}
+
+        <ChevronDown
+          size={12}
+          strokeWidth={
+            1.8
+          }
+          className="transition-transform duration-150 group-hover:rotate-180 group-focus-within:rotate-180"
+        />
+
+        {active ? (
+          <span
+            aria-hidden="true"
+            className="absolute inset-x-0 bottom-0 h-px bg-(--primary)"
+          />
+        ) : null}
+      </button>
+
+      {/* Dropdown bridge */}
+
+      <div className="pointer-events-none absolute left-1/2 top-full h-3 w-72 -translate-x-1/2" />
+
+      {/* Dropdown */}
+
+      <div
+        className={[
+          "pointer-events-none invisible absolute left-1/2 top-[calc(100%+10px)] z-[70]",
+
+          "w-[310px] -translate-x-1/2",
+
+          "rounded-md border border-(--border-soft)",
+
+          "bg-[rgba(5,7,9,0.98)] p-2",
+
+          "opacity-0 shadow-[0_24px_80px_rgba(0,0,0,0.6)]",
+
+          "backdrop-blur-xl",
+
+          "transition-[opacity,visibility,transform] duration-150",
+
+          "group-hover:pointer-events-auto group-hover:visible group-hover:opacity-100",
+
+          "group-focus-within:pointer-events-auto group-focus-within:visible group-focus-within:opacity-100",
+        ].join(" ")}
+      >
+        <div className="px-3 pb-2 pt-1">
+          <div className="font-mono text-[8px] font-semibold uppercase tracking-[0.16em] text-(--muted-soft)">
+            {group.label}
+          </div>
+        </div>
+
+        {group.items.map(
+          (
+            item,
+          ) => {
+            const Icon =
+              item.icon;
+
+            const itemActive =
+              activePage ===
+              item.id;
+
+            return (
+              <button
+                key={
+                  item.id
+                }
+                type="button"
+                onClick={() =>
+                  onPageChange(
+                    item.id,
+                  )
+                }
+                aria-current={
+                  itemActive
+                    ? "page"
+                    : undefined
+                }
+                className={[
+                  "group/item flex w-full items-start gap-3 rounded-md px-3 py-3 text-left",
+
+                  "transition-colors duration-150",
+
+                  itemActive
+                    ? "bg-[rgba(246,178,60,0.08)]"
+                    : "hover:bg-white/[0.035]",
+                ].join(" ")}
+              >
+                <div
+                  className={[
+                    "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md border",
+
+                    itemActive
+                      ? "border-[rgba(246,178,60,0.3)] bg-[rgba(246,178,60,0.07)] text-(--primary)"
+                      : "border-(--border-soft) bg-(--surface-0) text-(--muted) group-hover/item:text-(--foreground)",
+                  ].join(" ")}
+                >
+                  <Icon
+                    size={14}
+                    strokeWidth={
+                      1.6
+                    }
+                  />
+                </div>
+
+                <div className="min-w-0">
+                  <div
+                    className={[
+                      "text-[12px] font-medium",
+
+                      itemActive
+                        ? "text-(--primary)"
+                        : "text-(--foreground)",
+                    ].join(" ")}
+                  >
+                    {
+                      item.label
+                    }
+                  </div>
+
+                  <div className="mt-1 text-[10px] leading-relaxed text-(--muted)">
+                    {
+                      item.description
+                    }
+                  </div>
+                </div>
+              </button>
+            );
+          },
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* =========================================================
+   Mobile / Compact Navigation
+   ========================================================= */
+
+function CompactNavigation({
+  activePage,
+  onPageChange,
+}: {
+  activePage:
+    PageId;
+
+  onPageChange:
+    (
+      page:
+        PageId,
+    ) => void;
+}) {
+  const items =
+    navGroups.flatMap(
+      (
+        group,
+      ) =>
+        group.items,
+    );
+
+  return (
+    <div className="border-t border-(--border-soft) xl:hidden">
+      <nav
+        className="flex h-10 items-center gap-1 overflow-x-auto px-4"
+        aria-label="MissionNexus navigation"
+      >
+        {items.map(
+          (
+            item,
+          ) => {
+            const active =
+              activePage ===
+              item.id;
+
+            return (
+              <button
+                key={
+                  item.id
+                }
+                type="button"
+                onClick={() =>
+                  onPageChange(
+                    item.id,
+                  )
+                }
+                aria-current={
+                  active
+                    ? "page"
+                    : undefined
+                }
+                className={[
+                  "shrink-0 rounded-sm px-3 py-1.5",
+
+                  "font-mono text-[8px] font-semibold uppercase tracking-[0.09em]",
+
+                  active
+                    ? "bg-[rgba(246,178,60,0.08)] text-(--primary)"
+                    : "text-(--muted) hover:text-(--foreground)",
+                ].join(" ")}
+              >
+                {
+                  item.label
+                }
+              </button>
+            );
+          },
+        )}
+      </nav>
+    </div>
+  );
+}
+
+/* =========================================================
+   Application Shell
    ========================================================= */
 
 export function AppShell({
@@ -348,20 +733,23 @@ export function AppShell({
   activePage,
   onPageChange,
 }: AppShellProps) {
-  return (
-    <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
+  const activeItem =
+    getActiveItem(
+      activePage,
+    );
 
+  return (
+    <div className="min-h-screen bg-(--background) text-(--foreground)">
       {/* ===================================================
-          MissionNexus Header
+          Global Header
           =================================================== */}
 
-      <header className="fixed inset-x-0 top-0 z-50 border-b border-white/[0.08] bg-black/95 backdrop-blur-xl">
+      <header className="fixed inset-x-0 top-0 z-50 border-b border-(--border-soft) bg-black/95 backdrop-blur-xl">
+        <div className="mx-auto flex h-16 max-w-[1680px] items-center gap-5 px-5 lg:px-6">
 
-        <div className="mx-auto flex h-[70px] max-w-[1920px] items-center px-5 lg:px-7 xl:px-9">
-
-          {/* =================================================
-              Brand
-              ================================================= */}
+          {/* ===============================================
+              Aeronexus → MissionNexus Brand Family
+              =============================================== */}
 
           <button
             type="button"
@@ -370,456 +758,351 @@ export function AppShell({
                 "live-ops",
               )
             }
-            className="group flex shrink-0 items-center"
-            title="MissionNexus · Live Operations"
+            aria-label="MissionNexus Live Operations"
+            className="flex shrink-0 items-center gap-3"
           >
+            {/*
+              IMPORTANT V2 CHANGE
+
+              V1:
+              h-11 logo inside 256px area.
+
+              V2:
+              approx. 20px visual height to match the
+              compact GeoFusion / Aeronexus product-family
+              hierarchy.
+            */}
 
             <img
               src={
                 aeronexusWordmark
               }
               alt="Aeronexus"
-              className="h-[31px] w-auto object-contain opacity-95 transition-opacity group-hover:opacity-100"
+              className="h-[20px] w-auto max-w-[168px] object-contain"
             />
 
             <span
               aria-hidden="true"
-              className="mx-4 h-7 w-px bg-white/[0.17]"
+              className="h-6 w-px bg-white/12"
             />
 
-            <div className="flex flex-col items-start">
-
-              <span className="text-[15px] font-semibold tracking-[-0.02em] text-white">
+            <div className="text-left">
+              <div className="text-[14px] font-semibold tracking-[-0.025em] text-white">
                 MissionNexus
-              </span>
-
-              <span className="mt-[2px] font-mono text-[8px] font-medium uppercase tracking-[0.19em] text-white/30">
-                Mission Command
-              </span>
-
-            </div>
-
-          </button>
-
-          {/* =================================================
-              Desktop Navigation
-              ================================================= */}
-
-          <nav className="ml-12 hidden flex-1 items-center gap-7 xl:flex">
-
-            {navGroups.map(
-              (group) => {
-                const active =
-                  isGroupActive(
-                    group,
-                    activePage,
-                  );
-
-                return (
-                  <div
-                    key={
-                      group.label
-                    }
-                    className="group relative"
-                  >
-
-                    <button
-                      type="button"
-                      className={[
-                        "relative flex h-[70px] items-center gap-1.5 font-mono text-[10px] font-semibold uppercase tracking-[0.12em] transition-colors",
-
-                        active
-                          ? "text-[var(--primary)]"
-                          : "text-white/45 hover:text-white/85",
-                      ].join(
-                        " ",
-                      )}
-                    >
-
-                      <span>
-                        {
-                          group.label
-                        }
-                      </span>
-
-                      <ChevronDown
-                        size={12}
-                        strokeWidth={
-                          1.7
-                        }
-                        className="transition-transform duration-200 group-hover:rotate-180"
-                      />
-
-                      {active ? (
-                        <span className="absolute inset-x-0 bottom-0 h-[2px] bg-[var(--primary)]" />
-                      ) : null}
-
-                    </button>
-
-                    {/* =======================================
-                        Dropdown
-                        ======================================= */}
-
-                    <div className="pointer-events-none absolute left-1/2 top-[62px] z-50 w-[340px] -translate-x-1/2 translate-y-1 rounded-lg border border-white/[0.09] bg-[#07090d]/98 p-2 opacity-0 shadow-[0_24px_70px_rgba(0,0,0,0.75)] backdrop-blur-2xl transition-all duration-150 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100">
-
-                      <div className="absolute -top-3 left-0 h-3 w-full" />
-
-                      {group.items.map(
-                        (item) => {
-                          const Icon =
-                            item.icon;
-
-                          const itemActive =
-                            activePage ===
-                            item.id;
-
-                          return (
-                            <button
-                              key={
-                                item.id
-                              }
-                              type="button"
-                              onClick={() =>
-                                onPageChange(
-                                  item.id,
-                                )
-                              }
-                              className={[
-                                "group/item flex w-full items-start gap-3 rounded-md border px-3 py-3 text-left transition",
-
-                                itemActive
-                                  ? "border-[rgba(246,178,60,0.22)] bg-[rgba(246,178,60,0.075)]"
-                                  : "border-transparent hover:border-white/[0.07] hover:bg-white/[0.035]",
-                              ].join(
-                                " ",
-                              )}
-                            >
-
-                              <div
-                                className={[
-                                  "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded border transition",
-
-                                  itemActive
-                                    ? "border-[var(--primary)]/35 bg-[rgba(246,178,60,0.08)] text-[var(--primary)]"
-                                    : "border-white/[0.08] bg-white/[0.02] text-white/35 group-hover/item:text-white/65",
-                                ].join(
-                                  " ",
-                                )}
-                              >
-
-                                <Icon
-                                  size={14}
-                                  strokeWidth={
-                                    1.55
-                                  }
-                                />
-
-                              </div>
-
-                              <div className="min-w-0">
-
-                                <div
-                                  className={[
-                                    "text-[12px] font-semibold",
-
-                                    itemActive
-                                      ? "text-[var(--primary)]"
-                                      : "text-white/80",
-                                  ].join(
-                                    " ",
-                                  )}
-                                >
-                                  {
-                                    item.label
-                                  }
-                                </div>
-
-                                <div className="mt-1 text-[10px] leading-[1.55] text-white/30">
-                                  {
-                                    item.description
-                                  }
-                                </div>
-
-                              </div>
-
-                            </button>
-                          );
-                        },
-                      )}
-
-                    </div>
-
-                  </div>
-                );
-              },
-            )}
-
-          </nav>
-
-          {/* =================================================
-              Mission State
-              ================================================= */}
-
-          <div className="ml-auto flex shrink-0 items-center gap-5">
-
-            <div className="hidden items-center gap-2 lg:flex">
-
-              <span className="relative flex h-2 w-2">
-
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--nominal)] opacity-30" />
-
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--nominal)]" />
-
-              </span>
-
-              <div className="flex flex-col">
-
-                <span className="font-mono text-[8px] font-semibold uppercase tracking-[0.15em] text-[var(--nominal)]">
-                  System Nominal
-                </span>
-
-                <span className="mt-[2px] font-mono text-[7px] uppercase tracking-[0.12em] text-white/25">
-                  Mission Network
-                </span>
-
               </div>
 
+              <div className="mt-0.5 font-mono text-[7px] font-medium uppercase tracking-[0.16em] text-(--muted-soft)">
+                Mission Command
+              </div>
+            </div>
+          </button>
+
+          {/* ===============================================
+              Desktop Navigation
+              =============================================== */}
+
+          <nav
+            className="hidden h-full flex-1 items-center justify-center gap-7 xl:flex"
+            aria-label="MissionNexus primary navigation"
+          >
+            {navGroups.map(
+              (
+                group,
+              ) => (
+                <DesktopNavGroup
+                  key={
+                    group.label
+                  }
+                  group={
+                    group
+                  }
+                  activePage={
+                    activePage
+                  }
+                  onPageChange={
+                    onPageChange
+                  }
+                />
+              ),
+            )}
+          </nav>
+
+          <div className="ml-auto flex shrink-0 items-center gap-4">
+
+            {/* System state */}
+
+            <div className="hidden border-r border-(--border-soft) pr-4 2xl:block">
+              <MissionStatus
+                label="System Nominal"
+                detail="Mission Network"
+                tone="nominal"
+                pulse
+              />
             </div>
 
-            <span className="hidden h-7 w-px bg-white/[0.08] lg:block" />
+            {/* Command action */}
 
-            <button
-              type="button"
+            <MissionButton
+              tone="primary"
+              variant="outline"
+              size="md"
+              trailingIcon={
+                <ArrowRight
+                  size={13}
+                />
+              }
               onClick={() =>
                 onPageChange(
                   "live-ops",
                 )
               }
-              className="group flex h-9 items-center gap-2 rounded border border-[rgba(246,178,60,0.28)] bg-[rgba(246,178,60,0.08)] px-4 font-mono text-[9px] font-semibold uppercase tracking-[0.14em] text-[var(--primary)] transition hover:border-[rgba(246,178,60,0.5)] hover:bg-[rgba(246,178,60,0.13)]"
+              className="hidden sm:inline-flex"
             >
-
               Command Center
-
-              <ArrowRight
-                size={12}
-                strokeWidth={
-                  1.8
-                }
-                className="transition-transform group-hover:translate-x-0.5"
-              />
-
-            </button>
-
+            </MissionButton>
           </div>
-
         </div>
 
+        <CompactNavigation
+          activePage={
+            activePage
+          }
+          onPageChange={
+            onPageChange
+          }
+        />
       </header>
 
       {/* ===================================================
-          Application Content
+          Application Workspace
           =================================================== */}
 
-      <main className="min-h-screen bg-[#050608] pt-[70px]">
-
+      <main className="min-h-screen bg-(--background) pt-[104px] xl:pt-16">
         {children}
-
       </main>
 
       {/* ===================================================
-          Aeronexus Footer
+          MissionNexus V2 Footer
           =================================================== */}
 
-      <footer className="border-t border-white/[0.08] bg-black">
+      <footer className="border-t border-(--border-soft) bg-black">
+        <div className="mx-auto max-w-[1680px] px-5 py-9 lg:px-6">
+          <div className="grid items-start gap-8 md:grid-cols-2 xl:grid-cols-[1.35fr_1fr_1fr_1fr_1.1fr]">
 
-        <div className="mx-auto max-w-[1680px] px-8 py-12">
+            {/* =============================================
+                Product Identity
 
-          <div className="grid items-start gap-10 lg:grid-cols-5">
-
-            {/* ===============================================
-                Brand
-                =============================================== */}
+                The giant white V1 logo card has been
+                intentionally removed.
+                ============================================= */}
 
             <div className="min-w-0">
+              <div className="flex items-center gap-3">
+                <img
+                  src={
+                    aeronexusWordmark
+                  }
+                  alt="Aeronexus"
+                  className="h-[18px] w-auto max-w-[150px] object-contain"
+                />
 
-              <img
-                src={
-                  aeronexusFooterLogo
-                }
-                alt="Aeronexus"
-                className="h-auto w-[180px] object-contain"
-              />
+                <span
+                  aria-hidden="true"
+                  className="h-5 w-px bg-white/12"
+                />
 
-              <div className="mt-5 flex items-center">
-
-                <span className="text-sm font-semibold text-white/85">
-                  Aeronexus
-                </span>
-
-                <span className="mx-2.5 h-4 w-px bg-white/15" />
-
-                <span className="text-sm font-medium text-white/55">
+                <span className="text-[13px] font-semibold text-white">
                   MissionNexus
                 </span>
-
               </div>
 
-              <p className="mt-4 max-w-[245px] text-xs leading-5 text-white/35">
-                Unified mission command and operational intelligence for next-generation unmanned systems.
+              <p className="mt-4 max-w-[280px] text-[11px] leading-[1.75] text-(--muted)">
+                Autonomous mission command and operational intelligence for next-generation unmanned systems.
               </p>
 
+              <div className="mt-5">
+                <MissionStatus
+                  label="Platform Online"
+                  detail={
+                    activeItem
+                      ? activeItem.label
+                      : "Mission Interface"
+                  }
+                  tone="nominal"
+                />
+              </div>
             </div>
 
-            {/* ===============================================
-                Footer Columns
-                =============================================== */}
+            {/* =============================================
+                Product Navigation
+                ============================================= */}
 
-            {footerColumns.map(
-              (column) => (
+            {footerSections.map(
+              (
+                section,
+              ) => (
                 <div
                   key={
-                    column.title
+                    section.title
                   }
                   className="min-w-0"
                 >
-
-                  <h3 className="font-mono text-[9px] font-semibold uppercase tracking-[0.18em] text-[var(--primary)]">
+                  <div className="font-mono text-[8px] font-semibold uppercase tracking-[0.16em] text-(--primary)">
                     {
-                      column.title
+                      section.title
                     }
-                  </h3>
-
-                  <div className="mt-5 flex flex-col gap-3">
-
-                    {column.links.map(
-                      (link) => (
-                        <span
-                          key={
-                            link
-                          }
-                          className="text-xs leading-relaxed text-white/45"
-                        >
-                          {
-                            link
-                          }
-                        </span>
-                      ),
-                    )}
-
                   </div>
 
+                  <div className="mt-4 flex flex-col gap-2.5">
+                    {section.pages.map(
+                      (
+                        page,
+                      ) => (
+                        <button
+                          key={
+                            page.id
+                          }
+                          type="button"
+                          onClick={() =>
+                            onPageChange(
+                              page.id,
+                            )
+                          }
+                          className={[
+                            "w-fit text-left text-[11px] transition-colors",
+
+                            activePage ===
+                            page.id
+                              ? "text-(--primary)"
+                              : "text-(--muted) hover:text-(--foreground)",
+                          ].join(" ")}
+                        >
+                          {
+                            page.label
+                          }
+                        </button>
+                      ),
+                    )}
+                  </div>
                 </div>
               ),
             )}
 
-            {/* ===============================================
-                Current Mission
-                =============================================== */}
+            {/* =============================================
+                Mission State
+                ============================================= */}
 
             <div className="min-w-0">
-
-              <h3 className="font-mono text-[9px] font-semibold uppercase tracking-[0.18em] text-[var(--primary)]">
+              <div className="font-mono text-[8px] font-semibold uppercase tracking-[0.16em] text-(--primary)">
                 Mission State
-              </h3>
-
-              <div className="mt-5 flex flex-col gap-3 font-mono text-[10px]">
-
-                <div className="grid grid-cols-[1fr_auto] gap-4">
-
-                  <span className="text-white/30">
-                    Drone
-                  </span>
-
-                  <span className="text-right text-white/65">
-                    {
-                      telemetry.droneId
-                    }
-                  </span>
-
-                </div>
-
-                <div className="grid grid-cols-[1fr_auto] gap-4">
-
-                  <span className="text-white/30">
-                    Platform
-                  </span>
-
-                  <span className="text-right text-white/65">
-                    {
-                      telemetry.model
-                    }
-                  </span>
-
-                </div>
-
-                <div className="grid grid-cols-[1fr_auto] gap-4">
-
-                  <span className="text-white/30">
-                    Mission
-                  </span>
-
-                  <span className="text-right text-white/65">
-                    {
-                      telemetry.mission
-                    }
-                  </span>
-
-                </div>
-
-                <div className="grid grid-cols-[1fr_auto] gap-4">
-
-                  <span className="text-white/30">
-                    Operating Mode
-                  </span>
-
-                  <span className="text-right text-[var(--nominal)]">
-                    Simulation
-                  </span>
-
-                </div>
-
-                <div className="grid grid-cols-[1fr_auto] gap-4">
-
-                  <span className="text-white/30">
-                    Interface
-                  </span>
-
-                  <span className="text-right text-white/65">
-                    MissionNexus
-                  </span>
-
-                </div>
-
               </div>
 
-            </div>
+              <div className="mt-4 grid gap-3">
+                <FooterState
+                  label="Aircraft"
+                  value={
+                    telemetry.droneId
+                  }
+                />
 
+                <FooterState
+                  label="Platform"
+                  value={
+                    telemetry.model
+                  }
+                />
+
+                <FooterState
+                  label="Mission"
+                  value={
+                    telemetry.mission
+                  }
+                />
+
+                <FooterState
+                  label="Flight Mode"
+                  value={
+                    telemetry.flightMode
+                  }
+                  tone="primary"
+                />
+
+                <FooterState
+                  label="Risk"
+                  value={
+                    telemetry.risk.toUpperCase()
+                  }
+                  tone="nominal"
+                />
+              </div>
+            </div>
           </div>
 
           {/* ===============================================
-              Bottom Footer
+              Legal / Build Bar
               =============================================== */}
 
-          <div className="mt-10 border-t border-white/[0.07] pt-5">
+          <div className="mt-8 border-t border-(--border-soft) pt-4">
+            <div className="flex flex-col gap-2 font-mono text-[8px] uppercase tracking-[0.06em] text-(--muted-soft) md:flex-row md:items-center md:justify-between">
+              <span>
+                Aeronexus autonomous systems · operational capabilities depend on deployment configuration and connected aircraft.
+              </span>
 
-            <div className="flex flex-col gap-3 text-[10px] text-white/25 md:flex-row md:items-center md:justify-between">
-
-              <p>
-                Mission capabilities depend on aircraft configuration, telemetry availability and deployment environment.
-              </p>
-
-              <p>
-                © 2026 Aeronexus · MissionNexus
-              </p>
-
+              <span>
+                © 2026 Aeronexus · MissionNexus V2
+              </span>
             </div>
-
           </div>
-
         </div>
-
       </footer>
+    </div>
+  );
+}
 
+/* =========================================================
+   Footer State Row
+   ========================================================= */
+
+function FooterState({
+  label,
+  value,
+  tone = "default",
+}: {
+  label:
+    string;
+
+  value:
+    string;
+
+  tone?:
+    | "default"
+    | "primary"
+    | "nominal";
+}) {
+  const valueClass =
+    tone ===
+    "primary"
+      ? "text-(--primary)"
+      : tone ===
+          "nominal"
+        ? "text-(--nominal)"
+        : "text-(--foreground)";
+
+  return (
+    <div className="grid grid-cols-[1fr_auto] items-center gap-4">
+      <span className="font-mono text-[8px] uppercase tracking-[0.08em] text-(--muted-soft)">
+        {label}
+      </span>
+
+      <span
+        className={[
+          "max-w-[140px] truncate text-right font-mono text-[9px] font-medium",
+
+          valueClass,
+        ].join(" ")}
+      >
+        {value}
+      </span>
     </div>
   );
 }
