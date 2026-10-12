@@ -1,8 +1,10 @@
-import type { ReactNode } from "react";
+import type {
+  ReactNode,
+} from "react";
+
 import {
   AlertTriangle,
   Boxes,
-  CheckCircle2,
   ClipboardCheck,
   Package,
   PackageCheck,
@@ -11,14 +13,32 @@ import {
   Truck,
   Warehouse,
 } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
 
-import { InventorySummary } from "../components/inventory/InventorySummary";
-import { LowStockPanel } from "../components/inventory/LowStockPanel";
-import { PartsInventoryTable } from "../components/inventory/PartsInventoryTable";
-import { SupplierOrdersPanel } from "../components/inventory/SupplierOrdersPanel";
+import type {
+  LucideIcon,
+} from "lucide-react";
 
-type Tone = "nominal" | "caution" | "critical" | "info";
+import {
+  InventorySummary,
+} from "../components/inventory/InventorySummary";
+
+import {
+  LowStockPanel,
+} from "../components/inventory/LowStockPanel";
+
+import {
+  PartsInventoryTable,
+} from "../components/inventory/PartsInventoryTable";
+
+import {
+  SupplierOrdersPanel,
+} from "../components/inventory/SupplierOrdersPanel";
+
+type Tone =
+  | "nominal"
+  | "caution"
+  | "critical"
+  | "info";
 
 type SummaryMetric = {
   label: string;
@@ -30,95 +50,175 @@ type SummaryMetric = {
 
 const toneClass = {
   nominal: {
-    text: "text-(--nominal)",
-    border: "border-[rgba(73,229,143,0.28)]",
-    bg: "bg-[rgba(73,229,143,0.08)]",
-    dot: "bg-(--nominal)",
+    text:
+      "text-[var(--nominal)]",
+
+    border:
+      "border-[rgba(89,217,154,0.28)]",
+
+    bg:
+      "bg-[rgba(89,217,154,0.08)]",
+
+    dot:
+      "bg-[var(--nominal)]",
   },
+
   caution: {
-    text: "text-(--primary)",
-    border: "border-[rgba(246,178,60,0.32)]",
-    bg: "bg-[rgba(246,178,60,0.08)]",
-    dot: "bg-(--primary)",
+    text:
+      "text-[var(--primary)]",
+
+    border:
+      "border-[rgba(246,178,60,0.32)]",
+
+    bg:
+      "bg-[rgba(246,178,60,0.08)]",
+
+    dot:
+      "bg-[var(--primary)]",
   },
+
   critical: {
-    text: "text-(--critical)",
-    border: "border-[rgba(255,77,77,0.34)]",
-    bg: "bg-[rgba(255,77,77,0.08)]",
-    dot: "bg-(--critical)",
+    text:
+      "text-[var(--critical)]",
+
+    border:
+      "border-[rgba(255,90,99,0.34)]",
+
+    bg:
+      "bg-[rgba(255,90,99,0.08)]",
+
+    dot:
+      "bg-[var(--critical)]",
   },
+
   info: {
-    text: "text-(--info)",
-    border: "border-[rgba(90,169,255,0.3)]",
-    bg: "bg-[rgba(90,169,255,0.08)]",
-    dot: "bg-(--info)",
+    text:
+      "text-[var(--info)]",
+
+    border:
+      "border-[rgba(90,169,255,0.3)]",
+
+    bg:
+      "bg-[rgba(90,169,255,0.08)]",
+
+    dot:
+      "bg-[var(--info)]",
   },
 };
 
-const summaryMetrics: SummaryMetric[] = [
-  {
-    label: "Total Parts",
-    value: "248",
-    helper: "Tracked inventory items",
-    icon: Boxes,
-    tone: "info",
-  },
-  {
-    label: "Available Stock",
-    value: "91%",
-    helper: "Ready for service use",
-    icon: PackageCheck,
-    tone: "nominal",
-  },
-  {
-    label: "Low Stock",
-    value: "07",
-    helper: "Below reorder threshold",
-    icon: AlertTriangle,
-    tone: "caution",
-  },
-  {
-    label: "Open Orders",
-    value: "04",
-    helper: "Supplier orders in progress",
-    icon: Truck,
-    tone: "info",
-  },
-];
+const summaryMetrics:
+  SummaryMetric[] = [
+    {
+      label:
+        "Total Parts",
+
+      value:
+        "248",
+
+      helper:
+        "Tracked inventory items",
+
+      icon:
+        Boxes,
+
+      tone:
+        "info",
+    },
+
+    {
+      label:
+        "Available Stock",
+
+      value:
+        "91%",
+
+      helper:
+        "Ready for service use",
+
+      icon:
+        PackageCheck,
+
+      tone:
+        "nominal",
+    },
+
+    {
+      label:
+        "Low Stock",
+
+      value:
+        "07",
+
+      helper:
+        "Below reorder threshold",
+
+      icon:
+        AlertTriangle,
+
+      tone:
+        "caution",
+    },
+
+    {
+      label:
+        "Open Orders",
+
+      value:
+        "04",
+
+      helper:
+        "Supplier orders in progress",
+
+      icon:
+        Truck,
+
+      tone:
+        "info",
+    },
+  ];
+
+/* =========================================================
+   Page Header
+   ========================================================= */
 
 function PageHeader() {
   return (
-    <section className="rounded-xl border border-[#1d2533] bg-[#07111f] p-5 shadow-[0_18px_50px_rgba(0,0,0,0.28)]">
+    <section className="mn-panel p-5">
       <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
         <div>
-          <p className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-(--primary)">
-            Operational Systems
+          <p className="mn-eyebrow">
+            Systems · Logistics
           </p>
 
-          <h1 className="mt-2 text-[28px] font-semibold tracking-tight text-(--foreground)">
+          <h1 className="mn-heading mt-2 text-[28px]">
             Parts Inventory
           </h1>
 
-          <p className="mt-2 max-w-4xl text-[14px] leading-relaxed text-(--muted)">
-            Track spare parts, stock levels, reorder points, supplier orders,
-            cost, storage location, and drone compatibility.
+          <p className="mt-2 max-w-4xl text-[13px] leading-relaxed text-[var(--muted)]">
+            Track spare parts, stock levels, reorder thresholds, supplier orders, storage locations and aircraft compatibility across MissionNexus operations.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
           <button
             type="button"
-            className="flex h-11 items-center gap-2 rounded border border-[#2a3547] bg-black px-4 font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-(--foreground) transition hover:border-(--primary) hover:text-(--primary)"
+            className="mn-button mn-button-secondary"
           >
-            <ScanLine size={14} />
+            <ScanLine
+              size={14}
+            />
+
             Scan Part
           </button>
 
           <button
             type="button"
-            className="flex h-11 items-center gap-2 rounded bg-(--primary) px-4 font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-black transition hover:opacity-90"
+            className="mn-button mn-button-primary"
           >
-            <PackagePlus size={14} />
+            <PackagePlus
+              size={14}
+            />
+
             Add Stock
           </button>
         </div>
@@ -126,6 +226,10 @@ function PageHeader() {
     </section>
   );
 }
+
+/* =========================================================
+   Section
+   ========================================================= */
 
 function SectionShell({
   eyebrow,
@@ -139,57 +243,97 @@ function SectionShell({
   children: ReactNode;
 }) {
   return (
-    <section className="overflow-hidden rounded-xl border border-[#1d2533] bg-black shadow-[0_18px_50px_rgba(0,0,0,0.28)]">
-      <div className="border-b border-[#151923] px-5 py-4">
+    <section className="mn-panel overflow-hidden">
+      <div className="border-b border-[var(--border-soft)] px-5 py-4">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <p className="font-mono text-[9px] font-bold uppercase tracking-[0.18em] text-(--primary)">
+            <p className="mn-eyebrow">
               {eyebrow}
             </p>
 
-            <h2 className="mt-1 text-[18px] font-semibold leading-tight text-(--foreground)">
+            <h2 className="mn-heading mt-1 text-[18px]">
               {title}
             </h2>
           </div>
 
-          {action && (
-            <span className="inline-flex w-fit rounded-full border border-[#243147] bg-[#07111f] px-3 py-1 font-mono text-[9px] font-bold uppercase tracking-[0.12em] text-(--info)">
+          {action ? (
+            <span className="mn-chip mn-chip-primary w-fit">
               {action}
             </span>
-          )}
+          ) : null}
         </div>
       </div>
 
-      <div className="p-5">{children}</div>
+      <div className="p-5">
+        {children}
+      </div>
     </section>
   );
 }
 
-function SummaryCard({ item }: { item: SummaryMetric }) {
-  const Icon = item.icon;
-  const tone = toneClass[item.tone];
+/* =========================================================
+   Summary
+   ========================================================= */
+
+function SummaryCard({
+  item,
+}: {
+  item: SummaryMetric;
+}) {
+  const Icon =
+    item.icon;
+
+  const tone =
+    toneClass[
+      item.tone
+    ];
 
   return (
-    <div className={`rounded-xl border bg-[#070a10] p-4 ${tone.border}`}>
+    <div
+      className={[
+        "mn-card p-4",
+        tone.border,
+      ].join(" ")}
+    >
       <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 font-mono text-[9px] font-bold uppercase tracking-[0.12em] text-(--muted)">
-          <Icon size={14} className={tone.text} />
+        <div className="flex items-center gap-2 font-mono text-[9px] font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
+          <Icon
+            size={14}
+            className={
+              tone.text
+            }
+          />
+
           {item.label}
         </div>
 
-        <span className={`h-2.5 w-2.5 rounded-full ${tone.dot}`} />
+        <span
+          className={[
+            "h-2 w-2 rounded-full",
+            tone.dot,
+          ].join(" ")}
+        />
       </div>
 
-      <div className={`mt-4 font-mono text-[26px] font-bold uppercase ${tone.text}`}>
+      <div
+        className={[
+          "mt-4 font-mono text-[26px] font-semibold",
+          tone.text,
+        ].join(" ")}
+      >
         {item.value}
       </div>
 
-      <p className="mt-2 text-[13px] leading-relaxed text-(--muted)">
+      <p className="mt-2 text-[12px] leading-relaxed text-[var(--muted)]">
         {item.helper}
       </p>
     </div>
   );
 }
+
+/* =========================================================
+   Insight
+   ========================================================= */
 
 function InsightCard({
   icon: Icon,
@@ -204,36 +348,70 @@ function InsightCard({
   helper: string;
   tone: Tone;
 }) {
-  const toneStyle = toneClass[tone];
+  const style =
+    toneClass[
+      tone
+    ];
 
   return (
-    <div className={`rounded-xl border bg-black p-4 ${toneStyle.border}`}>
-      <div className="flex items-center gap-2 font-mono text-[9px] font-bold uppercase tracking-[0.14em] text-(--muted)">
-        <Icon size={13} className={toneStyle.text} />
+    <div
+      className={[
+        "mn-card p-4",
+        style.border,
+      ].join(" ")}
+    >
+      <div className="flex items-center gap-2 font-mono text-[9px] font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+        <Icon
+          size={13}
+          className={
+            style.text
+          }
+        />
+
         {label}
       </div>
 
-      <div className={`mt-3 font-mono text-[18px] font-bold uppercase ${toneStyle.text}`}>
+      <div
+        className={[
+          "mt-3 font-mono text-[18px] font-semibold",
+          style.text,
+        ].join(" ")}
+      >
         {value}
       </div>
 
-      <p className="mt-2 text-[13px] leading-relaxed text-(--muted)">
+      <p className="mt-2 text-[12px] leading-relaxed text-[var(--muted)]">
         {helper}
       </p>
     </div>
   );
 }
 
+/* =========================================================
+   Page
+   ========================================================= */
+
 export function Inventory() {
   return (
-    <div className="min-h-screen bg-[#09090b] px-5 py-6">
+    <div className="min-h-screen bg-[var(--background)] px-5 py-6">
       <div className="mx-auto flex max-w-[1680px] flex-col gap-6">
         <PageHeader />
 
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {summaryMetrics.map((item) => (
-            <SummaryCard key={item.label} item={item} />
-          ))}
+          {summaryMetrics.map(
+            (
+              item,
+            ) => (
+              <SummaryCard
+                key={
+                  item.label
+                }
+                item={
+                  item
+                }
+              />
+            ),
+          )}
         </section>
 
         <SectionShell
@@ -276,7 +454,9 @@ export function Inventory() {
 
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <InsightCard
-            icon={Warehouse}
+            icon={
+              Warehouse
+            }
             label="Storage"
             value="Bay A-03"
             helper="Primary drone components are mapped to the main service bay."
@@ -284,15 +464,19 @@ export function Inventory() {
           />
 
           <InsightCard
-            icon={Package}
+            icon={
+              Package
+            }
             label="Critical Spares"
             value="Available"
-            helper="Core propeller, ESC, battery, and sensor spares are stocked."
+            helper="Core propeller, ESC, battery and sensor spares are stocked."
             tone="nominal"
           />
 
           <InsightCard
-            icon={AlertTriangle}
+            icon={
+              AlertTriangle
+            }
             label="Procurement Risk"
             value="Moderate"
             helper="Seven components are near reorder threshold."
@@ -300,7 +484,9 @@ export function Inventory() {
           />
 
           <InsightCard
-            icon={ClipboardCheck}
+            icon={
+              ClipboardCheck
+            }
             label="Audit Status"
             value="Clean"
             helper="Inventory status is consistent with current mock records."
