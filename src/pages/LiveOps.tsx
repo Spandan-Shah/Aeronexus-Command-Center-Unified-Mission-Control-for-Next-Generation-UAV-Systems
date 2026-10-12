@@ -33,30 +33,17 @@ import type {
 
 /* =========================================================
    MissionNexus V2
-   Home / Tactical Mission Map
+   Tactical Mission Map
 
-   FIRST VIEWPORT
+   Typography:
+   - Headings: 16px
+   - Content: 13px
 
-   ┌───────────────────────────────────────────────────────┐
-   │ Global Aeronexus Header                       70px   │
-   ├───────────────────────────────────────────────────────┤
-   │ Tactical Mission Map                                │
-   ├─────────────────────────────────────┬─────────────────┤
-   │                                     │ MAP CONTROLS    │
-   │                                     │                 │
-   │                                     │ UAV     AOI     │
-   │              MAP                    │ Mission Home    │
-   │                                     │                 │
-   │                                     │ Zoom / Base Map │
-   │                                     │                 │
-   │                                     │ Layers 2-col   │
-   │                                     │                 │
-   └─────────────────────────────────────┴─────────────────┘
-
-   Nothing inside this workspace scrolls.
-
-   The MissionNexus footer exists immediately below this
-   viewport and appears only when the document is scrolled.
+   Layout:
+   - entire map workspace fits first viewport
+   - right panel remains two-column
+   - no internal scrolling
+   - footer begins after first viewport
    ========================================================= */
 
 const initialMapState: AeroWorldMapState = {
@@ -101,7 +88,7 @@ function CompactAction({
       type="button"
       onClick={onClick}
       className={[
-        "group flex h-[42px] min-w-0 items-center gap-2.5",
+        "group flex h-[42px] min-w-0 items-center gap-2",
 
         "rounded-[5px] border px-2.5",
 
@@ -112,8 +99,8 @@ function CompactAction({
         "active:translate-y-px",
 
         primary
-          ? "border-[rgba(246,178,60,0.32)] bg-[rgba(246,178,60,0.07)] text-(--primary)"
-          : "border-white/[0.08] bg-white/[0.018] text-white/66 hover:border-white/15 hover:bg-white/[0.035] hover:text-white",
+          ? "border-[rgba(246,178,60,0.30)] bg-[rgba(246,178,60,0.06)] text-(--primary)"
+          : "border-white/[0.08] bg-white/[0.015] text-white/70 hover:border-white/15 hover:bg-white/[0.03] hover:text-white",
       ].join(" ")}
     >
       <span
@@ -123,8 +110,8 @@ function CompactAction({
           "rounded-[4px] border",
 
           primary
-            ? "border-[rgba(246,178,60,0.25)] bg-[rgba(246,178,60,0.06)]"
-            : "border-white/[0.07] bg-black/30",
+            ? "border-[rgba(246,178,60,0.24)] bg-[rgba(246,178,60,0.05)]"
+            : "border-white/[0.07] bg-black/25",
         ].join(" ")}
       >
         <Icon
@@ -133,7 +120,7 @@ function CompactAction({
         />
       </span>
 
-      <span className="min-w-0 truncate text-[10px] font-medium">
+      <span className="min-w-0 truncate text-[13px] font-medium leading-none">
         {label}
       </span>
     </button>
@@ -142,6 +129,9 @@ function CompactAction({
 
 /* =========================================================
    Layer Toggle
+
+   Label = 13px
+   ON/OFF = 13px
    ========================================================= */
 
 function CompactLayer({
@@ -161,24 +151,22 @@ function CompactLayer({
       onClick={onClick}
       aria-pressed={enabled}
       className={[
-        "flex h-[32px] min-w-0 items-center justify-between",
+        "flex h-[34px] min-w-0 items-center justify-between",
 
         "rounded-[4px] border px-2.5",
-
-        "font-mono text-[8px] font-semibold uppercase tracking-[0.055em]",
 
         "transition-[background-color,border-color,color] duration-150",
 
         enabled
-          ? "border-[rgba(246,178,60,0.22)] bg-[rgba(246,178,60,0.045)] text-(--primary)"
-          : "border-white/[0.065] bg-white/[0.01] text-white/34 hover:border-white/12 hover:text-white/64",
+          ? "border-[rgba(246,178,60,0.22)] bg-[rgba(246,178,60,0.04)] text-(--primary)"
+          : "border-white/[0.06] bg-white/[0.01] text-white/50 hover:border-white/12 hover:text-white/74",
       ].join(" ")}
     >
-      <span className="truncate">
+      <span className="min-w-0 truncate text-[13px] font-medium leading-none tracking-[-0.01em]">
         {label}
       </span>
 
-      <span className="ml-2 shrink-0 text-[7px]">
+      <span className="ml-2 shrink-0 font-mono text-[13px] font-semibold leading-none">
         {enabled
           ? "ON"
           : "OFF"}
@@ -189,6 +177,8 @@ function CompactLayer({
 
 /* =========================================================
    Control Section
+
+   Heading = 16px
    ========================================================= */
 
 function ControlSection({
@@ -202,11 +192,11 @@ function ControlSection({
   return (
     <section className="min-w-0">
       <div className="mb-2 flex items-center gap-2">
-        <span className="shrink-0 font-mono text-[8px] font-semibold uppercase tracking-[0.14em] text-white/38">
+        <span className="shrink-0 font-mono text-[16px] font-semibold uppercase tracking-[0.055em] text-white/58">
           {title}
         </span>
 
-        <span className="h-px min-w-0 flex-1 bg-white/[0.06]" />
+        <span className="h-px min-w-0 flex-1 bg-white/[0.07]" />
       </div>
 
       {children}
@@ -216,12 +206,6 @@ function ControlSection({
 
 /* =========================================================
    Map Control Rail
-
-   Important:
-   - Entire rail remains visible in the first viewport.
-   - No overflow-y-auto.
-   - Navigation is 2 columns.
-   - Layer controls are 2 columns.
    ========================================================= */
 
 function MapControlRail({
@@ -255,17 +239,17 @@ function MapControlRail({
       ].join(" ")}
     >
       {/* ===================================================
-          Rail Header
+          Map Control Header
           =================================================== */}
 
-      <div className="shrink-0 border-b border-white/[0.08] px-3.5 py-3">
+      <div className="shrink-0 border-b border-white/[0.08] px-3 py-2.5">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <div className="font-mono text-[9px] font-semibold uppercase tracking-[0.15em] text-(--primary)">
+            <div className="font-mono text-[16px] font-semibold uppercase tracking-[0.055em] text-(--primary)">
               Map Controls
             </div>
 
-            <div className="mt-1 truncate text-[10px] text-white/38">
+            <div className="mt-0.5 truncate text-[13px] leading-[1.3] text-white/52">
               Navigation · view · layers
             </div>
           </div>
@@ -274,7 +258,7 @@ function MapControlRail({
             className={[
               "flex shrink-0 items-center gap-1.5",
 
-              "font-mono text-[7px] font-semibold uppercase tracking-[0.09em]",
+              "font-mono text-[13px] font-semibold uppercase tracking-[0.035em]",
 
               gpsOnline
                 ? "text-(--nominal)"
@@ -283,7 +267,7 @@ function MapControlRail({
           >
             <span
               className={[
-                "h-1.5 w-1.5 rounded-full",
+                "h-2 w-2 rounded-full",
 
                 gpsOnline
                   ? "bg-(--nominal)"
@@ -299,12 +283,10 @@ function MapControlRail({
       </div>
 
       {/* ===================================================
-          Rail Content
-
-          Fits inside available height.
+          Control Content
           =================================================== */}
 
-      <div className="flex min-h-0 flex-1 flex-col gap-3 p-3">
+      <div className="flex min-h-0 flex-1 flex-col gap-2.5 p-3">
         {/* ===============================================
             Navigation
             =============================================== */}
@@ -347,7 +329,7 @@ function MapControlRail({
         </ControlSection>
 
         {/* ===============================================
-            View
+            Map View
             =============================================== */}
 
         <ControlSection title="Map View">
@@ -375,31 +357,35 @@ function MapControlRail({
               mapRef.current?.toggleBaseMap()
             }
             className={[
-              "mt-1.5 flex h-[34px] w-full items-center justify-between",
+              "mt-1.5 flex h-[35px] w-full items-center justify-between",
 
-              "rounded-[4px] border border-[rgba(90,169,255,0.2)]",
+              "rounded-[4px] border",
 
-              "bg-[rgba(90,169,255,0.04)] px-2.5",
+              "border-[rgba(90,169,255,0.20)]",
+
+              "bg-[rgba(90,169,255,0.04)]",
+
+              "px-2.5",
 
               "text-(--info)",
 
               "transition-[background-color,border-color] duration-150",
 
-              "hover:border-[rgba(90,169,255,0.36)]",
+              "hover:border-[rgba(90,169,255,0.35)]",
 
               "hover:bg-[rgba(90,169,255,0.07)]",
             ].join(" ")}
           >
-            <span className="flex items-center gap-2 text-[9px] font-medium">
+            <span className="flex items-center gap-2 text-[13px] font-medium">
               <Globe2
-                size={12}
+                size={13}
                 strokeWidth={1.6}
               />
 
               Base Map
             </span>
 
-            <span className="font-mono text-[8px] font-semibold uppercase">
+            <span className="font-mono text-[13px] font-semibold uppercase">
               {mapState.baseMap}
             </span>
           </button>
@@ -512,19 +498,17 @@ function MapControlRail({
         </ControlSection>
 
         {/* ===============================================
-            Rail State
-
-            Pushed to bottom without making rail scroll.
+            Map State
             =============================================== */}
 
-        <div className="mt-auto border-t border-white/[0.07] pt-2.5">
-          <div className="grid grid-cols-2 gap-2">
+        <div className="mt-auto border-t border-white/[0.07] pt-2">
+          <div className="grid grid-cols-2 gap-1.5">
             <div className="rounded-[4px] border border-white/[0.06] bg-black/20 px-2.5 py-2">
-              <div className="font-mono text-[7px] uppercase tracking-[0.1em] text-white/28">
+              <div className="font-mono text-[16px] font-semibold uppercase tracking-[0.05em] text-white/52">
                 Zoom
               </div>
 
-              <div className="mt-0.5 font-mono text-[10px] font-semibold text-white/68">
+              <div className="mt-0.5 font-mono text-[13px] font-semibold text-white/80">
                 {mapState.zoom.toFixed(
                   1,
                 )}
@@ -532,19 +516,19 @@ function MapControlRail({
             </div>
 
             <div className="rounded-[4px] border border-white/[0.06] bg-black/20 px-2.5 py-2">
-              <div className="font-mono text-[7px] uppercase tracking-[0.1em] text-white/28">
+              <div className="font-mono text-[16px] font-semibold uppercase tracking-[0.05em] text-white/52">
                 Reference
               </div>
 
-              <div className="mt-0.5 font-mono text-[10px] font-semibold text-white/68">
+              <div className="mt-0.5 font-mono text-[13px] font-semibold text-white/80">
                 WGS-84
               </div>
             </div>
           </div>
 
-          <div className="mt-2 flex items-center gap-2 font-mono text-[7px] uppercase tracking-[0.08em] text-white/30">
+          <div className="mt-2 flex items-center gap-2 font-mono text-[13px] uppercase tracking-[0.035em] text-white/48">
             <Satellite
-              size={10}
+              size={13}
               strokeWidth={1.6}
               className={
                 gpsOnline
@@ -562,7 +546,7 @@ function MapControlRail({
 }
 
 /* =========================================================
-   Live Operations / Home
+   Live Operations
    ========================================================= */
 
 export function LiveOps() {
@@ -588,28 +572,14 @@ export function LiveOps() {
   }
 
   return (
-    /*
-     * This section occupies EXACTLY the browser area below
-     * the fixed 70px global header.
-     *
-     * The footer is the next element in AppShell.
-     *
-     * Therefore:
-     *
-     * 70px header
-     * +
-     * calc(100vh - 70px) home workspace
-     * =
-     * exactly 100vh.
-     */
     <section className="h-[calc(100vh-70px)] w-full overflow-hidden bg-[#05060d]">
       <div
         className={[
           "mx-auto grid h-full w-full max-w-[1600px]",
 
-          "grid-rows-[46px_minmax(0,1fr)]",
+          "grid-rows-[48px_minmax(0,1fr)]",
 
-          "px-4 pb-3",
+          "px-4 pb-4 pt-2",
 
           "sm:px-6",
 
@@ -621,7 +591,7 @@ export function LiveOps() {
         ].join(" ")}
       >
         {/* =================================================
-            Tactical Map Header
+            Map Page Header
             ================================================= */}
 
         <header className="flex min-w-0 items-center justify-between border-b border-white/[0.08]">
@@ -633,7 +603,7 @@ export function LiveOps() {
             />
 
             <h1
-              className="truncate text-[15px] font-medium tracking-[-0.02em] text-white"
+              className="truncate text-[16px] font-medium tracking-[-0.02em] text-white"
               style={{
                 fontFamily:
                   '"Manrope", "Inter", ui-sans-serif, system-ui, sans-serif',
@@ -647,35 +617,28 @@ export function LiveOps() {
               className="hidden h-3 w-px bg-white/10 sm:block"
             />
 
-            <span className="hidden font-mono text-[8px] uppercase tracking-[0.08em] text-white/30 sm:block">
+            <span className="hidden font-mono text-[13px] font-medium uppercase tracking-[0.045em] text-white/44 sm:block">
               Live Operations
             </span>
           </div>
 
           <div className="flex shrink-0 items-center gap-2">
-            <span className="h-1.5 w-1.5 rounded-full bg-(--nominal)" />
+            <span className="h-2 w-2 rounded-full bg-(--nominal)" />
 
-            <span className="font-mono text-[8px] font-semibold uppercase tracking-[0.1em] text-(--nominal)">
+            <span className="font-mono text-[13px] font-semibold uppercase tracking-[0.04em] text-(--nominal)">
               Map Ready
             </span>
           </div>
         </header>
 
         {/* =================================================
-            Map Workspace
-
-            Both map and right rail are forced to exactly
-            the same available height.
-
-            No child scrollbars.
+            Map + Right Panel
             ================================================= */}
 
         <div className="min-h-0 pt-3">
           <div
             className={[
-              "grid h-full min-h-0",
-
-              "overflow-hidden",
+              "grid h-full min-h-0 overflow-hidden",
 
               "rounded-[6px]",
 
@@ -685,22 +648,13 @@ export function LiveOps() {
 
               "shadow-[0_18px_48px_rgba(0,0,0,0.2)]",
 
-              /*
-               * Wider right rail allows controls to use
-               * compact two-column layout and remain inside
-               * the screen height.
-               */
-              "lg:grid-cols-[minmax(0,1fr)_350px]",
+              "lg:grid-cols-[minmax(0,1fr)_340px]",
 
-              "xl:grid-cols-[minmax(0,1fr)_380px]",
+              "xl:grid-cols-[minmax(0,1fr)_360px]",
 
-              "2xl:grid-cols-[minmax(0,1fr)_400px]",
+              "2xl:grid-cols-[minmax(0,1fr)_380px]",
             ].join(" ")}
           >
-            {/* =============================================
-                Pure Map Canvas
-                ============================================= */}
-
             <div className="relative min-h-0 min-w-0 overflow-hidden">
               <AeroWorldMap
                 ref={mapRef}
@@ -709,10 +663,6 @@ export function LiveOps() {
                 }
               />
             </div>
-
-            {/* =============================================
-                Map Controls
-                ============================================= */}
 
             <MapControlRail
               mapRef={mapRef}
