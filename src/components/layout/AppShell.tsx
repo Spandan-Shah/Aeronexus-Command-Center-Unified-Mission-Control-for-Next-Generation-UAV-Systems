@@ -36,6 +36,24 @@ import {
   MissionFooter,
 } from "./MissionFooter";
 
+/* =========================================================
+   MissionNexus V2
+   Global Application Shell
+
+   Important stacking rule:
+
+   Header:
+   z-[5000]
+
+   Main application:
+   relative z-0
+
+   Leaflet uses high internal z-index values for its panes
+   and controls. Keeping the application content inside a
+   z-0 stacking context prevents Leaflet from drawing above
+   the fixed MissionNexus header.
+   ========================================================= */
+
 type AppShellProps = {
   children: ReactNode;
 
@@ -48,15 +66,23 @@ type AppShellProps = {
 
 type NavItem = {
   id: PageId;
+
   label: string;
+
   description: string;
+
   icon: LucideIcon;
 };
 
 type NavGroup = {
   label: string;
+
   items: NavItem[];
 };
+
+/* =========================================================
+   Navigation
+   ========================================================= */
 
 const navGroups: NavGroup[] = [
   {
@@ -65,41 +91,56 @@ const navGroups: NavGroup[] = [
     items: [
       {
         id: "live-ops",
+
         label: "Live Operations",
+
         description:
           "Tactical map and real-time mission awareness",
+
         icon: Radar,
       },
 
       {
         id: "mission-planner",
+
         label: "Mission Planner",
+
         description:
           "Routes, waypoints, geofences and mission planning",
+
         icon: Map,
       },
 
       {
         id: "drone-control",
+
         label: "Drone Control",
+
         description:
           "Aircraft commands, payload and flight control",
+
         icon: Gamepad2,
       },
 
       {
         id: "fleet",
+
         label: "Fleet",
+
         description:
           "Aircraft assignment and operational readiness",
+
         icon: Plane,
       },
 
       {
         id: "pre-flight",
+
         label: "Pre-Flight",
+
         description:
           "Launch readiness and aircraft validation",
+
         icon: ClipboardCheck,
       },
     ],
@@ -111,25 +152,34 @@ const navGroups: NavGroup[] = [
     items: [
       {
         id: "camera-ai",
+
         label: "Vision Intelligence",
+
         description:
           "YOLO, OpenCV and aerial video analysis",
+
         icon: Camera,
       },
 
       {
         id: "logs",
+
         label: "Mission Debrief",
+
         description:
           "Logs, alerts, analytics and mission history",
+
         icon: FileText,
       },
 
       {
         id: "security",
+
         label: "Security",
+
         description:
           "Secure sessions and telemetry integrity",
+
         icon: ShieldCheck,
       },
     ],
@@ -141,38 +191,54 @@ const navGroups: NavGroup[] = [
     items: [
       {
         id: "drone-health",
+
         label: "Drone Health",
+
         description:
           "Aircraft diagnostics and component condition",
+
         icon: Gauge,
       },
 
       {
         id: "battery",
+
         label: "Battery & Power",
+
         description:
           "Power state, thermal behavior and endurance",
+
         icon: Battery,
       },
 
       {
         id: "maintenance",
+
         label: "Maintenance",
+
         description:
           "Aircraft servicing and maintenance scheduling",
+
         icon: Wrench,
       },
 
       {
         id: "inventory",
+
         label: "Inventory",
+
         description:
           "Parts, payloads and operational assets",
+
         icon: Package,
       },
     ],
   },
 ];
+
+/* =========================================================
+   Typography
+   ========================================================= */
 
 const productFont = {
   fontFamily:
@@ -184,6 +250,10 @@ const interfaceFont = {
     '"Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
 };
 
+/* =========================================================
+   Helpers
+   ========================================================= */
+
 function isGroupActive(
   group: NavGroup,
   activePage: PageId,
@@ -193,6 +263,10 @@ function isGroupActive(
       item.id === activePage,
   );
 }
+
+/* =========================================================
+   Desktop Navigation
+   ========================================================= */
 
 function DesktopNavGroup({
   group,
@@ -215,6 +289,10 @@ function DesktopNavGroup({
 
   return (
     <div className="group relative flex h-full items-center">
+      {/* ===================================================
+          Main header group
+          =================================================== */}
+
       <button
         type="button"
         style={productFont}
@@ -222,24 +300,31 @@ function DesktopNavGroup({
           "relative flex h-full items-center gap-1.5",
 
           /*
-           * Reduced from 13px.
-           * Cleaner and closer to GeoFusion.
+           * Compact right-side navigation.
            */
-          "text-[12px] font-semibold uppercase tracking-[0.06em]",
+          "text-[11px] font-semibold uppercase tracking-[0.065em]",
 
           "transition-colors duration-150",
 
           active
             ? "text-white"
-            : "text-white/68 hover:text-white",
+            : "text-white/64 hover:text-white",
         ].join(" ")}
       >
         {group.label}
 
         <ChevronDown
-          size={12}
+          size={11}
           strokeWidth={1.7}
-          className="opacity-55 transition-transform duration-150 group-hover:rotate-180 group-focus-within:rotate-180"
+          className={[
+            "opacity-55",
+
+            "transition-transform duration-150",
+
+            "group-hover:rotate-180",
+
+            "group-focus-within:rotate-180",
+          ].join(" ")}
         />
 
         {active ? (
@@ -250,39 +335,56 @@ function DesktopNavGroup({
         ) : null}
       </button>
 
-      <div className="pointer-events-none absolute left-1/2 top-full h-3 w-[310px] -translate-x-1/2" />
+      {/* ===================================================
+          Hover bridge
+          =================================================== */}
+
+      <div className="pointer-events-none absolute left-1/2 top-full h-3 w-[300px] -translate-x-1/2" />
+
+      {/* ===================================================
+          Dropdown
+          =================================================== */}
 
       <div
         className={[
-          "pointer-events-none invisible absolute left-1/2 top-[calc(100%+10px)] z-[80]",
+          "pointer-events-none invisible absolute left-1/2 top-[calc(100%+10px)]",
 
-          "w-[310px] -translate-x-1/2",
+          /*
+           * Above header/map content.
+           */
+          "z-[5100]",
+
+          "w-[300px] -translate-x-1/2",
 
           "rounded-[6px] border border-white/10",
 
-          "bg-[rgba(5,6,13,0.98)] p-2",
+          "bg-[rgba(5,6,13,0.99)] p-2",
 
           "opacity-0",
 
-          "shadow-[0_22px_60px_rgba(0,0,0,0.5)]",
+          "shadow-[0_22px_60px_rgba(0,0,0,0.55)]",
 
           "backdrop-blur-[18px]",
 
           "transition-[opacity,visibility] duration-150",
 
           "group-hover:pointer-events-auto",
+
           "group-hover:visible",
+
           "group-hover:opacity-100",
 
           "group-focus-within:pointer-events-auto",
+
           "group-focus-within:visible",
+
           "group-focus-within:opacity-100",
         ].join(" ")}
       >
         <div className="px-3 pb-2 pt-1">
           <div
             style={productFont}
-            className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/38"
+            className="text-[9px] font-semibold uppercase tracking-[0.13em] text-white/38"
           >
             {group.label}
           </div>
@@ -312,7 +414,11 @@ function DesktopNavGroup({
                     : undefined
                 }
                 className={[
-                  "flex w-full items-start gap-3 rounded-[6px] px-3 py-2.5 text-left",
+                  "flex w-full items-start gap-3",
+
+                  "rounded-[6px] px-3 py-2.5",
+
+                  "text-left",
 
                   "transition-colors duration-150",
 
@@ -321,37 +427,41 @@ function DesktopNavGroup({
                     : "hover:bg-white/[0.04]",
                 ].join(" ")}
               >
+                {/* Icon */}
+
                 <span
                   className={[
-                    "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center",
+                    "mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center",
 
                     "rounded-[5px] border",
 
                     itemActive
                       ? "border-[rgba(246,178,60,0.28)] bg-[rgba(246,178,60,0.07)] text-(--primary)"
-                      : "border-white/[0.08] bg-white/[0.02] text-white/50",
+                      : "border-white/[0.08] bg-white/[0.02] text-white/48",
                   ].join(" ")}
                 >
                   <Icon
-                    size={14}
+                    size={13}
                     strokeWidth={1.6}
                   />
                 </span>
 
+                {/* Text */}
+
                 <span className="min-w-0">
                   <span
                     className={[
-                      "block text-[12px] font-medium",
+                      "block text-[11px] font-medium",
 
                       itemActive
                         ? "text-(--primary)"
-                        : "text-white/90",
+                        : "text-white/88",
                     ].join(" ")}
                   >
                     {item.label}
                   </span>
 
-                  <span className="mt-1 block text-[10px] leading-[1.45] text-white/42">
+                  <span className="mt-1 block text-[10px] leading-[1.45] text-white/40">
                     {item.description}
                   </span>
                 </span>
@@ -363,6 +473,10 @@ function DesktopNavGroup({
     </div>
   );
 }
+
+/* =========================================================
+   Mobile Navigation
+   ========================================================= */
 
 function MobileNavigation({
   activePage,
@@ -388,7 +502,26 @@ function MobileNavigation({
   }
 
   return (
-    <div className="absolute inset-x-0 top-[70px] border-b border-white/10 bg-[rgba(5,6,13,0.99)] shadow-[0_22px_60px_rgba(0,0,0,0.5)] backdrop-blur-[18px] min-[1380px]:hidden">
+    <div
+      className={[
+        "absolute inset-x-0 top-[70px]",
+
+        /*
+         * Must remain above Leaflet.
+         */
+        "z-[5100]",
+
+        "border-b border-white/10",
+
+        "bg-[rgba(5,6,13,0.99)]",
+
+        "shadow-[0_22px_60px_rgba(0,0,0,0.55)]",
+
+        "backdrop-blur-[18px]",
+
+        "min-[1380px]:hidden",
+      ].join(" ")}
+    >
       <div className="mx-auto max-h-[calc(100vh-70px)] max-w-[1600px] overflow-y-auto px-5 py-5 sm:px-6 lg:px-10">
         <div className="grid gap-6 md:grid-cols-3">
           {navGroups.map(
@@ -398,7 +531,7 @@ function MobileNavigation({
               >
                 <div
                   style={productFont}
-                  className="mb-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-(--primary)"
+                  className="mb-3 text-[10px] font-semibold uppercase tracking-[0.11em] text-(--primary)"
                 >
                   {group.label}
                 </div>
@@ -422,20 +555,31 @@ function MobileNavigation({
                               item.id,
                             )
                           }
+                          aria-current={
+                            active
+                              ? "page"
+                              : undefined
+                          }
                           className={[
-                            "flex items-center gap-3 rounded-[6px] px-3 py-2.5 text-left",
+                            "flex items-center gap-3",
+
+                            "rounded-[6px] px-3 py-2.5",
+
+                            "text-left",
+
+                            "transition-colors duration-150",
 
                             active
                               ? "bg-[rgba(246,178,60,0.08)] text-(--primary)"
-                              : "text-white/70 hover:bg-white/[0.035] hover:text-white",
+                              : "text-white/68 hover:bg-white/[0.035] hover:text-white",
                           ].join(" ")}
                         >
                           <Icon
-                            size={14}
+                            size={13}
                             strokeWidth={1.6}
                           />
 
-                          <span className="text-[12px]">
+                          <span className="text-[11px]">
                             {item.label}
                           </span>
                         </button>
@@ -448,6 +592,8 @@ function MobileNavigation({
           )}
         </div>
 
+        {/* Settings */}
+
         <div className="mt-5 border-t border-white/[0.07] pt-4">
           <button
             type="button"
@@ -456,21 +602,27 @@ function MobileNavigation({
                 "settings",
               )
             }
+            aria-current={
+              activePage ===
+              "settings"
+                ? "page"
+                : undefined
+            }
             className={[
-              "flex h-[40px] w-full items-center justify-center gap-2",
+              "flex h-[38px] w-full items-center justify-center gap-2",
 
               "rounded-[6px] border border-white/10",
 
-              "text-[12px]",
+              "text-[11px]",
 
               activePage ===
               "settings"
                 ? "bg-white/[0.06] text-white"
-                : "bg-transparent text-white/70",
+                : "bg-transparent text-white/68",
             ].join(" ")}
           >
             <Settings
-              size={14}
+              size={13}
               strokeWidth={1.6}
             />
 
@@ -481,6 +633,10 @@ function MobileNavigation({
     </div>
   );
 }
+
+/* =========================================================
+   MissionNexus Header
+   ========================================================= */
 
 function MissionNexusHeader({
   activePage,
@@ -514,18 +670,38 @@ function MissionNexusHeader({
     <header
       style={interfaceFont}
       className={[
-        "fixed inset-x-0 top-0 z-[100]",
+        /*
+         * IMPORTANT:
+         *
+         * Leaflet uses z-index values around 200-1000.
+         * The previous z-[100] allowed the map to draw over
+         * the header while scrolling.
+         */
+        "fixed inset-x-0 top-0 z-[5000]",
 
         "h-[70px]",
 
         "border-b border-white/10",
 
+        /*
+         * Fully opaque background prevents map bleed-through.
+         */
         "bg-[#05060d]",
 
-        "shadow-[0_8px_24px_rgba(0,0,0,0.22)]",
+        "shadow-[0_8px_24px_rgba(0,0,0,0.28)]",
       ].join(" ")}
     >
-      <div className="mx-auto flex h-full w-full max-w-[1600px] items-center px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-14">
+      <div
+        className={[
+          "mx-auto flex h-full w-full max-w-[1600px] items-center",
+
+          "px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-14",
+        ].join(" ")}
+      >
+        {/* =================================================
+            Aeronexus | MissionNexus
+            ================================================= */}
+
         <button
           type="button"
           onClick={() =>
@@ -539,7 +715,7 @@ function MissionNexusHeader({
           <img
             src={aeronexusWordmark}
             alt="Aeronexus"
-            className="h-8 w-auto object-contain sm:h-9 xl:h-10"
+            className="h-8 w-auto shrink-0 object-contain sm:h-9 xl:h-10"
           />
 
           <span
@@ -549,15 +725,21 @@ function MissionNexusHeader({
 
           <span
             style={productFont}
-            className="truncate text-[15px] font-medium tracking-[-0.01em] text-white/80"
+            className="truncate text-[15px] font-medium tracking-[-0.01em] text-white/78"
           >
             MissionNexus
           </span>
         </button>
 
+        {/* =================================================
+            Desktop Header Navigation
+
+            Smaller than previous version.
+            ================================================= */}
+
         <nav
           aria-label="MissionNexus primary navigation"
-          className="ml-auto hidden h-full items-center gap-7 min-[1380px]:flex"
+          className="ml-auto hidden h-full items-center gap-6 min-[1380px]:flex"
         >
           {navGroups.map(
             (group) => (
@@ -571,7 +753,13 @@ function MissionNexusHeader({
           )}
         </nav>
 
-        <div className="ml-auto flex items-center gap-2 min-[1380px]:ml-7">
+        {/* =================================================
+            Header Utilities
+            ================================================= */}
+
+        <div className="ml-auto flex items-center gap-2 min-[1380px]:ml-6">
+          {/* Settings */}
+
           <button
             type="button"
             onClick={() =>
@@ -586,9 +774,14 @@ function MissionNexusHeader({
                 : undefined
             }
             className={[
-              "hidden h-[38px] items-center justify-center gap-2 rounded-[6px] border px-3.5",
+              "hidden h-[36px] items-center justify-center gap-1.5",
 
-              "text-[12px] font-medium",
+              "rounded-[6px] border px-3",
+
+              /*
+               * Reduced header utility text.
+               */
+              "text-[11px] font-medium",
 
               "transition-[background-color,border-color,color] duration-150",
 
@@ -597,16 +790,18 @@ function MissionNexusHeader({
               activePage ===
               "settings"
                 ? "border-white/20 bg-white/[0.06] text-white"
-                : "border-white/10 bg-[#07090d] text-white/68 hover:border-white/20 hover:bg-white/[0.04] hover:text-white",
+                : "border-white/10 bg-[#07090d] text-white/64 hover:border-white/20 hover:bg-white/[0.04] hover:text-white",
             ].join(" ")}
           >
             <Settings
-              size={14}
+              size={13}
               strokeWidth={1.6}
             />
 
             Settings
           </button>
+
+          {/* Compact navigation */}
 
           <button
             type="button"
@@ -623,33 +818,39 @@ function MissionNexusHeader({
             }
             aria-expanded={mobileOpen}
             className={[
-              "flex h-[38px] w-[38px] items-center justify-center",
+              "flex h-[36px] w-[36px] items-center justify-center",
 
               "rounded-[6px] border border-white/10",
 
               "bg-[#07090d]",
 
-              "text-white/60",
+              "text-white/58",
 
-              "hover:border-white/20 hover:text-white",
+              "transition-[background-color,border-color,color] duration-150",
+
+              "hover:border-white/20 hover:bg-white/[0.04] hover:text-white",
 
               "min-[1380px]:hidden",
             ].join(" ")}
           >
             {mobileOpen ? (
               <X
-                size={16}
+                size={15}
                 strokeWidth={1.6}
               />
             ) : (
               <Menu
-                size={16}
+                size={15}
                 strokeWidth={1.6}
               />
             )}
           </button>
         </div>
       </div>
+
+      {/* ===================================================
+          Mobile Navigation
+          =================================================== */}
 
       {mobileOpen ? (
         <MobileNavigation
@@ -666,6 +867,10 @@ function MissionNexusHeader({
   );
 }
 
+/* =========================================================
+   Application Shell
+   ========================================================= */
+
 export function AppShell({
   children,
   activePage,
@@ -681,14 +886,30 @@ export function AppShell({
         onPageChange={onPageChange}
       />
 
-      <main className="pt-[70px]">
+      {/* ===================================================
+          Main Content
+
+          relative z-0 creates a stacking context.
+
+          Leaflet's internal z-index values are now trapped
+          inside this lower stacking context, so they cannot
+          overlap the z-[5000] header.
+          =================================================== */}
+
+      <main className="relative z-0 pt-[70px]">
         {children}
       </main>
 
-      <MissionFooter
-        activePage={activePage}
-        onPageChange={onPageChange}
-      />
+      {/* ===================================================
+          Footer
+          =================================================== */}
+
+      <div className="relative z-0">
+        <MissionFooter
+          activePage={activePage}
+          onPageChange={onPageChange}
+        />
+      </div>
     </div>
   );
 }
