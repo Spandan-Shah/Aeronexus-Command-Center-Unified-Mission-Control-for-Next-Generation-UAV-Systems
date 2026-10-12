@@ -40,18 +40,16 @@ import {
    MissionNexus V2
    Global Application Shell
 
-   Important stacking rule:
+   Header stays above Leaflet:
+   - Header: z-[5000]
+   - Main: relative z-0
 
-   Header:
-   z-[5000]
+   Desktop primary navigation:
+   - Operations
+   - Intelligence
+   - Systems
 
-   Main application:
-   relative z-0
-
-   Leaflet uses high internal z-index values for its panes
-   and controls. Keeping the application content inside a
-   z-0 stacking context prevents Leaflet from drawing above
-   the fixed MissionNexus header.
+   Explicit font-size: 9px
    ========================================================= */
 
 type AppShellProps = {
@@ -290,34 +288,41 @@ function DesktopNavGroup({
   return (
     <div className="group relative flex h-full items-center">
       {/* ===================================================
-          Main header group
+          Primary desktop navigation label
+
+          Explicit 9px inline font-size is intentional.
+          This prevents inherited or global CSS from
+          overriding the compact header typography.
           =================================================== */}
 
       <button
         type="button"
-        style={productFont}
-        className={[
-          "relative flex h-full items-center gap-1.5",
+        style={{
+          ...productFont,
 
-          /*
-           * Compact right-side navigation.
-           */
-          "text-[10px] font-semibold uppercase tracking-[0.06em]",
+          fontSize: "9px",
+
+          lineHeight: "1",
+        }}
+        className={[
+          "relative flex h-full items-center gap-1",
+
+          "font-semibold uppercase tracking-[0.055em]",
 
           "transition-colors duration-150",
 
           active
             ? "text-white"
-            : "text-white/64 hover:text-white",
+            : "text-white/62 hover:text-white",
         ].join(" ")}
       >
         {group.label}
 
         <ChevronDown
-          size={11}
+          size={10}
           strokeWidth={1.7}
           className={[
-            "opacity-55",
+            "opacity-50",
 
             "transition-transform duration-150",
 
@@ -349,9 +354,6 @@ function DesktopNavGroup({
         className={[
           "pointer-events-none invisible absolute left-1/2 top-[calc(100%+10px)]",
 
-          /*
-           * Above header/map content.
-           */
           "z-[5100]",
 
           "w-[300px] -translate-x-1/2",
@@ -506,9 +508,6 @@ function MobileNavigation({
       className={[
         "absolute inset-x-0 top-[70px]",
 
-        /*
-         * Must remain above Leaflet.
-         */
         "z-[5100]",
 
         "border-b border-white/10",
@@ -671,11 +670,8 @@ function MissionNexusHeader({
       style={interfaceFont}
       className={[
         /*
-         * IMPORTANT:
-         *
-         * Leaflet uses z-index values around 200-1000.
-         * The previous z-[100] allowed the map to draw over
-         * the header while scrolling.
+         * Leaflet uses high internal z-index values.
+         * Header stays above the map.
          */
         "fixed inset-x-0 top-0 z-[5000]",
 
@@ -683,9 +679,6 @@ function MissionNexusHeader({
 
         "border-b border-white/10",
 
-        /*
-         * Fully opaque background prevents map bleed-through.
-         */
         "bg-[#05060d]",
 
         "shadow-[0_8px_24px_rgba(0,0,0,0.28)]",
@@ -733,8 +726,6 @@ function MissionNexusHeader({
 
         {/* =================================================
             Desktop Header Navigation
-
-            Smaller than previous version.
             ================================================= */}
 
         <nav
@@ -778,9 +769,6 @@ function MissionNexusHeader({
 
               "rounded-[6px] border px-3",
 
-              /*
-               * Reduced header utility text.
-               */
               "text-[11px] font-medium",
 
               "transition-[background-color,border-color,color] duration-150",
@@ -889,11 +877,7 @@ export function AppShell({
       {/* ===================================================
           Main Content
 
-          relative z-0 creates a stacking context.
-
-          Leaflet's internal z-index values are now trapped
-          inside this lower stacking context, so they cannot
-          overlap the z-[5000] header.
+          z-0 keeps Leaflet underneath the global header.
           =================================================== */}
 
       <main className="relative z-0 pt-[70px]">
