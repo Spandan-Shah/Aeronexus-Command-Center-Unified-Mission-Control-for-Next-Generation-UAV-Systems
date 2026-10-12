@@ -1,4 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+
 import {
   Camera,
   ExternalLink,
@@ -6,29 +11,81 @@ import {
   ScanLine,
   ShieldCheck,
 } from "lucide-react";
-import type { CameraOpenCvAnalysis } from "./OpenCvAnalysisPanel";
+
+import type {
+  CameraOpenCvAnalysis,
+} from "./OpenCvAnalysisPanel";
+
+/* =========================================================
+   Types
+   ========================================================= */
 
 type AiVideoPanelProps = {
   videoSrc?: string;
   videoTitle?: string;
   videoSourceName?: string;
-  openCvAnalysis?: CameraOpenCvAnalysis | null;
+
+  openCvAnalysis?:
+    CameraOpenCvAnalysis | null;
+
   isAnnotatedPlayback?: boolean;
 };
 
-function getRiskClass(risk?: string) {
-  if (risk === "critical") return "text-(--critical)";
-  if (risk === "high") return "text-(--caution)";
-  if (risk === "medium") return "text-(--info)";
-  return "text-(--nominal)";
+/* =========================================================
+   Helpers
+   ========================================================= */
+
+function getRiskClass(
+  risk?: string,
+) {
+  if (
+    risk === "critical"
+  ) {
+    return "text-[#FF5A63]";
+  }
+
+  if (
+    risk === "high"
+  ) {
+    return "text-[#F6B23C]";
+  }
+
+  if (
+    risk === "medium"
+  ) {
+    return "text-[#5AA9FF]";
+  }
+
+  return "text-[#59D99A]";
 }
 
-function getRiskBorderClass(risk?: string) {
-  if (risk === "critical") return "border-(--critical)";
-  if (risk === "high") return "border-(--caution)";
-  if (risk === "medium") return "border-(--info)";
-  return "border-(--nominal)";
+function getRiskBorderClass(
+  risk?: string,
+) {
+  if (
+    risk === "critical"
+  ) {
+    return "border-[rgba(255,90,99,0.34)]";
+  }
+
+  if (
+    risk === "high"
+  ) {
+    return "border-[rgba(246,178,60,0.34)]";
+  }
+
+  if (
+    risk === "medium"
+  ) {
+    return "border-[rgba(90,169,255,0.32)]";
+  }
+
+  return "border-[rgba(89,217,154,0.3)]";
 }
+
+/* =========================================================
+   Generated Fallback
+   ========================================================= */
 
 function GeneratedMissionFeed({
   videoTitle,
@@ -40,259 +97,449 @@ function GeneratedMissionFeed({
   videoFailed: boolean;
 }) {
   return (
-    <div className="absolute inset-0 overflow-hidden bg-[#061018]">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_52%_48%,rgba(73,229,143,0.22),rgba(5,13,24,0.96)_58%)]" />
-      <div className="absolute inset-0 opacity-[0.18] [background-image:linear-gradient(rgba(143,163,184,0.22)_1px,transparent_1px),linear-gradient(90deg,rgba(143,163,184,0.22)_1px,transparent_1px)] [background-size:42px_42px]" />
+    <div className="absolute inset-0 overflow-hidden bg-[#030609]">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_48%,rgba(90,169,255,0.15),rgba(3,4,5,0.98)_58%)]" />
 
-      <div className="absolute left-[44%] top-[42%] h-24 w-24 rounded-full border border-[rgba(246,178,60,0.5)] bg-[rgba(246,178,60,0.08)]">
-        <div className="absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-(--primary)" />
+      <div className="absolute inset-0 opacity-[0.12] [background-image:linear-gradient(rgba(143,163,184,0.25)_1px,transparent_1px),linear-gradient(90deg,rgba(143,163,184,0.25)_1px,transparent_1px)] [background-size:48px_48px]" />
+
+      <div className="absolute left-1/2 top-1/2 h-24 w-24 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[rgba(246,178,60,0.42)]">
+        <div className="absolute left-1/2 top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#F6B23C]" />
+
+        <div className="absolute left-1/2 top-1/2 h-px w-36 -translate-x-1/2 -translate-y-1/2 bg-[rgba(246,178,60,0.25)]" />
+
+        <div className="absolute left-1/2 top-1/2 h-36 w-px -translate-x-1/2 -translate-y-1/2 bg-[rgba(246,178,60,0.25)]" />
       </div>
 
-      <div className="absolute left-5 top-5 rounded border border-[#1d2533] bg-[#050609]/88 px-3 py-2 backdrop-blur">
-        <div className="flex items-center gap-2 font-mono text-[9px] font-bold uppercase tracking-[0.14em] text-(--primary)">
-          <Camera size={13} />
+      <div className="absolute left-4 top-4 rounded-[4px] border border-white/[0.1] bg-[rgba(3,4,5,0.86)] px-2.5 py-1.5 backdrop-blur">
+        <div className="flex items-center gap-2 font-mono text-[9px] font-semibold uppercase tracking-[0.055em] text-[#F6B23C]">
+          <Camera
+            size={11}
+          />
+
           {videoSourceName}
         </div>
 
-        <div className="mt-1 font-mono text-[8px] uppercase tracking-[0.1em] text-(--muted)">
+        <div className="mt-0.5 max-w-[260px] truncate font-mono text-[8px] text-white/32">
           {videoTitle}
         </div>
       </div>
 
-      <div className="absolute right-5 top-5 rounded border border-[#1d2533] bg-[#050609]/88 px-3 py-2 text-right backdrop-blur">
-        <div className="font-mono text-[9px] font-bold uppercase tracking-[0.14em] text-(--nominal)">
-          Generated mission feed
+      {videoFailed ? (
+        <div className="absolute bottom-4 left-4 rounded-[4px] border border-[rgba(246,178,60,0.26)] bg-[rgba(3,4,5,0.9)] px-2.5 py-1.5 font-mono text-[8px] uppercase text-[#F6B23C]">
+          MP4 unavailable · fallback feed
         </div>
-
-        <div className="mt-1 font-mono text-[8px] uppercase text-(--muted)">
-          Live tactical simulation
-        </div>
-      </div>
-
-      {videoFailed && (
-        <div className="absolute left-5 bottom-16 rounded border border-[rgba(246,178,60,0.34)] bg-[rgba(246,178,60,0.08)] px-3 py-2 backdrop-blur">
-          <div className="font-mono text-[9px] font-bold uppercase tracking-[0.12em] text-(--primary)">
-            MP4 unavailable · check public/videos path
-          </div>
-        </div>
-      )}
+      ) : null}
     </div>
   );
 }
 
+/* =========================================================
+   Main
+   ========================================================= */
+
 export function AiVideoPanel({
   videoSrc,
-  videoTitle = "Simulated EO/IR Feed",
-  videoSourceName = "SIM-CAM-01",
+  videoTitle =
+    "Simulated EO/IR Feed",
+  videoSourceName =
+    "SIM-CAM-01",
   openCvAnalysis,
-  isAnnotatedPlayback = false,
+  isAnnotatedPlayback =
+    false,
 }: AiVideoPanelProps) {
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const [videoFailed, setVideoFailed] = useState(false);
-  const [videoLoaded, setVideoLoaded] = useState(false);
+  const videoRef =
+    useRef<
+      HTMLVideoElement | null
+    >(null);
+
+  const [
+    videoFailed,
+    setVideoFailed,
+  ] =
+    useState(
+      false,
+    );
+
+  const [
+    videoLoaded,
+    setVideoLoaded,
+  ] =
+    useState(
+      false,
+    );
 
   const isMjpegStream =
-    isAnnotatedPlayback && Boolean(videoSrc?.includes("/annotated-stream/"));
+    isAnnotatedPlayback &&
+    Boolean(
+      videoSrc?.includes(
+        "/annotated-stream/",
+      ),
+    );
 
-  useEffect(() => {
-    setVideoFailed(false);
-    setVideoLoaded(isMjpegStream);
+  /* =======================================================
+     Source Reset
+     ======================================================= */
 
-    const videoElement = videoRef.current;
+  useEffect(
+    () => {
+      setVideoFailed(
+        false,
+      );
 
-    if (videoElement) {
-      videoElement.pause();
-      videoElement.removeAttribute("src");
-      videoElement.load();
-    }
+      setVideoLoaded(
+        isMjpegStream,
+      );
 
-    if (!videoSrc || isMjpegStream) return;
+      const videoElement =
+        videoRef.current;
 
-    window.setTimeout(() => {
-      const nextVideoElement = videoRef.current;
+      if (
+        videoElement
+      ) {
+        videoElement.pause();
 
-      if (!nextVideoElement) return;
+        videoElement.removeAttribute(
+          "src",
+        );
 
-      nextVideoElement.load();
+        videoElement.load();
+      }
 
-      void nextVideoElement.play().catch(() => {
-        setVideoLoaded(false);
-      });
-    }, 60);
-  }, [videoSrc, isMjpegStream]);
+      if (
+        !videoSrc ||
+        isMjpegStream
+      ) {
+        return;
+      }
 
-  const showVideo = Boolean(videoSrc) && !videoFailed;
+      const timer =
+        window.setTimeout(
+          () => {
+            const nextVideoElement =
+              videoRef.current;
 
-  const confidence = Math.round(
-    (openCvAnalysis?.detections.confidence ?? 0) * 100
+            if (
+              !nextVideoElement
+            ) {
+              return;
+            }
+
+            nextVideoElement.load();
+
+            void nextVideoElement
+              .play()
+              .catch(
+                () => {
+                  setVideoLoaded(
+                    false,
+                  );
+                },
+              );
+          },
+          60,
+        );
+
+      return () => {
+        window.clearTimeout(
+          timer,
+        );
+      };
+    },
+    [
+      videoSrc,
+      isMjpegStream,
+    ],
   );
 
+  const showVideo =
+    Boolean(
+      videoSrc,
+    ) &&
+    !videoFailed;
+
+  const confidence =
+    Math.round(
+      (
+        openCvAnalysis
+          ?.detections
+          .confidence ??
+        0
+      ) *
+        100,
+    );
+
+  /* =======================================================
+     Render
+     ======================================================= */
+
   return (
-    <div className="relative min-h-[520px] overflow-hidden rounded-xl border border-[#1d2533] bg-black 2xl:min-h-[620px]">
-      {showVideo && isMjpegStream ? (
+    <div className="relative h-full min-h-[420px] w-full overflow-hidden bg-black xl:min-h-0">
+      {/* ===============================================
+          Video / MJPEG
+          =============================================== */}
+
+      {showVideo &&
+      isMjpegStream ? (
         <img
-          key={videoSrc}
-          src={videoSrc}
-          alt="Frame-by-frame YOLO annotated stream"
+          key={
+            videoSrc
+          }
+          src={
+            videoSrc
+          }
+          alt="YOLO annotated video stream"
           className="absolute inset-0 h-full w-full bg-black object-contain"
-          onLoad={() => setVideoLoaded(true)}
+          onLoad={() =>
+            setVideoLoaded(
+              true,
+            )
+          }
           onError={() => {
-            setVideoFailed(true);
-            setVideoLoaded(false);
+            setVideoFailed(
+              true,
+            );
+
+            setVideoLoaded(
+              false,
+            );
           }}
         />
       ) : showVideo ? (
         <video
-          ref={videoRef}
-          key={videoSrc}
+          ref={
+            videoRef
+          }
+          key={
+            videoSrc
+          }
           className="absolute inset-0 h-full w-full bg-black object-contain"
           autoPlay
           muted
           loop
           playsInline
           preload="metadata"
-          onCanPlay={() => setVideoLoaded(true)}
-          onLoadedData={() => setVideoLoaded(true)}
+          onCanPlay={() =>
+            setVideoLoaded(
+              true,
+            )
+          }
+          onLoadedData={() =>
+            setVideoLoaded(
+              true,
+            )
+          }
           onError={() => {
-            setVideoFailed(true);
-            setVideoLoaded(false);
+            setVideoFailed(
+              true,
+            );
+
+            setVideoLoaded(
+              false,
+            );
           }}
         >
-          <source src={videoSrc} type="video/mp4" />
-          Your browser does not support MP4 video playback.
+          <source
+            src={
+              videoSrc
+            }
+            type="video/mp4"
+          />
+
+          Your browser does not support video playback.
         </video>
       ) : (
         <GeneratedMissionFeed
-          videoTitle={videoTitle}
-          videoSourceName={videoSourceName}
-          videoFailed={videoFailed}
+          videoTitle={
+            videoTitle
+          }
+          videoSourceName={
+            videoSourceName
+          }
+          videoFailed={
+            videoFailed
+          }
         />
       )}
 
-      {videoFailed && (
+      {videoFailed ? (
         <GeneratedMissionFeed
-          videoTitle={videoTitle}
-          videoSourceName={videoSourceName}
-          videoFailed={videoFailed}
+          videoTitle={
+            videoTitle
+          }
+          videoSourceName={
+            videoSourceName
+          }
+          videoFailed
         />
-      )}
+      ) : null}
 
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.025)_1px,transparent_1px)] [background-size:100%_5px] opacity-20" />
+      {/* ===============================================
+          Very subtle scan line texture
+          =============================================== */}
 
-      <div className="absolute left-4 top-4 z-30 flex max-w-[78%] flex-wrap gap-2">
-        <span className="flex items-center gap-2 rounded bg-[#050609]/88 px-3 py-1.5 font-mono text-[9px] font-bold uppercase tracking-[0.1em] text-(--primary)">
-          <Camera size={13} />
-          {videoSourceName}
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.018)_1px,transparent_1px)] [background-size:100%_6px] opacity-20" />
+
+      {/* ===============================================
+          Source
+          =============================================== */}
+
+      <div className="absolute left-3 top-3 z-30 flex max-w-[65%] items-center gap-1.5">
+        <span className="flex min-w-0 items-center gap-1.5 rounded-[4px] border border-white/[0.09] bg-[rgba(3,4,5,0.88)] px-2 py-1.5 backdrop-blur">
+          <Camera
+            size={11}
+            className="shrink-0 text-[#F6B23C]"
+          />
+
+          <span className="truncate font-mono text-[8px] font-semibold uppercase tracking-[0.05em] text-white/58">
+            {videoSourceName}
+          </span>
         </span>
 
-        <span className="rounded bg-[#050609]/88 px-3 py-1.5 font-mono text-[9px] font-bold uppercase tracking-[0.1em] text-(--muted)">
-          {videoTitle}
-        </span>
-
-        {videoSrc && !videoFailed && (
+        {videoSrc &&
+        !videoFailed ? (
           <a
-            href={videoSrc}
+            href={
+              videoSrc
+            }
             target="_blank"
             rel="noreferrer"
-            className="flex items-center gap-1 rounded bg-[#050609]/88 px-3 py-1.5 font-mono text-[9px] font-bold uppercase tracking-[0.1em] text-(--nominal) hover:text-(--primary)"
+            className="flex h-[27px] w-[27px] shrink-0 items-center justify-center rounded-[4px] border border-white/[0.09] bg-[rgba(3,4,5,0.88)] text-white/36 transition hover:text-[#5AA9FF]"
+            aria-label="Open video feed"
           >
-            <ExternalLink size={12} />
-            Open Feed
+            <ExternalLink
+              size={11}
+            />
           </a>
-        )}
+        ) : null}
       </div>
 
-      <div className="absolute right-4 top-4 z-30 rounded border border-[#1d2533] bg-[#050609]/88 px-3 py-2 text-right backdrop-blur">
-        <div className="font-mono text-[9px] font-bold uppercase tracking-[0.14em] text-(--primary)">
-          {isMjpegStream
-            ? "Live YOLO MJPEG Stream"
-            : videoFailed || !videoSrc
-              ? "Generated Tactical Feed"
-              : "YOLO Camera Feed"}
-        </div>
+      {/* ===============================================
+          Feed Mode
+          =============================================== */}
 
-        <div className="mt-1 font-mono text-[8px] uppercase tracking-[0.08em] text-(--muted)">
-          {isMjpegStream
-            ? "Frame-by-frame boxes"
-            : videoFailed || !videoSrc
-              ? "Fallback mode"
-              : "Source video"}
-        </div>
-      </div>
-
-      {openCvAnalysis && !isAnnotatedPlayback && (
+      <div className="absolute right-3 top-3 z-30 rounded-[4px] border border-white/[0.09] bg-[rgba(3,4,5,0.88)] px-2.5 py-1.5 text-right backdrop-blur">
         <div
-          className={`absolute right-4 top-24 z-30 rounded border bg-[#050609]/90 px-3 py-2 backdrop-blur ${getRiskBorderClass(
-            openCvAnalysis.risk
-          )}`}
+          className={[
+            "font-mono text-[8px] font-semibold uppercase tracking-[0.055em]",
+
+            isMjpegStream
+              ? "text-[#59D99A]"
+              : "text-[#5AA9FF]",
+          ].join(" ")}
+        >
+          {isMjpegStream
+            ? "YOLO LIVE"
+            : videoFailed ||
+                !videoSrc
+              ? "SIMULATION"
+              : "SOURCE FEED"}
+        </div>
+
+        <div className="mt-0.5 font-mono text-[7px] uppercase text-white/28">
+          {isMjpegStream
+            ? "annotated frames"
+            : "native video"}
+        </div>
+      </div>
+
+      {/* ===============================================
+          Analysis State
+          =============================================== */}
+
+      {openCvAnalysis &&
+      !isAnnotatedPlayback ? (
+        <div
+          className={[
+            "absolute right-3 top-[58px] z-30 rounded-[4px] border",
+
+            "bg-[rgba(3,4,5,0.9)] px-2.5 py-1.5 backdrop-blur",
+
+            getRiskBorderClass(
+              openCvAnalysis.risk,
+            ),
+          ].join(" ")}
         >
           <div
-            className={`font-mono text-[9px] font-bold uppercase tracking-[0.12em] ${getRiskClass(
-              openCvAnalysis.risk
-            )}`}
+            className={[
+              "font-mono text-[8px] font-semibold uppercase tracking-[0.055em]",
+
+              getRiskClass(
+                openCvAnalysis.risk,
+              ),
+            ].join(" ")}
           >
-            YOLO · {openCvAnalysis.risk} Risk
+            {
+              openCvAnalysis.risk
+            }{" "}
+            risk
           </div>
 
-          <div className="mt-1 font-mono text-[8px] uppercase text-(--muted)">
-            Confidence {confidence}% · source video preserved
-          </div>
-        </div>
-      )}
-
-      {isAnnotatedPlayback && (
-        <div className="absolute right-4 top-24 z-30 rounded border border-(--nominal) bg-[#050609]/90 px-3 py-2 backdrop-blur">
-          <div className="font-mono text-[9px] font-bold uppercase tracking-[0.12em] text-(--nominal)">
-            Frame-by-frame YOLO
-          </div>
-
-          <div className="mt-1 font-mono text-[8px] uppercase text-(--muted)">
-            Boxes are drawn inside streamed frames
+          <div className="mt-0.5 font-mono text-[7px] uppercase text-white/28">
+            confidence{" "}
+            {confidence}%
           </div>
         </div>
-      )}
+      ) : null}
 
-      {videoSrc && !videoFailed && !videoLoaded && (
-        <div className="absolute left-1/2 top-1/2 z-40 w-80 -translate-x-1/2 -translate-y-1/2 rounded border border-(--primary) bg-[#050609]/95 p-4 text-center">
-          <div className="font-mono text-[12px] font-bold uppercase text-(--primary)">
-            Loading camera feed
-          </div>
+      {/* ===============================================
+          Loading
+          =============================================== */}
 
-          <div className="mt-2 break-all text-xs text-(--muted)">
-            {videoSrc}
+      {videoSrc &&
+      !videoFailed &&
+      !videoLoaded ? (
+        <div className="absolute left-1/2 top-1/2 z-40 -translate-x-1/2 -translate-y-1/2 rounded-[5px] border border-[rgba(246,178,60,0.28)] bg-[rgba(3,4,5,0.94)] px-4 py-3 text-center backdrop-blur">
+          <div className="font-mono text-[9px] font-semibold uppercase tracking-[0.055em] text-[#F6B23C]">
+            Loading video feed
           </div>
         </div>
-      )}
+      ) : null}
 
-      <div className="absolute bottom-4 left-4 z-30 rounded border border-[#1d2533] bg-[#050609]/88 px-3 py-2 backdrop-blur">
-        <div className="flex items-center gap-2 font-mono text-[9px] font-bold uppercase tracking-[0.12em] text-(--primary)">
-          <Radar size={12} />
+      {/* ===============================================
+          Bottom left model state
+          =============================================== */}
+
+      <div className="absolute bottom-3 left-3 z-30 rounded-[4px] border border-white/[0.09] bg-[rgba(3,4,5,0.88)] px-2.5 py-1.5 backdrop-blur">
+        <div className="flex items-center gap-1.5 font-mono text-[8px] font-semibold uppercase tracking-[0.055em] text-[#5AA9FF]">
+          <Radar
+            size={10}
+          />
+
           {isMjpegStream
-            ? "Model: YOLO + fire mode · live MJPEG"
-            : videoFailed || !videoSrc
-              ? "Model: simulated vision feed"
-              : "Model: source video"}
-        </div>
-
-        <div className="mt-1 font-mono text-[8px] uppercase tracking-[0.08em] text-(--muted)">
-          {isMjpegStream
-            ? "Moving boxes are drawn into each streamed frame"
+            ? "YOLO + CV LIVE"
             : openCvAnalysis
-              ? `Best frame ${
-                  openCvAnalysis.frame?.best_frame_index ?? "-"
-                } · source video not blurred`
-              : "Select a feed above, then analyse with YOLO"}
+              ? "ANALYSIS AVAILABLE"
+              : "VISION READY"}
+        </div>
+
+        <div className="mt-0.5 max-w-[320px] truncate font-mono text-[7px] text-white/26">
+          {videoTitle}
         </div>
       </div>
 
-      <div className="absolute bottom-4 right-4 z-30 flex items-center gap-2 rounded border border-[#1d2533] bg-[#050609]/88 px-3 py-2 font-mono text-[8px] font-bold uppercase tracking-[0.1em] text-(--muted) backdrop-blur">
-        <ScanLine size={12} className="text-(--primary)" />
-        Native fit display
+      {/* ===============================================
+          Bottom right
+          =============================================== */}
+
+      <div className="absolute bottom-3 right-3 z-30 flex items-center gap-1.5 rounded-[4px] border border-white/[0.09] bg-[rgba(3,4,5,0.88)] px-2 py-1.5 font-mono text-[7px] font-semibold uppercase tracking-[0.05em] text-white/32 backdrop-blur">
+        <ScanLine
+          size={10}
+          className="text-[#F6B23C]"
+        />
+
+        Native fit
       </div>
 
-      <div className="absolute left-1/2 bottom-4 z-30 hidden -translate-x-1/2 items-center gap-2 rounded border border-[rgba(73,229,143,0.28)] bg-[rgba(73,229,143,0.08)] px-3 py-2 font-mono text-[8px] font-bold uppercase tracking-[0.1em] text-(--nominal) backdrop-blur md:flex">
-        <ShieldCheck size={12} />
-        Human-in-loop review
+      {/* ===============================================
+          Human-in-loop
+          =============================================== */}
+
+      <div className="absolute bottom-3 left-1/2 z-30 hidden -translate-x-1/2 items-center gap-1.5 rounded-[4px] border border-[rgba(89,217,154,0.2)] bg-[rgba(3,4,5,0.88)] px-2 py-1.5 font-mono text-[7px] font-semibold uppercase tracking-[0.05em] text-[#59D99A] backdrop-blur lg:flex">
+        <ShieldCheck
+          size={10}
+        />
+
+        Human review
       </div>
     </div>
   );
