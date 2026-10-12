@@ -16,10 +16,6 @@ import type {
   CameraOpenCvAnalysis,
 } from "./OpenCvAnalysisPanel";
 
-/* =========================================================
-   Types
-   ========================================================= */
-
 type AiVideoPanelProps = {
   videoSrc?: string;
   videoTitle?: string;
@@ -30,10 +26,6 @@ type AiVideoPanelProps = {
 
   isAnnotatedPlayback?: boolean;
 };
-
-/* =========================================================
-   Helpers
-   ========================================================= */
 
 function getRiskClass(
   risk?: string,
@@ -83,10 +75,6 @@ function getRiskBorderClass(
   return "border-[rgba(89,217,154,0.3)]";
 }
 
-/* =========================================================
-   Generated Fallback
-   ========================================================= */
-
 function GeneratedMissionFeed({
   videoTitle,
   videoSourceName,
@@ -110,32 +98,28 @@ function GeneratedMissionFeed({
         <div className="absolute left-1/2 top-1/2 h-36 w-px -translate-x-1/2 -translate-y-1/2 bg-[rgba(246,178,60,0.25)]" />
       </div>
 
-      <div className="absolute left-4 top-4 rounded-[4px] border border-white/[0.1] bg-[rgba(3,4,5,0.86)] px-2.5 py-1.5 backdrop-blur">
-        <div className="flex items-center gap-2 font-mono text-[9px] font-semibold uppercase tracking-[0.055em] text-[#F6B23C]">
+      <div className="absolute left-4 top-4 rounded-[5px] border border-white/[0.1] bg-[rgba(3,4,5,0.88)] px-3 py-2 backdrop-blur">
+        <div className="flex items-center gap-2 font-mono text-[10px] font-semibold uppercase tracking-[0.05em] text-[#F6B23C]">
           <Camera
-            size={11}
+            size={13}
           />
 
           {videoSourceName}
         </div>
 
-        <div className="mt-0.5 max-w-[260px] truncate font-mono text-[8px] text-white/32">
+        <div className="mt-1 max-w-[300px] truncate text-[10px] text-white/40">
           {videoTitle}
         </div>
       </div>
 
       {videoFailed ? (
-        <div className="absolute bottom-4 left-4 rounded-[4px] border border-[rgba(246,178,60,0.26)] bg-[rgba(3,4,5,0.9)] px-2.5 py-1.5 font-mono text-[8px] uppercase text-[#F6B23C]">
+        <div className="absolute bottom-4 left-4 rounded-[5px] border border-[rgba(246,178,60,0.26)] bg-[rgba(3,4,5,0.9)] px-3 py-2 font-mono text-[9px] uppercase text-[#F6B23C]">
           MP4 unavailable · fallback feed
         </div>
       ) : null}
     </div>
   );
 }
-
-/* =========================================================
-   Main
-   ========================================================= */
 
 export function AiVideoPanel({
   videoSrc,
@@ -175,10 +159,6 @@ export function AiVideoPanel({
         "/annotated-stream/",
       ),
     );
-
-  /* =======================================================
-     Source Reset
-     ======================================================= */
 
   useEffect(
     () => {
@@ -268,16 +248,8 @@ export function AiVideoPanel({
         100,
     );
 
-  /* =======================================================
-     Render
-     ======================================================= */
-
   return (
-    <div className="relative h-full min-h-[420px] w-full overflow-hidden bg-black xl:min-h-0">
-      {/* ===============================================
-          Video / MJPEG
-          =============================================== */}
-
+    <div className="relative h-full min-h-[440px] w-full overflow-hidden bg-black xl:min-h-0">
       {showVideo &&
       isMjpegStream ? (
         <img
@@ -373,24 +345,18 @@ export function AiVideoPanel({
         />
       ) : null}
 
-      {/* ===============================================
-          Very subtle scan line texture
-          =============================================== */}
-
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.018)_1px,transparent_1px)] [background-size:100%_6px] opacity-20" />
 
-      {/* ===============================================
-          Source
-          =============================================== */}
+      {/* Top left */}
 
-      <div className="absolute left-3 top-3 z-30 flex max-w-[65%] items-center gap-1.5">
-        <span className="flex min-w-0 items-center gap-1.5 rounded-[4px] border border-white/[0.09] bg-[rgba(3,4,5,0.88)] px-2 py-1.5 backdrop-blur">
+      <div className="absolute left-3 top-3 z-30 flex max-w-[68%] items-center gap-2">
+        <span className="flex min-w-0 items-center gap-2 rounded-[5px] border border-white/[0.09] bg-[rgba(3,4,5,0.88)] px-3 py-2 backdrop-blur">
           <Camera
-            size={11}
+            size={13}
             className="shrink-0 text-[#F6B23C]"
           />
 
-          <span className="truncate font-mono text-[8px] font-semibold uppercase tracking-[0.05em] text-white/58">
+          <span className="truncate font-mono text-[10px] font-semibold uppercase tracking-[0.04em] text-white/68">
             {videoSourceName}
           </span>
         </span>
@@ -403,57 +369,50 @@ export function AiVideoPanel({
             }
             target="_blank"
             rel="noreferrer"
-            className="flex h-[27px] w-[27px] shrink-0 items-center justify-center rounded-[4px] border border-white/[0.09] bg-[rgba(3,4,5,0.88)] text-white/36 transition hover:text-[#5AA9FF]"
+            className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[5px] border border-white/[0.09] bg-[rgba(3,4,5,0.88)] text-white/46 transition hover:border-[rgba(90,169,255,0.3)] hover:text-[#5AA9FF]"
             aria-label="Open video feed"
           >
             <ExternalLink
-              size={11}
+              size={13}
             />
           </a>
         ) : null}
       </div>
 
-      {/* ===============================================
-          Feed Mode
-          =============================================== */}
+      {/* Top right */}
 
-      <div className="absolute right-3 top-3 z-30 rounded-[4px] border border-white/[0.09] bg-[rgba(3,4,5,0.88)] px-2.5 py-1.5 text-right backdrop-blur">
+      <div className="absolute right-3 top-3 z-30 min-w-[120px] rounded-[5px] border border-white/[0.09] bg-[rgba(3,4,5,0.88)] px-3 py-2 text-right backdrop-blur">
         <div
           className={[
-            "font-mono text-[8px] font-semibold uppercase tracking-[0.055em]",
-
+            "font-mono text-[10px] font-semibold uppercase tracking-[0.045em]",
             isMjpegStream
               ? "text-[#59D99A]"
               : "text-[#5AA9FF]",
           ].join(" ")}
         >
           {isMjpegStream
-            ? "YOLO LIVE"
+            ? "YOLO Live"
             : videoFailed ||
                 !videoSrc
-              ? "SIMULATION"
-              : "SOURCE FEED"}
+              ? "Simulation"
+              : "Source Feed"}
         </div>
 
-        <div className="mt-0.5 font-mono text-[7px] uppercase text-white/28">
+        <div className="mt-1 text-[9px] text-white/34">
           {isMjpegStream
-            ? "annotated frames"
-            : "native video"}
+            ? "Annotated frames"
+            : "Native video"}
         </div>
       </div>
 
-      {/* ===============================================
-          Analysis State
-          =============================================== */}
+      {/* Risk */}
 
       {openCvAnalysis &&
       !isAnnotatedPlayback ? (
         <div
           className={[
-            "absolute right-3 top-[58px] z-30 rounded-[4px] border",
-
-            "bg-[rgba(3,4,5,0.9)] px-2.5 py-1.5 backdrop-blur",
-
+            "absolute right-3 top-[72px] z-30 rounded-[5px] border",
+            "bg-[rgba(3,4,5,0.9)] px-3 py-2 backdrop-blur",
             getRiskBorderClass(
               openCvAnalysis.risk,
             ),
@@ -461,8 +420,7 @@ export function AiVideoPanel({
         >
           <div
             className={[
-              "font-mono text-[8px] font-semibold uppercase tracking-[0.055em]",
-
+              "font-mono text-[10px] font-semibold uppercase tracking-[0.045em]",
               getRiskClass(
                 openCvAnalysis.risk,
               ),
@@ -474,72 +432,64 @@ export function AiVideoPanel({
             risk
           </div>
 
-          <div className="mt-0.5 font-mono text-[7px] uppercase text-white/28">
-            confidence{" "}
+          <div className="mt-1 text-[9px] text-white/34">
+            Confidence{" "}
             {confidence}%
           </div>
         </div>
       ) : null}
 
-      {/* ===============================================
-          Loading
-          =============================================== */}
+      {/* Loading */}
 
       {videoSrc &&
       !videoFailed &&
       !videoLoaded ? (
-        <div className="absolute left-1/2 top-1/2 z-40 -translate-x-1/2 -translate-y-1/2 rounded-[5px] border border-[rgba(246,178,60,0.28)] bg-[rgba(3,4,5,0.94)] px-4 py-3 text-center backdrop-blur">
-          <div className="font-mono text-[9px] font-semibold uppercase tracking-[0.055em] text-[#F6B23C]">
+        <div className="absolute left-1/2 top-1/2 z-40 -translate-x-1/2 -translate-y-1/2 rounded-[5px] border border-[rgba(246,178,60,0.28)] bg-[rgba(3,4,5,0.94)] px-5 py-3 text-center backdrop-blur">
+          <div className="font-mono text-[10px] font-semibold uppercase tracking-[0.045em] text-[#F6B23C]">
             Loading video feed
           </div>
         </div>
       ) : null}
 
-      {/* ===============================================
-          Bottom left model state
-          =============================================== */}
+      {/* Bottom left */}
 
-      <div className="absolute bottom-3 left-3 z-30 rounded-[4px] border border-white/[0.09] bg-[rgba(3,4,5,0.88)] px-2.5 py-1.5 backdrop-blur">
-        <div className="flex items-center gap-1.5 font-mono text-[8px] font-semibold uppercase tracking-[0.055em] text-[#5AA9FF]">
+      <div className="absolute bottom-3 left-3 z-30 rounded-[5px] border border-white/[0.09] bg-[rgba(3,4,5,0.88)] px-3 py-2 backdrop-blur">
+        <div className="flex items-center gap-2 font-mono text-[10px] font-semibold uppercase tracking-[0.04em] text-[#5AA9FF]">
           <Radar
-            size={10}
+            size={12}
           />
 
           {isMjpegStream
-            ? "YOLO + CV LIVE"
+            ? "YOLO + CV Live"
             : openCvAnalysis
-              ? "ANALYSIS AVAILABLE"
-              : "VISION READY"}
+              ? "Analysis Available"
+              : "Vision Ready"}
         </div>
 
-        <div className="mt-0.5 max-w-[320px] truncate font-mono text-[7px] text-white/26">
+        <div className="mt-1 max-w-[330px] truncate text-[9px] text-white/34">
           {videoTitle}
         </div>
       </div>
 
-      {/* ===============================================
-          Bottom right
-          =============================================== */}
+      {/* Human review */}
 
-      <div className="absolute bottom-3 right-3 z-30 flex items-center gap-1.5 rounded-[4px] border border-white/[0.09] bg-[rgba(3,4,5,0.88)] px-2 py-1.5 font-mono text-[7px] font-semibold uppercase tracking-[0.05em] text-white/32 backdrop-blur">
+      <div className="absolute bottom-3 left-1/2 z-30 hidden -translate-x-1/2 items-center gap-2 rounded-[5px] border border-[rgba(89,217,154,0.2)] bg-[rgba(3,4,5,0.88)] px-3 py-2 font-mono text-[9px] font-semibold uppercase tracking-[0.04em] text-[#59D99A] backdrop-blur lg:flex">
+        <ShieldCheck
+          size={12}
+        />
+
+        Human Review
+      </div>
+
+      {/* Bottom right */}
+
+      <div className="absolute bottom-3 right-3 z-30 flex items-center gap-2 rounded-[5px] border border-white/[0.09] bg-[rgba(3,4,5,0.88)] px-3 py-2 font-mono text-[9px] font-semibold uppercase tracking-[0.04em] text-white/42 backdrop-blur">
         <ScanLine
-          size={10}
+          size={12}
           className="text-[#F6B23C]"
         />
 
-        Native fit
-      </div>
-
-      {/* ===============================================
-          Human-in-loop
-          =============================================== */}
-
-      <div className="absolute bottom-3 left-1/2 z-30 hidden -translate-x-1/2 items-center gap-1.5 rounded-[4px] border border-[rgba(89,217,154,0.2)] bg-[rgba(3,4,5,0.88)] px-2 py-1.5 font-mono text-[7px] font-semibold uppercase tracking-[0.05em] text-[#59D99A] backdrop-blur lg:flex">
-        <ShieldCheck
-          size={10}
-        />
-
-        Human review
+        Native Fit
       </div>
     </div>
   );
