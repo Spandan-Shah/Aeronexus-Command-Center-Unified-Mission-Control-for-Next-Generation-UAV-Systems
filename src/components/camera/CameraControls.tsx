@@ -71,8 +71,8 @@ export function CameraControls({
   compact = false,
 }: CameraControlsProps) {
   const content = (
-    <div className="grid gap-2">
-      <div className="grid grid-cols-3 gap-1.5">
+    <div className="grid gap-3">
+      <div className="grid grid-cols-3 gap-2">
         {controls.map(
           (
             control,
@@ -87,46 +87,58 @@ export function CameraControls({
                 }
                 type="button"
                 className={[
-                  "flex items-center justify-center gap-1.5",
+                  "flex w-full flex-col items-center justify-center gap-1.5",
 
                   compact
-                    ? "h-[36px]"
-                    : "h-[46px]",
+                    ? "min-h-[48px]"
+                    : "min-h-[58px]",
 
-                  "rounded-[4px] border border-white/[0.08]",
+                  "rounded-[5px] border border-white/[0.08]",
 
                   "bg-[#05060d]",
 
-                  "font-mono text-[8px] font-semibold uppercase tracking-[0.04em]",
+                  "px-2 py-2",
 
-                  "text-white/52",
+                  "text-white/58",
 
                   "transition-colors duration-150",
 
-                  "hover:border-[rgba(246,178,60,0.32)] hover:text-[#F6B23C]",
+                  "hover:border-[rgba(246,178,60,0.32)]",
+
+                  "hover:bg-[rgba(246,178,60,0.035)]",
+
+                  "hover:text-[#F6B23C]",
                 ].join(" ")}
               >
                 <Icon
-                  size={12}
-                  strokeWidth={1.6}
+                  size={14}
+                  strokeWidth={1.65}
                 />
 
-                {
-                  control.label
-                }
+                <span className="font-mono text-[9px] font-semibold uppercase tracking-[0.035em]">
+                  {
+                    control.label
+                  }
+                </span>
               </button>
             );
           },
         )}
       </div>
 
-      <div className="flex min-h-[34px] items-center justify-between rounded-[4px] border border-[rgba(89,217,154,0.18)] bg-[rgba(89,217,154,0.035)] px-2.5">
-        <span className="font-mono text-[8px] font-semibold uppercase tracking-[0.05em] text-white/34">
-          AI Review
-        </span>
+      <div className="flex min-h-[42px] items-center justify-between gap-3 rounded-[5px] border border-[rgba(89,217,154,0.18)] bg-[rgba(89,217,154,0.035)] px-3">
+        <div>
+          <div className="font-mono text-[9px] font-semibold uppercase tracking-[0.045em] text-white/38">
+            AI Review Mode
+          </div>
 
-        <span className="font-mono text-[8px] font-semibold uppercase tracking-[0.05em] text-[#59D99A]">
-          Assisted Tagging Active
+          <div className="mt-0.5 text-[11px] font-medium text-white/66">
+            Human-assisted review
+          </div>
+        </div>
+
+        <span className="font-mono text-[9px] font-semibold uppercase tracking-[0.04em] text-[#59D99A]">
+          Active
         </span>
       </div>
     </div>
