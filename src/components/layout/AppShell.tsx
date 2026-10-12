@@ -33,179 +33,258 @@ import type {
 } from "../../data/navigation";
 
 import {
-  telemetry,
-} from "../../data/telemetry";
-
-import {
-  MissionStatus,
-} from "../ui/mission";
+  MissionFooter,
+} from "./MissionFooter";
 
 /* =========================================================
-   MissionNexus V2 Application Shell
+   MissionNexus V2
+   Application Shell
 
-   Aeronexus Product Family Lockup:
+   Aeronexus family hierarchy:
 
    AERONEXUS | MissionNexus
 
-   Header geometry intentionally follows GeoFusion:
-   - 70 px header
+   Header follows GeoFusion geometry:
+   - 70px height
    - compact Aeronexus wordmark
    - single divider
-   - single-line product name
-   - Manrope / Inter typography
-   - 42 px utility controls
+   - Manrope product typography
+   - Inter interface typography
    ========================================================= */
 
 type AppShellProps = {
-  children: ReactNode;
+  children:
+    ReactNode;
 
-  activePage: PageId;
+  activePage:
+    PageId;
 
   onPageChange: (
-    page: PageId,
+    page:
+      PageId,
   ) => void;
 };
 
 type NavItem = {
-  id: PageId;
+  id:
+    PageId;
 
-  label: string;
+  label:
+    string;
 
-  description: string;
+  description:
+    string;
 
-  icon: LucideIcon;
+  icon:
+    LucideIcon;
 };
 
 type NavGroup = {
-  label: string;
+  label:
+    string;
 
-  items: NavItem[];
+  items:
+    NavItem[];
 };
 
 /* =========================================================
    Navigation
    ========================================================= */
 
-const navGroups: NavGroup[] = [
-  {
-    label: "Operations",
+const navGroups:
+  NavGroup[] = [
+    {
+      label:
+        "Operations",
 
-    items: [
-      {
-        id: "live-ops",
-        label: "Live Operations",
-        description:
-          "Real-time aircraft command and mission awareness",
-        icon: Radar,
-      },
+      items: [
+        {
+          id:
+            "live-ops",
 
-      {
-        id: "mission-planner",
-        label: "Mission Planner",
-        description:
-          "Routes, waypoints, geofences and mission planning",
-        icon: Map,
-      },
+          label:
+            "Live Operations",
 
-      {
-        id: "drone-control",
-        label: "Drone Control",
-        description:
-          "Aircraft commands, payload and flight control",
-        icon: Gamepad2,
-      },
+          description:
+            "Real-time aircraft command and mission awareness",
 
-      {
-        id: "fleet",
-        label: "Fleet",
-        description:
-          "Aircraft assignment, state and operational readiness",
-        icon: Plane,
-      },
+          icon:
+            Radar,
+        },
 
-      {
-        id: "pre-flight",
-        label: "Pre-Flight",
-        description:
-          "Launch readiness and aircraft validation",
-        icon: ClipboardCheck,
-      },
-    ],
-  },
+        {
+          id:
+            "mission-planner",
 
-  {
-    label: "Intelligence",
+          label:
+            "Mission Planner",
 
-    items: [
-      {
-        id: "camera-ai",
-        label: "Vision Intelligence",
-        description:
-          "YOLO, OpenCV and aerial video analysis",
-        icon: Camera,
-      },
+          description:
+            "Routes, waypoints, geofences and mission planning",
 
-      {
-        id: "logs",
-        label: "Mission Debrief",
-        description:
-          "Logs, analytics, events and mission audit history",
-        icon: FileText,
-      },
+          icon:
+            Map,
+        },
 
-      {
-        id: "security",
-        label: "Security",
-        description:
-          "Secure command sessions and telemetry integrity",
-        icon: ShieldCheck,
-      },
-    ],
-  },
+        {
+          id:
+            "drone-control",
 
-  {
-    label: "Systems",
+          label:
+            "Drone Control",
 
-    items: [
-      {
-        id: "drone-health",
-        label: "Drone Health",
-        description:
-          "Aircraft diagnostics and component condition",
-        icon: Gauge,
-      },
+          description:
+            "Aircraft commands, payload and flight control",
 
-      {
-        id: "battery",
-        label: "Battery & Power",
-        description:
-          "Power state, thermal behavior and endurance",
-        icon: Battery,
-      },
+          icon:
+            Gamepad2,
+        },
 
-      {
-        id: "maintenance",
-        label: "Maintenance",
-        description:
-          "Aircraft servicing and maintenance scheduling",
-        icon: Wrench,
-      },
+        {
+          id:
+            "fleet",
 
-      {
-        id: "inventory",
-        label: "Inventory",
-        description:
-          "Parts, payloads and operational assets",
-        icon: Package,
-      },
-    ],
-  },
-];
+          label:
+            "Fleet",
+
+          description:
+            "Aircraft assignment, state and operational readiness",
+
+          icon:
+            Plane,
+        },
+
+        {
+          id:
+            "pre-flight",
+
+          label:
+            "Pre-Flight",
+
+          description:
+            "Launch readiness and aircraft validation",
+
+          icon:
+            ClipboardCheck,
+        },
+      ],
+    },
+
+    {
+      label:
+        "Intelligence",
+
+      items: [
+        {
+          id:
+            "camera-ai",
+
+          label:
+            "Vision Intelligence",
+
+          description:
+            "YOLO, OpenCV and aerial video analysis",
+
+          icon:
+            Camera,
+        },
+
+        {
+          id:
+            "logs",
+
+          label:
+            "Mission Debrief",
+
+          description:
+            "Logs, analytics, events and mission audit history",
+
+          icon:
+            FileText,
+        },
+
+        {
+          id:
+            "security",
+
+          label:
+            "Security",
+
+          description:
+            "Secure command sessions and telemetry integrity",
+
+          icon:
+            ShieldCheck,
+        },
+      ],
+    },
+
+    {
+      label:
+        "Systems",
+
+      items: [
+        {
+          id:
+            "drone-health",
+
+          label:
+            "Drone Health",
+
+          description:
+            "Aircraft diagnostics and component condition",
+
+          icon:
+            Gauge,
+        },
+
+        {
+          id:
+            "battery",
+
+          label:
+            "Battery & Power",
+
+          description:
+            "Power state, thermal behavior and endurance",
+
+          icon:
+            Battery,
+        },
+
+        {
+          id:
+            "maintenance",
+
+          label:
+            "Maintenance",
+
+          description:
+            "Aircraft servicing and maintenance scheduling",
+
+          icon:
+            Wrench,
+        },
+
+        {
+          id:
+            "inventory",
+
+          label:
+            "Inventory",
+
+          description:
+            "Parts, payloads and operational assets",
+
+          icon:
+            Package,
+        },
+      ],
+    },
+  ];
 
 /* =========================================================
-   Product Typography
-
-   Mirrors GeoFusion's Manrope → Inter display stack.
+   Typography
    ========================================================= */
 
 const productFont = {
@@ -223,49 +302,23 @@ const interfaceFont = {
    ========================================================= */
 
 function isGroupActive(
-  group: NavGroup,
-  activePage: PageId,
+  group:
+    NavGroup,
+
+  activePage:
+    PageId,
 ) {
   return group.items.some(
-    (item) =>
-      item.id === activePage,
+    (
+      item,
+    ) =>
+      item.id ===
+      activePage,
   );
 }
 
-function getActiveItem(
-  activePage: PageId,
-) {
-  for (
-    const group of navGroups
-  ) {
-    const item =
-      group.items.find(
-        (candidate) =>
-          candidate.id === activePage,
-      );
-
-    if (item) {
-      return item;
-    }
-  }
-
-  if (
-    activePage === "settings"
-  ) {
-    return {
-      id: "settings" as PageId,
-      label: "Settings",
-      description:
-        "MissionNexus system configuration",
-      icon: Settings,
-    };
-  }
-
-  return null;
-}
-
 /* =========================================================
-   Desktop Navigation Group
+   Desktop Navigation
    ========================================================= */
 
 function DesktopNavGroup({
@@ -273,12 +326,15 @@ function DesktopNavGroup({
   activePage,
   onPageChange,
 }: {
-  group: NavGroup;
+  group:
+    NavGroup;
 
-  activePage: PageId;
+  activePage:
+    PageId;
 
   onPageChange: (
-    page: PageId,
+    page:
+      PageId,
   ) => void;
 }) {
   const active =
@@ -291,7 +347,9 @@ function DesktopNavGroup({
     <div className="group relative flex h-full items-center">
       <button
         type="button"
-        style={productFont}
+        style={
+          productFont
+        }
         className={[
           "relative flex h-full items-center gap-1.5",
 
@@ -301,14 +359,22 @@ function DesktopNavGroup({
 
           active
             ? "text-white"
-            : "text-white/72 hover:text-white",
-        ].join(" ")}
+            : "text-white/70 hover:text-white",
+        ].join(
+          " ",
+        )}
       >
-        {group.label}
+        {
+          group.label
+        }
 
         <ChevronDown
-          size={12}
-          strokeWidth={1.8}
+          size={
+            12
+          }
+          strokeWidth={
+            1.8
+          }
           className={[
             "opacity-60",
 
@@ -317,7 +383,9 @@ function DesktopNavGroup({
             "group-hover:rotate-180",
 
             "group-focus-within:rotate-180",
-          ].join(" ")}
+          ].join(
+            " ",
+          )}
         />
 
         {active ? (
@@ -352,30 +420,30 @@ function DesktopNavGroup({
 
           "transition-[opacity,visibility] duration-150",
 
-          "group-hover:pointer-events-auto",
+          "group-hover:pointer-events-auto group-hover:visible group-hover:opacity-100",
 
-          "group-hover:visible",
-
-          "group-hover:opacity-100",
-
-          "group-focus-within:pointer-events-auto",
-
-          "group-focus-within:visible",
-
-          "group-focus-within:opacity-100",
-        ].join(" ")}
+          "group-focus-within:pointer-events-auto group-focus-within:visible group-focus-within:opacity-100",
+        ].join(
+          " ",
+        )}
       >
         <div className="px-3 pb-2 pt-1">
           <div
-            style={productFont}
+            style={
+              productFont
+            }
             className="text-[9px] font-semibold uppercase tracking-[0.16em] text-white/35"
           >
-            {group.label}
+            {
+              group.label
+            }
           </div>
         </div>
 
         {group.items.map(
-          (item) => {
+          (
+            item,
+          ) => {
             const Icon =
               item.icon;
 
@@ -407,42 +475,56 @@ function DesktopNavGroup({
                   itemActive
                     ? "bg-[rgba(246,178,60,0.08)]"
                     : "hover:bg-white/[0.045]",
-                ].join(" ")}
+                ].join(
+                  " ",
+                )}
               >
                 <span
                   className={[
-                    "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center",
-
-                    "rounded-[6px] border",
+                    "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-[6px] border",
 
                     itemActive
                       ? "border-[rgba(246,178,60,0.26)] bg-[rgba(246,178,60,0.07)] text-(--primary)"
                       : "border-white/[0.08] bg-white/[0.025] text-white/50",
-                  ].join(" ")}
+                  ].join(
+                    " ",
+                  )}
                 >
                   <Icon
-                    size={14}
-                    strokeWidth={1.6}
+                    size={
+                      14
+                    }
+                    strokeWidth={
+                      1.6
+                    }
                   />
                 </span>
 
                 <span className="min-w-0">
                   <span
-                    style={interfaceFont}
+                    style={
+                      interfaceFont
+                    }
                     className={[
                       "block text-[12px] font-medium",
 
                       itemActive
                         ? "text-(--primary)"
                         : "text-white/90",
-                    ].join(" ")}
+                    ].join(
+                      " ",
+                    )}
                   >
-                    {item.label}
+                    {
+                      item.label
+                    }
                   </span>
 
                   <span
-                    style={interfaceFont}
-                    className="mt-1 block text-[10px] leading-[1.55] text-white/42"
+                    style={
+                      interfaceFont
+                    }
+                    className="mt-1 block text-[10px] leading-[1.55] text-white/40"
                   >
                     {
                       item.description
@@ -467,16 +549,20 @@ function MobileNavigation({
   onPageChange,
   onClose,
 }: {
-  activePage: PageId;
+  activePage:
+    PageId;
 
   onPageChange: (
-    page: PageId,
+    page:
+      PageId,
   ) => void;
 
-  onClose: () => void;
+  onClose:
+    () => void;
 }) {
   function changePage(
-    page: PageId,
+    page:
+      PageId,
   ) {
     onPageChange(
       page,
@@ -490,14 +576,18 @@ function MobileNavigation({
       <div className="mx-auto max-h-[calc(100vh-70px)] max-w-[1600px] overflow-y-auto px-5 py-5 sm:px-6 lg:px-10">
         <div className="grid gap-6 md:grid-cols-3">
           {navGroups.map(
-            (group) => (
+            (
+              group,
+            ) => (
               <div
                 key={
                   group.label
                 }
               >
                 <div
-                  style={productFont}
+                  style={
+                    productFont
+                  }
                   className="mb-3 text-[9px] font-semibold uppercase tracking-[0.16em] text-(--primary)"
                 >
                   {
@@ -507,7 +597,9 @@ function MobileNavigation({
 
                 <div className="grid gap-1">
                   {group.items.map(
-                    (item) => {
+                    (
+                      item,
+                    ) => {
                       const Icon =
                         item.icon;
 
@@ -531,16 +623,24 @@ function MobileNavigation({
 
                             active
                               ? "bg-[rgba(246,178,60,0.08)] text-(--primary)"
-                              : "text-white/68 hover:bg-white/[0.035] hover:text-white",
-                          ].join(" ")}
+                              : "text-white/70 hover:bg-white/[0.035] hover:text-white",
+                          ].join(
+                            " ",
+                          )}
                         >
                           <Icon
-                            size={14}
-                            strokeWidth={1.6}
+                            size={
+                              14
+                            }
+                            strokeWidth={
+                              1.6
+                            }
                           />
 
                           <span
-                            style={interfaceFont}
+                            style={
+                              interfaceFont
+                            }
                             className="text-[12px]"
                           >
                             {
@@ -573,16 +673,24 @@ function MobileNavigation({
               activePage ===
               "settings"
                 ? "bg-white/[0.06] text-white"
-                : "bg-transparent text-white/68",
-            ].join(" ")}
+                : "bg-transparent text-white/70",
+            ].join(
+              " ",
+            )}
           >
             <Settings
-              size={14}
-              strokeWidth={1.6}
+              size={
+                14
+              }
+              strokeWidth={
+                1.6
+              }
             />
 
             <span
-              style={interfaceFont}
+              style={
+                interfaceFont
+              }
               className="text-[12px]"
             >
               Settings
@@ -602,20 +710,25 @@ function MissionNexusHeader({
   activePage,
   onPageChange,
 }: {
-  activePage: PageId;
+  activePage:
+    PageId;
 
   onPageChange: (
-    page: PageId,
+    page:
+      PageId,
   ) => void;
 }) {
   const [
     mobileOpen,
     setMobileOpen,
   ] =
-    useState(false);
+    useState(
+      false,
+    );
 
   function changePage(
-    page: PageId,
+    page:
+      PageId,
   ) {
     onPageChange(
       page,
@@ -628,7 +741,9 @@ function MissionNexusHeader({
 
   return (
     <header
-      style={interfaceFont}
+      style={
+        interfaceFont
+      }
       className={[
         "fixed inset-x-0 top-0 z-50",
 
@@ -639,14 +754,13 @@ function MissionNexusHeader({
         "bg-[rgba(5,6,13,0.96)]",
 
         "backdrop-blur-[18px]",
-      ].join(" ")}
+      ].join(
+        " ",
+      )}
     >
       <div className="mx-auto flex h-full w-full max-w-[1600px] items-center px-5 sm:px-6 lg:px-10 2xl:px-14">
-
         {/* ===============================================
             Aeronexus | MissionNexus
-
-            GeoFusion-matched family lockup.
             =============================================== */}
 
         <button
@@ -657,24 +771,26 @@ function MissionNexusHeader({
             )
           }
           aria-label="MissionNexus home"
-          className="flex shrink-0 items-center"
+          className="flex min-w-0 shrink-0 items-center"
         >
           <img
             src={
               aeronexusWordmark
             }
             alt="Aeronexus"
-            className="h-auto w-[114px] object-contain"
+            className="h-auto w-[114px] shrink-0 object-contain"
           />
 
           <span
             aria-hidden="true"
-            className="mx-[15px] h-[28px] w-px bg-white/12"
+            className="mx-[15px] h-[28px] w-px shrink-0 bg-white/12"
           />
 
           <span
-            style={productFont}
-            className="whitespace-nowrap text-[16px] font-normal tracking-[-0.025em] text-white/90"
+            style={
+              productFont
+            }
+            className="truncate whitespace-nowrap text-[16px] font-normal tracking-[-0.025em] text-white/90"
           >
             MissionNexus
           </span>
@@ -689,7 +805,9 @@ function MissionNexusHeader({
           className="ml-auto hidden h-full items-center gap-8 xl:flex"
         >
           {navGroups.map(
-            (group) => (
+            (
+              group,
+            ) => (
               <DesktopNavGroup
                 key={
                   group.label
@@ -709,7 +827,7 @@ function MissionNexusHeader({
         </nav>
 
         {/* ===============================================
-            Right Utilities
+            Utilities
             =============================================== */}
 
         <div className="ml-auto flex items-center gap-2 xl:ml-8">
@@ -727,27 +845,31 @@ function MissionNexusHeader({
                 : undefined
             }
             className={[
-              "hidden h-[42px] items-center justify-center gap-2",
-
-              "rounded-[6px] border px-4",
+              "hidden h-[42px] items-center justify-center gap-2 rounded-[6px] border px-4 lg:flex",
 
               "transition-[background-color,border-color,color] duration-150",
-
-              "lg:flex",
 
               activePage ===
               "settings"
                 ? "border-white/20 bg-white/[0.06] text-white"
-                : "border-white/10 bg-[rgba(5,6,13,0.9)] text-white/68 hover:border-white/20 hover:bg-white/[0.035] hover:text-white",
-            ].join(" ")}
+                : "border-white/10 bg-[rgba(5,6,13,0.9)] text-white/70 hover:border-white/20 hover:bg-white/[0.035] hover:text-white",
+            ].join(
+              " ",
+            )}
           >
             <Settings
-              size={14}
-              strokeWidth={1.6}
+              size={
+                14
+              }
+              strokeWidth={
+                1.6
+              }
             />
 
             <span
-              style={interfaceFont}
+              style={
+                interfaceFont
+              }
               className="text-[12px] font-normal"
             >
               Settings
@@ -758,7 +880,9 @@ function MissionNexusHeader({
             type="button"
             onClick={() =>
               setMobileOpen(
-                (current) =>
+                (
+                  current,
+                ) =>
                   !current,
               )
             }
@@ -771,28 +895,34 @@ function MissionNexusHeader({
               mobileOpen
             }
             className={[
-              "flex h-[42px] w-[42px] items-center justify-center",
+              "flex h-[42px] w-[42px] items-center justify-center rounded-[6px] border border-white/10",
 
-              "rounded-[6px] border border-white/10",
-
-              "bg-[rgba(5,6,13,0.9)]",
-
-              "text-white/58",
+              "bg-[rgba(5,6,13,0.9)] text-white/60",
 
               "transition-[background-color,border-color,color] duration-150",
 
               "hover:border-white/20 hover:bg-white/[0.035] hover:text-white",
-            ].join(" ")}
+            ].join(
+              " ",
+            )}
           >
             {mobileOpen ? (
               <X
-                size={16}
-                strokeWidth={1.6}
+                size={
+                  16
+                }
+                strokeWidth={
+                  1.6
+                }
               />
             ) : (
               <Menu
-                size={16}
-                strokeWidth={1.6}
+                size={
+                  16
+                }
+                strokeWidth={
+                  1.6
+                }
               />
             )}
           </button>
@@ -819,321 +949,6 @@ function MissionNexusHeader({
 }
 
 /* =========================================================
-   Footer State
-   ========================================================= */
-
-function FooterState({
-  label,
-  value,
-  tone = "default",
-}: {
-  label: string;
-
-  value: string;
-
-  tone?:
-    | "default"
-    | "primary"
-    | "nominal";
-}) {
-  const valueClass =
-    tone === "primary"
-      ? "text-(--primary)"
-      : tone ===
-          "nominal"
-        ? "text-(--nominal)"
-        : "text-white/84";
-
-  return (
-    <div className="grid grid-cols-[1fr_auto] items-center gap-4">
-      <span className="text-[9px] uppercase tracking-[0.08em] text-white/34">
-        {label}
-      </span>
-
-      <span
-        className={[
-          "max-w-[160px] truncate text-right text-[10px] font-medium",
-
-          valueClass,
-        ].join(" ")}
-      >
-        {value}
-      </span>
-    </div>
-  );
-}
-
-/* =========================================================
-   Footer
-   ========================================================= */
-
-function MissionNexusFooter({
-  activePage,
-  onPageChange,
-}: {
-  activePage: PageId;
-
-  onPageChange: (
-    page: PageId,
-  ) => void;
-}) {
-  const activeItem =
-    getActiveItem(
-      activePage,
-    );
-
-  return (
-    <footer
-      style={interfaceFont}
-      className="border-t border-white/[0.07] bg-[#05060d]"
-    >
-      <div className="mx-auto max-w-[1600px] px-5 py-9 sm:px-6 lg:px-10 2xl:px-14">
-        <div className="grid items-start gap-10 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
-
-          {/* Product */}
-
-          <div>
-            <div className="flex items-center">
-              <img
-                src={
-                  aeronexusWordmark
-                }
-                alt="Aeronexus"
-                className="h-auto w-[105px] object-contain"
-              />
-
-              <span
-                aria-hidden="true"
-                className="mx-3 h-6 w-px bg-white/10"
-              />
-
-              <span
-                style={productFont}
-                className="text-[15px] font-normal tracking-[-0.02em] text-white/88"
-              >
-                MissionNexus
-              </span>
-            </div>
-
-            <p className="mt-4 max-w-[320px] text-[11px] leading-[1.75] text-white/42">
-              Autonomous mission command and operational intelligence for next-generation unmanned systems.
-            </p>
-
-            <div className="mt-5">
-              <MissionStatus
-                label="Platform Online"
-                detail={
-                  activeItem
-                    ?.label ??
-                  "MissionNexus"
-                }
-                tone="nominal"
-              />
-            </div>
-          </div>
-
-          {/* Operations */}
-
-          <FooterColumn
-            title="Operations"
-            pages={[
-              [
-                "Live Operations",
-                "live-ops",
-              ],
-
-              [
-                "Mission Planner",
-                "mission-planner",
-              ],
-
-              [
-                "Drone Control",
-                "drone-control",
-              ],
-
-              [
-                "Fleet",
-                "fleet",
-              ],
-
-              [
-                "Pre-Flight",
-                "pre-flight",
-              ],
-            ]}
-            activePage={
-              activePage
-            }
-            onPageChange={
-              onPageChange
-            }
-          />
-
-          {/* Intelligence */}
-
-          <FooterColumn
-            title="Intelligence"
-            pages={[
-              [
-                "Vision Intelligence",
-                "camera-ai",
-              ],
-
-              [
-                "Mission Debrief",
-                "logs",
-              ],
-
-              [
-                "Security",
-                "security",
-              ],
-
-              [
-                "Settings",
-                "settings",
-              ],
-            ]}
-            activePage={
-              activePage
-            }
-            onPageChange={
-              onPageChange
-            }
-          />
-
-          {/* Mission State */}
-
-          <div>
-            <div
-              style={productFont}
-              className="text-[9px] font-semibold uppercase tracking-[0.16em] text-(--primary)"
-            >
-              Mission State
-            </div>
-
-            <div className="mt-4 grid gap-3">
-              <FooterState
-                label="Aircraft"
-                value={
-                  telemetry.droneId
-                }
-              />
-
-              <FooterState
-                label="Mission"
-                value={
-                  telemetry.mission
-                }
-              />
-
-              <FooterState
-                label="Flight Mode"
-                value={
-                  telemetry.flightMode
-                }
-                tone="primary"
-              />
-
-              <FooterState
-                label="Risk"
-                value={
-                  telemetry.risk.toUpperCase()
-                }
-                tone="nominal"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-9 border-t border-white/[0.07] pt-4">
-          <div className="flex flex-col gap-2 text-[9px] uppercase tracking-[0.05em] text-white/28 md:flex-row md:items-center md:justify-between">
-            <span>
-              Aeronexus autonomous systems
-            </span>
-
-            <span>
-              © 2026 Aeronexus · MissionNexus V2
-            </span>
-          </div>
-        </div>
-      </div>
-    </footer>
-  );
-}
-
-/* =========================================================
-   Footer Column
-   ========================================================= */
-
-function FooterColumn({
-  title,
-  pages,
-  activePage,
-  onPageChange,
-}: {
-  title: string;
-
-  pages: Array<
-    [
-      string,
-      PageId,
-    ]
-  >;
-
-  activePage: PageId;
-
-  onPageChange: (
-    page: PageId,
-  ) => void;
-}) {
-  return (
-    <div>
-      <div
-        style={productFont}
-        className="text-[9px] font-semibold uppercase tracking-[0.16em] text-(--primary)"
-      >
-        {title}
-      </div>
-
-      <div className="mt-4 grid gap-2.5">
-        {pages.map(
-          ([
-            label,
-            page,
-          ]) => (
-            <button
-              key={
-                page
-              }
-              type="button"
-              onClick={() =>
-                onPageChange(
-                  page,
-                )
-              }
-              className={[
-                "w-fit text-left text-[11px]",
-
-                "transition-colors duration-150",
-
-                activePage ===
-                page
-                  ? "text-(--primary)"
-                  : "text-white/42 hover:text-white/82",
-              ].join(" ")}
-            >
-              {label}
-            </button>
-          ),
-        )}
-      </div>
-    </div>
-  );
-}
-
-/* =========================================================
    Application Shell
    ========================================================= */
 
@@ -1144,8 +959,10 @@ export function AppShell({
 }: AppShellProps) {
   return (
     <div
-      style={interfaceFont}
-      className="min-h-screen bg-(--background) text-(--foreground)"
+      style={
+        interfaceFont
+      }
+      className="flex min-h-screen flex-col bg-(--background) text-(--foreground)"
     >
       <MissionNexusHeader
         activePage={
@@ -1156,13 +973,15 @@ export function AppShell({
         }
       />
 
-      {/* GeoFusion uses 70 px. MissionNexus now does too. */}
+      {/* 70px matches the GeoFusion product-family header. */}
 
-      <main className="min-h-screen pt-[70px]">
-        {children}
+      <main className="min-h-[calc(100vh-70px)] flex-1 pt-[70px]">
+        {
+          children
+        }
       </main>
 
-      <MissionNexusFooter
+      <MissionFooter
         activePage={
           activePage
         }
