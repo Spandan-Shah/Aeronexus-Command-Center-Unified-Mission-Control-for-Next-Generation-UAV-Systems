@@ -36,18 +36,6 @@ import {
   MissionFooter,
 } from "./MissionFooter";
 
-/* =========================================================
-   MissionNexus V2
-   Global Application Shell
-
-   GeoFusion product-family geometry:
-   - header: 70px
-   - exact Aeronexus wordmark asset
-   - logo: h-8 / sm:h-9 / xl:h-10
-   - divider: 24px
-   - MissionNexus: text-sm / sm:text-base
-   ========================================================= */
-
 type AppShellProps = {
   children: ReactNode;
 
@@ -60,17 +48,13 @@ type AppShellProps = {
 
 type NavItem = {
   id: PageId;
-
   label: string;
-
   description: string;
-
   icon: LucideIcon;
 };
 
 type NavGroup = {
   label: string;
-
   items: NavItem[];
 };
 
@@ -107,7 +91,7 @@ const navGroups: NavGroup[] = [
         id: "fleet",
         label: "Fleet",
         description:
-          "Aircraft assignment, state and operational readiness",
+          "Aircraft assignment and operational readiness",
         icon: Plane,
       },
 
@@ -210,10 +194,6 @@ function isGroupActive(
   );
 }
 
-/* =========================================================
-   Desktop Navigation Group
-   ========================================================= */
-
 function DesktopNavGroup({
   group,
   activePage,
@@ -240,7 +220,13 @@ function DesktopNavGroup({
         style={productFont}
         className={[
           "relative flex h-full items-center gap-1.5",
-          "text-[11px] font-semibold uppercase tracking-[0.08em]",
+
+          /*
+           * Reduced from 13px.
+           * Cleaner and closer to GeoFusion.
+           */
+          "text-[12px] font-semibold uppercase tracking-[0.06em]",
+
           "transition-colors duration-150",
 
           active
@@ -252,7 +238,7 @@ function DesktopNavGroup({
 
         <ChevronDown
           size={12}
-          strokeWidth={1.8}
+          strokeWidth={1.7}
           className="opacity-55 transition-transform duration-150 group-hover:rotate-180 group-focus-within:rotate-180"
         />
 
@@ -264,21 +250,30 @@ function DesktopNavGroup({
         ) : null}
       </button>
 
-      <div className="pointer-events-none absolute left-1/2 top-full h-3 w-[326px] -translate-x-1/2" />
+      <div className="pointer-events-none absolute left-1/2 top-full h-3 w-[310px] -translate-x-1/2" />
 
       <div
         className={[
           "pointer-events-none invisible absolute left-1/2 top-[calc(100%+10px)] z-[80]",
-          "w-[326px] -translate-x-1/2",
+
+          "w-[310px] -translate-x-1/2",
+
           "rounded-[6px] border border-white/10",
+
           "bg-[rgba(5,6,13,0.98)] p-2",
+
           "opacity-0",
+
           "shadow-[0_22px_60px_rgba(0,0,0,0.5)]",
+
           "backdrop-blur-[18px]",
+
           "transition-[opacity,visibility] duration-150",
+
           "group-hover:pointer-events-auto",
           "group-hover:visible",
           "group-hover:opacity-100",
+
           "group-focus-within:pointer-events-auto",
           "group-focus-within:visible",
           "group-focus-within:opacity-100",
@@ -287,7 +282,7 @@ function DesktopNavGroup({
         <div className="px-3 pb-2 pt-1">
           <div
             style={productFont}
-            className="text-[9px] font-semibold uppercase tracking-[0.16em] text-white/38"
+            className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/38"
           >
             {group.label}
           </div>
@@ -317,7 +312,8 @@ function DesktopNavGroup({
                     : undefined
                 }
                 className={[
-                  "flex w-full items-start gap-3 rounded-[6px] px-3 py-3 text-left",
+                  "flex w-full items-start gap-3 rounded-[6px] px-3 py-2.5 text-left",
+
                   "transition-colors duration-150",
 
                   itemActive
@@ -327,7 +323,9 @@ function DesktopNavGroup({
               >
                 <span
                   className={[
-                    "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-[5px] border",
+                    "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center",
+
+                    "rounded-[5px] border",
 
                     itemActive
                       ? "border-[rgba(246,178,60,0.28)] bg-[rgba(246,178,60,0.07)] text-(--primary)"
@@ -353,7 +351,7 @@ function DesktopNavGroup({
                     {item.label}
                   </span>
 
-                  <span className="mt-1 block text-[10px] leading-[1.55] text-white/42">
+                  <span className="mt-1 block text-[10px] leading-[1.45] text-white/42">
                     {item.description}
                   </span>
                 </span>
@@ -365,10 +363,6 @@ function DesktopNavGroup({
     </div>
   );
 }
-
-/* =========================================================
-   Mobile Navigation
-   ========================================================= */
 
 function MobileNavigation({
   activePage,
@@ -396,7 +390,7 @@ function MobileNavigation({
   return (
     <div className="absolute inset-x-0 top-[70px] border-b border-white/10 bg-[rgba(5,6,13,0.99)] shadow-[0_22px_60px_rgba(0,0,0,0.5)] backdrop-blur-[18px] min-[1380px]:hidden">
       <div className="mx-auto max-h-[calc(100vh-70px)] max-w-[1600px] overflow-y-auto px-5 py-5 sm:px-6 lg:px-10">
-        <div className="grid gap-7 md:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-3">
           {navGroups.map(
             (group) => (
               <div
@@ -404,7 +398,7 @@ function MobileNavigation({
               >
                 <div
                   style={productFont}
-                  className="mb-3 text-[9px] font-semibold uppercase tracking-[0.15em] text-(--primary)"
+                  className="mb-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-(--primary)"
                 >
                   {group.label}
                 </div>
@@ -428,14 +422,8 @@ function MobileNavigation({
                               item.id,
                             )
                           }
-                          aria-current={
-                            active
-                              ? "page"
-                              : undefined
-                          }
                           className={[
                             "flex items-center gap-3 rounded-[6px] px-3 py-2.5 text-left",
-                            "transition-colors duration-150",
 
                             active
                               ? "bg-[rgba(246,178,60,0.08)] text-(--primary)"
@@ -470,7 +458,10 @@ function MobileNavigation({
             }
             className={[
               "flex h-[40px] w-full items-center justify-center gap-2",
+
               "rounded-[6px] border border-white/10",
+
+              "text-[12px]",
 
               activePage ===
               "settings"
@@ -483,19 +474,13 @@ function MobileNavigation({
               strokeWidth={1.6}
             />
 
-            <span className="text-[12px]">
-              Settings
-            </span>
+            Settings
           </button>
         </div>
       </div>
     </div>
   );
 }
-
-/* =========================================================
-   Header
-   ========================================================= */
 
 function MissionNexusHeader({
   activePage,
@@ -529,18 +514,18 @@ function MissionNexusHeader({
     <header
       style={interfaceFont}
       className={[
-        "fixed inset-x-0 top-0 z-50",
+        "fixed inset-x-0 top-0 z-[100]",
+
         "h-[70px]",
+
         "border-b border-white/10",
-        "bg-[rgba(5,6,13,0.97)]",
-        "backdrop-blur-[18px]",
+
+        "bg-[#05060d]",
+
+        "shadow-[0_8px_24px_rgba(0,0,0,0.22)]",
       ].join(" ")}
     >
       <div className="mx-auto flex h-full w-full max-w-[1600px] items-center px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-14">
-        {/* =================================================
-            EXACT GEOFUSION PRODUCT LOCKUP
-            ================================================= */}
-
         <button
           type="button"
           onClick={() =>
@@ -564,17 +549,15 @@ function MissionNexusHeader({
 
           <span
             style={productFont}
-            className="truncate text-sm font-medium tracking-[-0.01em] text-white/75 sm:text-base"
+            className="truncate text-[15px] font-medium tracking-[-0.01em] text-white/80"
           >
             MissionNexus
           </span>
         </button>
 
-        {/* Desktop nav */}
-
         <nav
           aria-label="MissionNexus primary navigation"
-          className="ml-auto hidden h-full items-center gap-8 min-[1380px]:flex"
+          className="ml-auto hidden h-full items-center gap-7 min-[1380px]:flex"
         >
           {navGroups.map(
             (group) => (
@@ -588,9 +571,7 @@ function MissionNexusHeader({
           )}
         </nav>
 
-        {/* Utilities */}
-
-        <div className="ml-auto flex items-center gap-2 min-[1380px]:ml-8">
+        <div className="ml-auto flex items-center gap-2 min-[1380px]:ml-7">
           <button
             type="button"
             onClick={() =>
@@ -605,15 +586,18 @@ function MissionNexusHeader({
                 : undefined
             }
             className={[
-              "hidden h-[40px] items-center justify-center gap-2 rounded-[6px] border px-4",
-              "text-[12px]",
+              "hidden h-[38px] items-center justify-center gap-2 rounded-[6px] border px-3.5",
+
+              "text-[12px] font-medium",
+
               "transition-[background-color,border-color,color] duration-150",
+
               "sm:flex",
 
               activePage ===
               "settings"
                 ? "border-white/20 bg-white/[0.06] text-white"
-                : "border-white/10 bg-[rgba(5,6,13,0.9)] text-white/68 hover:border-white/20 hover:bg-white/[0.04] hover:text-white",
+                : "border-white/10 bg-[#07090d] text-white/68 hover:border-white/20 hover:bg-white/[0.04] hover:text-white",
             ].join(" ")}
           >
             <Settings
@@ -639,12 +623,16 @@ function MissionNexusHeader({
             }
             aria-expanded={mobileOpen}
             className={[
-              "flex h-[40px] w-[40px] items-center justify-center",
+              "flex h-[38px] w-[38px] items-center justify-center",
+
               "rounded-[6px] border border-white/10",
-              "bg-[rgba(5,6,13,0.9)]",
-              "text-white/58",
-              "transition-[background-color,border-color,color] duration-150",
-              "hover:border-white/20 hover:bg-white/[0.04] hover:text-white",
+
+              "bg-[#07090d]",
+
+              "text-white/60",
+
+              "hover:border-white/20 hover:text-white",
+
               "min-[1380px]:hidden",
             ].join(" ")}
           >
@@ -677,10 +665,6 @@ function MissionNexusHeader({
     </header>
   );
 }
-
-/* =========================================================
-   Application Shell
-   ========================================================= */
 
 export function AppShell({
   children,
