@@ -1,5 +1,13 @@
-import { useEffect, useRef, useState } from "react";
-import L, { type Layer, type Map as LeafletMap } from "leaflet";
+import {
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+
+import L, {
+  type Map as LeafletMap,
+} from "leaflet";
+
 import "leaflet/dist/leaflet.css";
 
 import {
@@ -8,19 +16,41 @@ import {
   initialMapView,
   restrictedZones,
 } from "../../data/worldMap";
+
 import {
   createDefaultWaypoint,
   type MissionWaypoint,
 } from "../../utils/missionAnalytics";
 
+/* =========================================================
+   Props
+   ========================================================= */
+
 type MissionPlanningMapProps = {
-  waypoints: MissionWaypoint[];
-  selectedWaypointId: string | null;
-  onWaypointsChange: (waypoints: MissionWaypoint[]) => void;
-  onSelectWaypoint: (waypointId: string | null) => void;
+  waypoints:
+    MissionWaypoint[];
+
+  selectedWaypointId:
+    string | null;
+
+  onWaypointsChange: (
+    waypoints:
+      MissionWaypoint[],
+  ) => void;
+
+  onSelectWaypoint: (
+    waypointId:
+      string | null,
+  ) => void;
 };
 
-type BaseMapId = "openstreetmap" | "hot";
+/* =========================================================
+   Base Maps
+   ========================================================= */
+
+type BaseMapId =
+  | "openstreetmap"
+  | "hot";
 
 const baseMaps: Record<
   BaseMapId,
@@ -32,63 +62,143 @@ const baseMaps: Record<
   }
 > = {
   openstreetmap: {
-    label: "OpenStreetMap",
-    shortLabel: "OSM",
-    url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-    attribution: "© OpenStreetMap contributors",
+    label:
+      "OpenStreetMap",
+
+    shortLabel:
+      "OSM",
+
+    url:
+      "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+
+    attribution:
+      "© OpenStreetMap contributors",
   },
+
   hot: {
-    label: "OpenStreetMap HOT",
-    shortLabel: "HOT",
-    url: "https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png",
-    attribution: "© OpenStreetMap contributors · HOT",
+    label:
+      "OpenStreetMap HOT",
+
+    shortLabel:
+      "HOT",
+
+    url:
+      "https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png",
+
+    attribution:
+      "© OpenStreetMap contributors · HOT",
   },
 };
+
+/* =========================================================
+   MissionNexus Map Colors
+   ========================================================= */
 
 const mapColors = {
-  route: "#050505",
-  routeHalo: "rgba(255,255,255,0.9)",
-  waypoint: "#f6b23c",
-  selectedWaypoint: "#49e58f",
-  home: "#49e58f",
-  geofence: "#009933",
-  restricted: "#ff4d4d",
-  stroke: "#050d18",
+  route:
+    "#5AA9FF",
+
+  routeHalo:
+    "rgba(3,4,5,0.82)",
+
+  waypoint:
+    "#5AA9FF",
+
+  selectedWaypoint:
+    "#F6B23C",
+
+  home:
+    "#59D99A",
+
+  geofence:
+    "#59D99A",
+
+  restricted:
+    "#FF5A63",
+
+  background:
+    "#030405",
 };
 
-function escapeHtml(value: string) {
+/* =========================================================
+   Helpers
+   ========================================================= */
+
+function escapeHtml(
+  value: string,
+) {
   return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+    .replaceAll(
+      "&",
+      "&amp;",
+    )
+    .replaceAll(
+      "<",
+      "&lt;",
+    )
+    .replaceAll(
+      ">",
+      "&gt;",
+    )
+    .replaceAll(
+      '"',
+      "&quot;",
+    )
+    .replaceAll(
+      "'",
+      "&#039;",
+    );
 }
 
-function createWaypointIcon(index: number, selected: boolean) {
-  const color = selected ? mapColors.selectedWaypoint : mapColors.waypoint;
+function createWaypointIcon(
+  index: number,
+  selected: boolean,
+) {
+  const color =
+    selected
+      ? mapColors.selectedWaypoint
+      : mapColors.waypoint;
+
+  const size =
+    selected
+      ? 34
+      : 30;
 
   return L.divIcon({
-    className: "aeronexus-waypoint-marker",
-    iconSize: [34, 34],
-    iconAnchor: [17, 17],
-    popupAnchor: [0, -17],
+    className:
+      "missionnexus-waypoint-marker",
+
+    iconSize: [
+      size,
+      size,
+    ],
+
+    iconAnchor: [
+      size / 2,
+      size / 2,
+    ],
+
+    popupAnchor: [
+      0,
+      -(size / 2),
+    ],
+
     html: `
       <div
         style="
-          width: 34px;
-          height: 34px;
-          border-radius: 999px;
-          background: rgba(5, 13, 24, 0.96);
-          border: 2px solid ${color};
-          color: ${color};
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-family: monospace;
-          font-size: 11px;
-          font-weight: 900;
-          box-shadow: 0 0 16px ${color}88;
+          width:${size}px;
+          height:${size}px;
+          border-radius:999px;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          background:rgba(3,4,5,0.96);
+          border:${selected ? 2 : 1.5}px solid ${color};
+          color:${color};
+          font-family:monospace;
+          font-size:10px;
+          font-weight:700;
+          box-shadow:${selected ? `0 0 18px ${color}66` : "none"};
         "
       >
         ${index + 1}
@@ -99,26 +209,40 @@ function createWaypointIcon(index: number, selected: boolean) {
 
 function createHomeIcon() {
   return L.divIcon({
-    className: "aeronexus-home-marker",
-    iconSize: [38, 38],
-    iconAnchor: [19, 19],
-    popupAnchor: [0, -19],
+    className:
+      "missionnexus-home-marker",
+
+    iconSize: [
+      34,
+      34,
+    ],
+
+    iconAnchor: [
+      17,
+      17,
+    ],
+
+    popupAnchor: [
+      0,
+      -17,
+    ],
+
     html: `
       <div
         style="
-          width: 38px;
-          height: 38px;
-          border-radius: 999px;
-          background: rgba(5, 13, 24, 0.96);
-          border: 2px solid ${mapColors.home};
-          color: ${mapColors.home};
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-family: monospace;
-          font-size: 10px;
-          font-weight: 900;
-          box-shadow: 0 0 16px ${mapColors.home}88;
+          width:34px;
+          height:34px;
+          border-radius:999px;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          background:rgba(3,4,5,0.96);
+          border:1.5px solid ${mapColors.home};
+          color:${mapColors.home};
+          font-family:monospace;
+          font-size:8px;
+          font-weight:700;
+          box-shadow:0 0 14px ${mapColors.home}44;
         "
       >
         HOME
@@ -127,335 +251,936 @@ function createHomeIcon() {
   });
 }
 
+/* =========================================================
+   Mission Planning Map
+   ========================================================= */
+
 export function MissionPlanningMap({
   waypoints,
   selectedWaypointId,
   onWaypointsChange,
   onSelectWaypoint,
 }: MissionPlanningMapProps) {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const mapRef = useRef<LeafletMap | null>(null);
-  const baseTileLayerRef = useRef<L.TileLayer | null>(null);
-  const waypointLayerRef = useRef<L.LayerGroup | null>(null);
-  const routeLayerRef = useRef<L.LayerGroup | null>(null);
+  const containerRef =
+    useRef<
+      HTMLDivElement | null
+    >(null);
 
-  const waypointsRef = useRef(waypoints);
-  const onWaypointsChangeRef = useRef(onWaypointsChange);
-  const onSelectWaypointRef = useRef(onSelectWaypoint);
+  const mapRef =
+    useRef<
+      LeafletMap | null
+    >(null);
 
-  const [baseMapId, setBaseMapId] = useState<BaseMapId>("openstreetmap");
-  const [coordinates, setCoordinates] = useState("23.02250°N · 72.57140°E");
-  const [zoom, setZoom] = useState(Math.max(initialMapView.zoom, 15));
+  const baseTileLayerRef =
+    useRef<
+      L.TileLayer | null
+    >(null);
 
-  useEffect(() => {
-    waypointsRef.current = waypoints;
-    onWaypointsChangeRef.current = onWaypointsChange;
-    onSelectWaypointRef.current = onSelectWaypoint;
-  }, [waypoints, onWaypointsChange, onSelectWaypoint]);
+  const waypointLayerRef =
+    useRef<
+      L.LayerGroup | null
+    >(null);
 
-  useEffect(() => {
-    const map = mapRef.current;
+  const routeLayerRef =
+    useRef<
+      L.LayerGroup | null
+    >(null);
 
-    if (!map) return;
+  const waypointsRef =
+    useRef(
+      waypoints,
+    );
 
-    if (baseTileLayerRef.current) {
-      map.removeLayer(baseTileLayerRef.current);
+  const onWaypointsChangeRef =
+    useRef(
+      onWaypointsChange,
+    );
+
+  const onSelectWaypointRef =
+    useRef(
+      onSelectWaypoint,
+    );
+
+  const [
+    baseMapId,
+    setBaseMapId,
+  ] =
+    useState<BaseMapId>(
+      "openstreetmap",
+    );
+
+  const [
+    coordinates,
+    setCoordinates,
+  ] =
+    useState(
+      "23.02250°N · 72.57140°E",
+    );
+
+  const [
+    zoom,
+    setZoom,
+  ] =
+    useState(
+      Math.max(
+        initialMapView.zoom,
+        15,
+      ),
+    );
+
+  /* =======================================================
+     Keep callbacks/data fresh for Leaflet handlers
+     ======================================================= */
+
+  useEffect(
+    () => {
+      waypointsRef.current =
+        waypoints;
+
+      onWaypointsChangeRef.current =
+        onWaypointsChange;
+
+      onSelectWaypointRef.current =
+        onSelectWaypoint;
+    },
+    [
+      waypoints,
+      onWaypointsChange,
+      onSelectWaypoint,
+    ],
+  );
+
+  /* =======================================================
+     Map Initialisation
+     ======================================================= */
+
+  useEffect(
+    () => {
+      if (
+        !containerRef.current ||
+        mapRef.current
+      ) {
+        return;
+      }
+
+      const map =
+        L.map(
+          containerRef.current,
+          {
+            center: [
+              initialMapView.latitude,
+              initialMapView.longitude,
+            ],
+
+            zoom:
+              Math.max(
+                initialMapView.zoom,
+                15,
+              ),
+
+            minZoom:
+              11,
+
+            maxZoom:
+              19,
+
+            zoomControl:
+              true,
+
+            attributionControl:
+              false,
+          },
+        );
+
+      mapRef.current =
+        map;
+
+      /* Attribution */
+
+      L.control
+        .attribution({
+          position:
+            "bottomright",
+
+          prefix:
+            false,
+        })
+        .addTo(
+          map,
+        );
+
+      baseTileLayerRef.current =
+        L.tileLayer(
+          baseMaps.openstreetmap
+            .url,
+          {
+            minZoom:
+              11,
+
+            maxZoom:
+              19,
+
+            attribution:
+              baseMaps.openstreetmap
+                .attribution,
+          },
+        ).addTo(
+          map,
+        );
+
+      /* Geofence */
+
+      L.geoJSON(
+        geofenceZone,
+        {
+          style: {
+            color:
+              mapColors.geofence,
+
+            weight:
+              2,
+
+            dashArray:
+              "7 6",
+
+            fillColor:
+              mapColors.geofence,
+
+            fillOpacity:
+              0.045,
+          },
+
+          onEachFeature:
+            (
+              feature,
+              layer,
+            ) => {
+              layer.bindPopup(
+                `<b>${escapeHtml(
+                  feature.properties?.name ??
+                    "Mission Geofence",
+                )}</b><br/>Operational mission boundary`,
+              );
+            },
+        },
+      ).addTo(
+        map,
+      );
+
+      /* Restricted Zones */
+
+      L.geoJSON(
+        restrictedZones,
+        {
+          style: {
+            color:
+              mapColors.restricted,
+
+            weight:
+              2,
+
+            fillColor:
+              mapColors.restricted,
+
+            fillOpacity:
+              0.11,
+          },
+
+          onEachFeature:
+            (
+              feature,
+              layer,
+            ) => {
+              layer.bindPopup(
+                `<b>${escapeHtml(
+                  feature.properties?.name ??
+                    "Restricted Zone",
+                )}</b><br/>Mission route should avoid this zone`,
+              );
+            },
+        },
+      ).addTo(
+        map,
+      );
+
+      /* Home */
+
+      L.geoJSON(
+        homePoint,
+        {
+          pointToLayer:
+            (
+              _feature,
+              latlng,
+            ) =>
+              L.marker(
+                latlng,
+                {
+                  icon:
+                    createHomeIcon(),
+                },
+              ),
+
+          onEachFeature:
+            (
+              feature,
+              layer,
+            ) => {
+              layer.bindPopup(
+                `<b>${escapeHtml(
+                  feature.properties?.name ??
+                    "HOME",
+                )}</b><br/>Launch / return point`,
+              );
+            },
+        },
+      ).addTo(
+        map,
+      );
+
+      /* Dynamic route layers */
+
+      routeLayerRef.current =
+        L.layerGroup().addTo(
+          map,
+        );
+
+      waypointLayerRef.current =
+        L.layerGroup().addTo(
+          map,
+        );
+
+      /* Add waypoint */
+
+      map.on(
+        "click",
+        (
+          event,
+        ) => {
+          const nextWaypoint =
+            createDefaultWaypoint(
+              Number(
+                event.latlng.lat.toFixed(
+                  6,
+                ),
+              ),
+
+              Number(
+                event.latlng.lng.toFixed(
+                  6,
+                ),
+              ),
+
+              waypointsRef.current
+                .length +
+                1,
+            );
+
+          onWaypointsChangeRef.current(
+            [
+              ...waypointsRef.current,
+
+              nextWaypoint,
+            ],
+          );
+
+          onSelectWaypointRef.current(
+            nextWaypoint.id,
+          );
+        },
+      );
+
+      /* Cursor position */
+
+      map.on(
+        "mousemove",
+        (
+          event,
+        ) => {
+          setCoordinates(
+            `${event.latlng.lat.toFixed(
+              5,
+            )}°N · ${event.latlng.lng.toFixed(
+              5,
+            )}°E`,
+          );
+        },
+      );
+
+      /* Zoom state */
+
+      map.on(
+        "zoomend",
+        () => {
+          setZoom(
+            Number(
+              map
+                .getZoom()
+                .toFixed(
+                  1,
+                ),
+            ),
+          );
+        },
+      );
+
+      /* Styling */
+
+      const styleLeafletControls =
+        () => {
+          const root =
+            containerRef.current;
+
+          if (!root) {
+            return;
+          }
+
+          const attribution =
+            root.querySelector(
+              ".leaflet-control-attribution",
+            ) as
+              | HTMLElement
+              | null;
+
+          if (
+            attribution
+          ) {
+            attribution.style.fontSize =
+              "10px";
+
+            attribution.style.lineHeight =
+              "1.35";
+
+            attribution.style.background =
+              "rgba(3,4,5,0.82)";
+
+            attribution.style.color =
+              "rgba(255,255,255,0.62)";
+
+            attribution.style.padding =
+              "3px 6px";
+
+            attribution
+              .querySelectorAll(
+                "a",
+              )
+              .forEach(
+                (
+                  link,
+                ) => {
+                  (
+                    link as HTMLElement
+                  ).style.color =
+                    "#8FC5FF";
+                },
+              );
+          }
+        };
+
+      const styleTimer =
+        window.setTimeout(
+          styleLeafletControls,
+          100,
+        );
+
+      const resizeTimers = [
+        window.setTimeout(
+          () =>
+            map.invalidateSize(),
+          100,
+        ),
+
+        window.setTimeout(
+          () =>
+            map.invalidateSize(),
+          400,
+        ),
+
+        window.setTimeout(
+          () =>
+            map.invalidateSize(),
+          900,
+        ),
+      ];
+
+      return () => {
+        window.clearTimeout(
+          styleTimer,
+        );
+
+        resizeTimers.forEach(
+          (
+            timer,
+          ) =>
+            window.clearTimeout(
+              timer,
+            ),
+        );
+
+        map.remove();
+
+        mapRef.current =
+          null;
+
+        baseTileLayerRef.current =
+          null;
+
+        waypointLayerRef.current =
+          null;
+
+        routeLayerRef.current =
+          null;
+      };
+    },
+    [],
+  );
+
+  /* =======================================================
+     Base Map Switching
+     ======================================================= */
+
+  useEffect(
+    () => {
+      const map =
+        mapRef.current;
+
+      if (!map) {
+        return;
+      }
+
+      if (
+        baseTileLayerRef.current
+      ) {
+        map.removeLayer(
+          baseTileLayerRef.current,
+        );
+      }
+
+      const baseMap =
+        baseMaps[
+          baseMapId
+        ];
+
+      const layer =
+        L.tileLayer(
+          baseMap.url,
+          {
+            minZoom:
+              11,
+
+            maxZoom:
+              19,
+
+            attribution:
+              baseMap.attribution,
+          },
+        );
+
+      layer.addTo(
+        map,
+      );
+
+      layer.bringToBack();
+
+      baseTileLayerRef.current =
+        layer;
+    },
+    [
+      baseMapId,
+    ],
+  );
+
+  /* =======================================================
+     Route + Waypoints
+     ======================================================= */
+
+  useEffect(
+    () => {
+      const waypointLayer =
+        waypointLayerRef.current;
+
+      const routeLayer =
+        routeLayerRef.current;
+
+      if (
+        !waypointLayer ||
+        !routeLayer
+      ) {
+        return;
+      }
+
+      waypointLayer.clearLayers();
+
+      routeLayer.clearLayers();
+
+      /* Route line */
+
+      if (
+        waypoints.length >=
+        2
+      ) {
+        const routeCoordinates =
+          waypoints.map(
+            (
+              waypoint,
+            ) =>
+              [
+                waypoint.lat,
+                waypoint.lng,
+              ] as [
+                number,
+                number,
+              ],
+          );
+
+        /* Dark route halo */
+
+        L.polyline(
+          routeCoordinates,
+          {
+            color:
+              mapColors.routeHalo,
+
+            weight:
+              7,
+
+            opacity:
+              0.88,
+
+            lineCap:
+              "round",
+
+            lineJoin:
+              "round",
+          },
+        ).addTo(
+          routeLayer,
+        );
+
+        /* Mission route */
+
+        L.polyline(
+          routeCoordinates,
+          {
+            color:
+              mapColors.route,
+
+            weight:
+              3,
+
+            opacity:
+              0.96,
+
+            dashArray:
+              "8 7",
+
+            lineCap:
+              "round",
+
+            lineJoin:
+              "round",
+          },
+        ).addTo(
+          routeLayer,
+        );
+      }
+
+      /* Waypoints */
+
+      waypoints.forEach(
+        (
+          waypoint,
+          index,
+        ) => {
+          const selected =
+            waypoint.id ===
+            selectedWaypointId;
+
+          const marker =
+            L.marker(
+              [
+                waypoint.lat,
+                waypoint.lng,
+              ],
+              {
+                icon:
+                  createWaypointIcon(
+                    index,
+                    selected,
+                  ),
+
+                draggable:
+                  true,
+              },
+            );
+
+          marker.bindPopup(
+            `<b>${escapeHtml(
+              waypoint.name,
+            )}</b><br/>
+            Altitude: ${waypoint.altitude} m<br/>
+            Speed: ${waypoint.speed} m/s<br/>
+            Hold: ${waypoint.holdSeconds} sec<br/>
+            Action: ${escapeHtml(
+              waypoint.action,
+            )}`,
+          );
+
+          marker.on(
+            "click",
+            (
+              event,
+            ) => {
+              event.originalEvent.stopPropagation();
+
+              onSelectWaypointRef.current(
+                waypoint.id,
+              );
+            },
+          );
+
+          marker.on(
+            "dragend",
+            () => {
+              const position =
+                marker.getLatLng();
+
+              const updatedWaypoints =
+                waypointsRef.current.map(
+                  (
+                    current,
+                  ) =>
+                    current.id ===
+                    waypoint.id
+                      ? {
+                          ...current,
+
+                          lat:
+                            Number(
+                              position.lat.toFixed(
+                                6,
+                              ),
+                            ),
+
+                          lng:
+                            Number(
+                              position.lng.toFixed(
+                                6,
+                              ),
+                            ),
+                        }
+                      : current,
+                );
+
+              onWaypointsChangeRef.current(
+                updatedWaypoints,
+              );
+            },
+          );
+
+          marker.addTo(
+            waypointLayer,
+          );
+        },
+      );
+    },
+    [
+      waypoints,
+      selectedWaypointId,
+    ],
+  );
+
+  /* =======================================================
+     Map Utilities
+     ======================================================= */
+
+  function toggleBaseMap() {
+    setBaseMapId(
+      (
+        current,
+      ) =>
+        current ===
+        "openstreetmap"
+          ? "hot"
+          : "openstreetmap",
+    );
+  }
+
+  function fitRoute() {
+    const map =
+      mapRef.current;
+
+    if (
+      !map ||
+      waypoints.length ===
+        0
+    ) {
+      return;
     }
 
-    const baseMap = baseMaps[baseMapId];
-
-    baseTileLayerRef.current = L.tileLayer(baseMap.url, {
-      minZoom: 11,
-      maxZoom: 19,
-      attribution: baseMap.attribution,
-    }).addTo(map);
-  }, [baseMapId]);
-
-  useEffect(() => {
-    if (!containerRef.current || mapRef.current) return;
-
-    const map = L.map(containerRef.current, {
-      center: [initialMapView.latitude, initialMapView.longitude],
-      zoom: Math.max(initialMapView.zoom, 15),
-      minZoom: 11,
-      maxZoom: 19,
-      zoomControl: true,
-      attributionControl: false,
-    });
-
-    mapRef.current = map;
-
-    L.control
-      .attribution({
-        position: "bottomright",
-        prefix: false,
-      })
-      .addTo(map);
-
-    baseTileLayerRef.current = L.tileLayer(baseMaps.openstreetmap.url, {
-      minZoom: 11,
-      maxZoom: 19,
-      attribution: baseMaps.openstreetmap.attribution,
-    }).addTo(map);
-
-    const staticLayers: Layer[] = [];
-
-    const geofenceLayer = L.geoJSON(geofenceZone, {
-      style: {
-        color: mapColors.geofence,
-        weight: 2.5,
-        dashArray: "6 6",
-        fillColor: mapColors.geofence,
-        fillOpacity: 0.06,
-      },
-      onEachFeature: (feature, layer) => {
-        layer.bindPopup(
-          `<b>${escapeHtml(
-            feature.properties?.name ?? "Mission Geofence"
-          )}</b><br/>Operational mission boundary`
-        );
-      },
-    }).addTo(map);
-
-    staticLayers.push(geofenceLayer);
-
-    const restrictedLayer = L.geoJSON(restrictedZones, {
-      style: {
-        color: mapColors.restricted,
-        weight: 2,
-        fillColor: mapColors.restricted,
-        fillOpacity: 0.16,
-      },
-      onEachFeature: (feature, layer) => {
-        layer.bindPopup(
-          `<b>${escapeHtml(
-            feature.properties?.name ?? "Restricted Zone"
-          )}</b><br/>Mission route should avoid this zone`
-        );
-      },
-    }).addTo(map);
-
-    staticLayers.push(restrictedLayer);
-
-    const homeLayer = L.geoJSON(homePoint, {
-      pointToLayer: (_feature, latlng) =>
-        L.marker(latlng, {
-          icon: createHomeIcon(),
-        }),
-      onEachFeature: (feature, layer) => {
-        layer.bindPopup(
-          `<b>${escapeHtml(
-            feature.properties?.name ?? "HOME"
-          )}</b><br/>Launch / return point`
-        );
-      },
-    }).addTo(map);
-
-    staticLayers.push(homeLayer);
-
-    routeLayerRef.current = L.layerGroup().addTo(map);
-    waypointLayerRef.current = L.layerGroup().addTo(map);
-
-    map.on("click", (event) => {
-      const nextWaypoint = createDefaultWaypoint(
-        Number(event.latlng.lat.toFixed(6)),
-        Number(event.latlng.lng.toFixed(6)),
-        waypointsRef.current.length + 1
+    if (
+      waypoints.length ===
+      1
+    ) {
+      map.flyTo(
+        [
+          waypoints[0].lat,
+          waypoints[0].lng,
+        ],
+        16,
+        {
+          duration:
+            0.8,
+        },
       );
 
-      onWaypointsChangeRef.current([...waypointsRef.current, nextWaypoint]);
-      onSelectWaypointRef.current(nextWaypoint.id);
-    });
-
-    map.on("mousemove", (event) => {
-      setCoordinates(
-        `${event.latlng.lat.toFixed(5)}°N · ${event.latlng.lng.toFixed(5)}°E`
-      );
-    });
-
-    map.on("zoomend", () => {
-      setZoom(Number(map.getZoom().toFixed(1)));
-    });
-
-    const resizeOne = window.setTimeout(() => map.invalidateSize(), 100);
-    const resizeTwo = window.setTimeout(() => map.invalidateSize(), 500);
-    const resizeThree = window.setTimeout(() => map.invalidateSize(), 1000);
-
-    return () => {
-      window.clearTimeout(resizeOne);
-      window.clearTimeout(resizeTwo);
-      window.clearTimeout(resizeThree);
-      map.remove();
-      mapRef.current = null;
-      baseTileLayerRef.current = null;
-      waypointLayerRef.current = null;
-      routeLayerRef.current = null;
-    };
-  }, []);
-
-  useEffect(() => {
-    const waypointLayer = waypointLayerRef.current;
-    const routeLayer = routeLayerRef.current;
-
-    if (!waypointLayer || !routeLayer) return;
-
-    waypointLayer.clearLayers();
-    routeLayer.clearLayers();
-
-    if (waypoints.length >= 2) {
-      const routeCoordinates = waypoints.map((waypoint) => [
-        waypoint.lat,
-        waypoint.lng,
-      ]) as [number, number][];
-
-      L.polyline(routeCoordinates, {
-        color: mapColors.routeHalo,
-        weight: 8,
-        opacity: 0.95,
-        dashArray: "1 13",
-        lineCap: "round",
-        lineJoin: "round",
-      }).addTo(routeLayer);
-
-      L.polyline(routeCoordinates, {
-        color: mapColors.route,
-        weight: 4,
-        opacity: 1,
-        dashArray: "1 13",
-        lineCap: "round",
-        lineJoin: "round",
-      }).addTo(routeLayer);
+      return;
     }
 
-    waypoints.forEach((waypoint, index) => {
-      const selected = waypoint.id === selectedWaypointId;
-
-      const marker = L.marker([waypoint.lat, waypoint.lng], {
-        icon: createWaypointIcon(index, selected),
-        draggable: true,
-      });
-
-      marker.bindPopup(
-        `<b>${escapeHtml(waypoint.name)}</b><br/>
-        Altitude: ${waypoint.altitude} m<br/>
-        Speed: ${waypoint.speed} m/s<br/>
-        Hold: ${waypoint.holdSeconds} sec<br/>
-        Action: ${waypoint.action}`
+    const bounds =
+      L.latLngBounds(
+        waypoints.map(
+          (
+            waypoint,
+          ) => [
+            waypoint.lat,
+            waypoint.lng,
+          ],
+        ),
       );
 
-      marker.on("click", (event) => {
-        event.originalEvent.stopPropagation();
-        onSelectWaypoint(waypoint.id);
-      });
+    map.fitBounds(
+      bounds,
+      {
+        padding: [
+          54,
+          54,
+        ],
 
-      marker.on("dragend", () => {
-        const position = marker.getLatLng();
+        maxZoom:
+          17,
+      },
+    );
+  }
 
-        const updatedWaypoints = waypointsRef.current.map((current) =>
-          current.id === waypoint.id
-            ? {
-                ...current,
-                lat: Number(position.lat.toFixed(6)),
-                lng: Number(position.lng.toFixed(6)),
-              }
-            : current
-        );
-
-        onWaypointsChangeRef.current(updatedWaypoints);
-      });
-
-      marker.addTo(waypointLayer);
-    });
-  }, [waypoints, selectedWaypointId, onSelectWaypoint]);
+  /* =======================================================
+     Render
+     ======================================================= */
 
   return (
-    <div className="relative h-full min-h-[620px] overflow-hidden rounded-xl border border-[#1d2533] bg-[#050d18]">
-      <div ref={containerRef} className="absolute inset-0 z-0" />
+    <div className="relative h-full min-h-0 w-full overflow-hidden bg-[#020304]">
+      {/* Leaflet canvas */}
 
-      <div className="pointer-events-none absolute left-4 top-4 z-20 max-w-[calc(100%-2rem)] rounded-lg border border-[#1d2533] bg-[#050d18]/92 px-4 py-3 backdrop-blur">
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-(--primary)">
-            Aeronexus Open Mission Planner
+      <div
+        ref={
+          containerRef
+        }
+        className="absolute inset-0 z-0"
+      />
+
+      {/* Compact instructions */}
+
+      <div className="pointer-events-none absolute left-3 top-3 z-[500]">
+        <div className="rounded-[4px] border border-white/[0.10] bg-[rgba(3,4,5,0.88)] px-2.5 py-1.5 backdrop-blur">
+          <div className="font-mono text-[9px] font-semibold uppercase tracking-[0.055em] text-white/58">
+            Click to add · drag
+            to move
           </div>
-
-          <div className="rounded-full border border-[#243147] bg-black px-2 py-0.5 font-mono text-[8px] font-bold uppercase tracking-[0.1em] text-(--muted)">
-            OpenStreetMap
-          </div>
-        </div>
-
-        <div className="mt-1 font-mono text-[9px] uppercase tracking-[0.08em] text-(--muted)">
-          Click to add waypoint · Drag marker to edit route · Black dotted
-          route line
         </div>
       </div>
 
-      <div className="absolute right-4 top-4 z-20 w-[13.5rem] rounded-lg border border-[#1d2533] bg-[#050d18]/94 p-3 backdrop-blur">
-        <div className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-(--foreground)">
-          Planner Map
-        </div>
+      {/* Map tools */}
+
+      <div className="pointer-events-none absolute right-3 top-3 z-[500] flex items-center gap-1.5">
+        <button
+          type="button"
+          onClick={
+            toggleBaseMap
+          }
+          className={[
+            "pointer-events-auto",
+
+            "h-[30px]",
+
+            "rounded-[4px] border",
+
+            "border-white/[0.12]",
+
+            "bg-[rgba(3,4,5,0.9)]",
+
+            "px-2.5",
+
+            "font-mono text-[9px] font-semibold uppercase tracking-[0.055em]",
+
+            "text-white/66",
+
+            "backdrop-blur",
+
+            "transition-colors",
+
+            "hover:border-[rgba(90,169,255,0.35)] hover:text-[#5AA9FF]",
+          ].join(" ")}
+        >
+          {
+            baseMaps[
+              baseMapId
+            ].shortLabel
+          }
+        </button>
 
         <button
           type="button"
-          onClick={() =>
-            setBaseMapId((current) =>
-              current === "openstreetmap" ? "hot" : "openstreetmap"
-            )
+          onClick={
+            fitRoute
           }
-          className="mt-3 w-full rounded border border-(--primary) bg-[rgba(246,178,60,0.08)] px-3 py-3 text-left font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-(--primary) transition hover:bg-[rgba(246,178,60,0.12)]"
+          disabled={
+            waypoints.length ===
+            0
+          }
+          className={[
+            "pointer-events-auto",
+
+            "h-[30px]",
+
+            "rounded-[4px] border",
+
+            "border-[rgba(90,169,255,0.24)]",
+
+            "bg-[rgba(3,4,5,0.9)]",
+
+            "px-2.5",
+
+            "font-mono text-[9px] font-semibold uppercase tracking-[0.055em]",
+
+            "text-[#5AA9FF]",
+
+            "backdrop-blur",
+
+            "transition-colors",
+
+            "hover:bg-[rgba(90,169,255,0.07)]",
+
+            "disabled:cursor-not-allowed disabled:opacity-35",
+          ].join(" ")}
         >
-          <span className="block text-[8px] text-(--muted)">Base Map</span>
-          {baseMaps[baseMapId].label}
+          Fit Route
         </button>
-
-        <div className="mt-3 grid gap-2">
-          <div className="rounded border border-[#1d2533] bg-black px-3 py-2">
-            <div className="font-mono text-[8px] font-bold uppercase tracking-[0.12em] text-(--muted)">
-              Waypoints
-            </div>
-
-            <div className="mt-1 font-mono text-[18px] font-bold text-(--foreground)">
-              {waypoints.length}
-            </div>
-          </div>
-
-          <div className="rounded border border-[#1d2533] bg-black px-3 py-2">
-            <div className="font-mono text-[8px] font-bold uppercase tracking-[0.12em] text-(--muted)">
-              Selected
-            </div>
-
-            <div className="mt-1 truncate font-mono text-[12px] font-bold text-(--foreground)">
-              {waypoints.find((waypoint) => waypoint.id === selectedWaypointId)
-                ?.name ?? "None"}
-            </div>
-          </div>
-        </div>
       </div>
 
-      <div className="pointer-events-none absolute bottom-4 left-4 z-20 rounded-lg border border-[#1d2533] bg-[#050d18]/92 px-4 py-3 backdrop-blur">
-        <div className="font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-(--foreground)">
-          {coordinates}
-        </div>
+      {/* Coordinate readout */}
 
-        <div className="mt-1 font-mono text-[8px] uppercase tracking-[0.1em] text-(--muted)">
-          WGS-84 · Zoom {zoom}
-        </div>
-      </div>
+      <div className="pointer-events-none absolute bottom-3 left-3 z-[500]">
+        <div className="rounded-[4px] border border-white/[0.10] bg-[rgba(3,4,5,0.88)] px-2.5 py-1.5 backdrop-blur">
+          <div className="font-mono text-[10px] font-medium text-white/68">
+            {
+              coordinates
+            }
+          </div>
 
-      <div className="pointer-events-none absolute bottom-4 right-4 z-20 flex flex-wrap items-center gap-2">
-        <div className="rounded-lg border border-[#1d2533] bg-[#050d18]/92 px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-(--muted) backdrop-blur">
-          AOI
-        </div>
-
-        <div className="rounded-lg border border-[#1d2533] bg-[#050d18]/92 px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-(--muted) backdrop-blur">
-          Home
-        </div>
-
-        <div className="rounded-lg border border-[#050505] bg-[rgba(255,255,255,0.86)] px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-black backdrop-blur">
-          Black Dotted Route
-        </div>
-
-        <div className="rounded-lg border border-[#1d2533] bg-[#050d18]/92 px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-(--muted) backdrop-blur">
-          Selected
+          <div className="mt-0.5 font-mono text-[8px] uppercase tracking-[0.055em] text-white/34">
+            WGS-84 · Zoom{" "}
+            {zoom}
+          </div>
         </div>
       </div>
     </div>
