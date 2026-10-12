@@ -1,4 +1,6 @@
-import { useState } from "react";
+import {
+  useState,
+} from "react";
 
 import {
   Activity,
@@ -18,15 +20,31 @@ import {
   Waves,
 } from "lucide-react";
 
-import type { LucideIcon } from "lucide-react";
+import type {
+  LucideIcon,
+} from "lucide-react";
 
-import type { CameraVideoSource } from "./VideoSourceLibrary";
+import type {
+  CameraVideoSource,
+} from "./VideoSourceLibrary";
+
+/* =========================================================
+   Public Types
+   ========================================================= */
 
 export type CameraDetectionBox = {
   label: string;
+
   display_label: string;
+
   confidence: number;
-  category: "person" | "vehicle" | "threat" | "object";
+
+  category:
+    | "person"
+    | "vehicle"
+    | "threat"
+    | "object";
+
   frame_index?: number;
 
   box: {
@@ -105,7 +123,8 @@ export type CameraOpenCvAnalysis = {
     smoke: boolean;
     flood: boolean;
     confidence: number;
-    boxes: CameraDetectionBox[];
+    boxes:
+      CameraDetectionBox[];
   };
 
   risk:
@@ -126,17 +145,31 @@ export type CameraOpenCvAnalysis = {
 
 type AnalyzeResponse = {
   ok: boolean;
-  analysis?: CameraOpenCvAnalysis;
+
+  analysis?:
+    CameraOpenCvAnalysis;
+
   error?: string;
 };
 
+type AnalysisMode =
+  | "full"
+  | "control"
+  | "details";
+
 type OpenCvAnalysisPanelProps = {
-  selectedVideo: CameraVideoSource;
-  analysis: CameraOpenCvAnalysis | null;
+  selectedVideo:
+    CameraVideoSource;
+
+  analysis:
+    CameraOpenCvAnalysis | null;
 
   onAnalysisComplete: (
-    analysis: CameraOpenCvAnalysis,
+    analysis:
+      CameraOpenCvAnalysis,
   ) => void;
+
+  mode?: AnalysisMode;
 };
 
 type Tone =
@@ -146,83 +179,126 @@ type Tone =
   | "info"
   | "muted";
 
+/* =========================================================
+   Backend
+   ========================================================= */
+
 const API_BASE_URL =
   "http://127.0.0.1:8000";
 
 /* =========================================================
-   Detection Label Groups
+   Detection Labels
    ========================================================= */
 
-const fireLabels = new Set([
-  "fire",
-  "flame",
-  "wildfire",
-  "blaze",
-  "burning",
-  "fire-color-signature",
-  "flame-signature",
-]);
+const fireLabels =
+  new Set([
+    "fire",
+    "flame",
+    "wildfire",
+    "blaze",
+    "burning",
+    "fire-color-signature",
+    "flame-signature",
+  ]);
 
-const smokeLabels = new Set([
-  "smoke",
-  "haze",
-  "smoke-signature",
-  "smoke-haze-signature",
-]);
+const smokeLabels =
+  new Set([
+    "smoke",
+    "haze",
+    "smoke-signature",
+    "smoke-haze-signature",
+  ]);
 
-const floodLabels = new Set([
-  "flood",
-  "water-flood",
-  "floodwater",
-  "water",
-]);
+const floodLabels =
+  new Set([
+    "flood",
+    "water-flood",
+    "floodwater",
+    "water",
+  ]);
 
 /* =========================================================
    Tone System
    ========================================================= */
 
-const toneClass = {
+const toneClass:
+  Record<
+    Tone,
+    {
+      text: string;
+      border: string;
+      bg: string;
+      dot: string;
+    }
+  > = {
   nominal: {
-    text: "text-(--nominal)",
+    text:
+      "text-[#59D99A]",
+
     border:
-      "border-[rgba(73,229,143,0.28)]",
+      "border-[rgba(89,217,154,0.25)]",
+
     bg:
-      "bg-[rgba(73,229,143,0.08)]",
-    dot: "bg-(--nominal)",
+      "bg-[rgba(89,217,154,0.05)]",
+
+    dot:
+      "bg-[#59D99A]",
   },
 
   caution: {
-    text: "text-(--primary)",
+    text:
+      "text-[#F6B23C]",
+
     border:
-      "border-[rgba(246,178,60,0.34)]",
+      "border-[rgba(246,178,60,0.28)]",
+
     bg:
-      "bg-[rgba(246,178,60,0.08)]",
-    dot: "bg-(--primary)",
+      "bg-[rgba(246,178,60,0.055)]",
+
+    dot:
+      "bg-[#F6B23C]",
   },
 
   critical: {
-    text: "text-(--critical)",
+    text:
+      "text-[#FF5A63]",
+
     border:
-      "border-[rgba(255,77,77,0.36)]",
+      "border-[rgba(255,90,99,0.28)]",
+
     bg:
-      "bg-[rgba(255,77,77,0.08)]",
-    dot: "bg-(--critical)",
+      "bg-[rgba(255,90,99,0.055)]",
+
+    dot:
+      "bg-[#FF5A63]",
   },
 
   info: {
-    text: "text-(--info)",
+    text:
+      "text-[#5AA9FF]",
+
     border:
-      "border-[rgba(90,169,255,0.3)]",
+      "border-[rgba(90,169,255,0.26)]",
+
     bg:
-      "bg-[rgba(90,169,255,0.08)]",
-    dot: "bg-(--info)",
+      "bg-[rgba(90,169,255,0.055)]",
+
+    dot:
+      "bg-[#5AA9FF]",
   },
 
   muted: {
-    text: "text-(--muted)",
-    border: "border-[#1d2533]",
-    bg: "bg-[#070a10]",
-    dot: "bg-(--muted)",
+    text:
+      "text-white/34",
+
+    border:
+      "border-white/[0.07]",
+
+    bg:
+      "bg-[#05060d]",
+
+    dot:
+      "bg-white/24",
   },
 };
 
@@ -309,21 +385,26 @@ function getEventTone(
     severity.toLowerCase();
 
   if (
-    value === "critical"
+    value ===
+    "critical"
   ) {
     return "critical";
   }
 
   if (
-    value === "high" ||
-    value === "medium" ||
-    value === "warning"
+    value ===
+      "high" ||
+    value ===
+      "medium" ||
+    value ===
+      "warning"
   ) {
     return "caution";
   }
 
   if (
-    value === "info"
+    value ===
+    "info"
   ) {
     return "info";
   }
@@ -341,27 +422,45 @@ function MetricBox({
   suffix = "",
   icon: Icon,
   tone = "info",
+  compact = false,
 }: {
   label: string;
-  value: string | number;
+
+  value:
+    | string
+    | number;
+
   suffix?: string;
-  icon: LucideIcon;
+
+  icon:
+    LucideIcon;
+
   tone?: Tone;
+
+  compact?: boolean;
 }) {
-  const toneStyle =
+  const style =
     toneClass[
       tone
     ];
 
   return (
     <div
-      className={`rounded-lg border bg-[#07111f] p-3 ${toneStyle.border}`}
+      className={[
+        "rounded-[4px] border bg-[#05060d]",
+
+        compact
+          ? "p-2"
+          : "p-3",
+
+        style.border,
+      ].join(" ")}
     >
-      <div className="flex items-center gap-2 font-mono text-[8px] font-bold uppercase tracking-[0.12em] text-(--muted)">
+      <div className="flex items-center gap-1.5 font-mono text-[8px] font-semibold uppercase tracking-[0.055em] text-white/30">
         <Icon
-          size={12}
+          size={10}
           className={
-            toneStyle.text
+            style.text
           }
         />
 
@@ -369,7 +468,15 @@ function MetricBox({
       </div>
 
       <div
-        className={`mt-2 font-mono text-[16px] font-bold ${toneStyle.text}`}
+        className={[
+          "mt-1 font-mono font-semibold",
+
+          compact
+            ? "text-[12px]"
+            : "text-[15px]",
+
+          style.text,
+        ].join(" ")}
       >
         {value}
         {suffix}
@@ -379,7 +486,7 @@ function MetricBox({
 }
 
 /* =========================================================
-   Detection Status
+   Detection State
    ========================================================= */
 
 function DetectionStatusCard({
@@ -387,17 +494,24 @@ function DetectionStatusCard({
   label,
   active,
   activeText,
-  clearText = "CLEAR",
+  clearText =
+    "CLEAR",
   tone,
 }: {
-  icon: LucideIcon;
+  icon:
+    LucideIcon;
+
   label: string;
+
   active: boolean;
+
   activeText: string;
+
   clearText?: string;
+
   tone: Tone;
 }) {
-  const toneStyle =
+  const style =
     active
       ? toneClass[
           tone
@@ -406,35 +520,45 @@ function DetectionStatusCard({
 
   return (
     <div
-      className={`rounded-lg border bg-[#07111f] p-3 ${toneStyle.border}`}
+      className={[
+        "rounded-[5px] border bg-[#05060d] p-3",
+
+        style.border,
+      ].join(" ")}
     >
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center justify-between gap-2">
         <Icon
-          size={17}
+          size={14}
           className={
-            toneStyle.text
+            style.text
           }
         />
 
         <span
-          className={`h-2 w-2 rounded-full ${
+          className={[
+            "h-1.5 w-1.5 rounded-full",
+
             active
               ? toneClass[
                   tone
                 ].dot
               : toneClass
                   .muted
-                  .dot
-          }`}
+                  .dot,
+          ].join(" ")}
         />
       </div>
 
-      <div className="mt-3 font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-(--foreground)">
+      <div className="mt-2 font-mono text-[9px] font-semibold uppercase text-white/64">
         {label}
       </div>
 
       <div
-        className={`mt-1 font-mono text-[9px] font-bold uppercase ${toneStyle.text}`}
+        className={[
+          "mt-0.5 font-mono text-[8px] font-semibold uppercase",
+
+          style.text,
+        ].join(" ")}
       >
         {active
           ? activeText
@@ -445,7 +569,7 @@ function DetectionStatusCard({
 }
 
 /* =========================================================
-   OpenCV Disaster Signature Panel
+   Fire / Disaster Analysis
    ========================================================= */
 
 function FireModePanel({
@@ -505,44 +629,38 @@ function FireModePanel({
     0;
 
   return (
-    <div className="rounded-xl border border-[rgba(255,77,77,0.34)] bg-[rgba(255,77,77,0.045)] p-4">
-      <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
-        <div>
-          <div className="flex items-center gap-2 font-mono text-[9px] font-bold uppercase tracking-[0.16em] text-(--critical)">
-            <Flame
-              size={14}
-            />
+    <div className="rounded-[5px] border border-[rgba(255,90,99,0.2)] bg-[rgba(255,90,99,0.025)] p-3">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 font-mono text-[9px] font-semibold uppercase tracking-[0.06em] text-[#FF5A63]">
+          <Flame
+            size={12}
+          />
 
-            OpenCV Fire / Flame Mode
-          </div>
-
-          <h3 className="mt-1 text-[15px] font-semibold text-(--foreground)">
-            Disaster signature analysis
-          </h3>
-
-          <p className="mt-2 text-[12px] leading-relaxed text-(--muted)">
-            Uses YOLO labels plus OpenCV HSV colour masks for fire/flame signatures and smoke-like haze patterns.
-          </p>
+          Fire / disaster signatures
         </div>
 
         <span
-          className={`w-fit rounded-full border px-3 py-1 font-mono text-[8px] font-bold uppercase tracking-[0.12em] ${
+          className={[
+            "font-mono text-[8px] font-semibold uppercase",
+
             fireModeActive ||
             smokeModeActive
-              ? "border-[rgba(255,77,77,0.36)] bg-[rgba(255,77,77,0.08)] text-(--critical)"
-              : "border-[rgba(73,229,143,0.28)] bg-[rgba(73,229,143,0.08)] text-(--nominal)"
-          }`}
+              ? "text-[#FF5A63]"
+              : "text-[#59D99A]",
+          ].join(" ")}
         >
           {fireModeActive ||
           smokeModeActive
             ? "Signal Found"
-            : "No Fire Signal"}
+            : "Clear"}
         </span>
       </div>
 
-      <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+      <div className="mt-3 grid grid-cols-2 gap-2 md:grid-cols-4">
         <MetricBox
-          icon={Flame}
+          icon={
+            Flame
+          }
           label="Fire Pixels"
           value={
             maxFire.toFixed(
@@ -558,7 +676,9 @@ function FireModePanel({
         />
 
         <MetricBox
-          icon={CloudFog}
+          icon={
+            CloudFog
+          }
           label="Smoke Pixels"
           value={
             maxSmoke.toFixed(
@@ -574,7 +694,9 @@ function FireModePanel({
         />
 
         <MetricBox
-          icon={Gauge}
+          icon={
+            Gauge
+          }
           label="Best Fire"
           value={
             bestFire.toFixed(
@@ -583,14 +705,17 @@ function FireModePanel({
           }
           suffix="%"
           tone={
-            bestFire > 0
+            bestFire >
+            0
               ? "critical"
               : "muted"
           }
         />
 
         <MetricBox
-          icon={CloudFog}
+          icon={
+            CloudFog
+          }
           label="Best Smoke"
           value={
             bestSmoke.toFixed(
@@ -599,41 +724,48 @@ function FireModePanel({
           }
           suffix="%"
           tone={
-            bestSmoke > 0
+            bestSmoke >
+            0
               ? "caution"
               : "muted"
           }
         />
       </div>
 
-      <div className="mt-4 grid gap-3 md:grid-cols-3">
+      <div className="mt-2 grid grid-cols-3 gap-2">
         <DetectionStatusCard
-          icon={Flame}
-          label="Fire / Flame"
+          icon={
+            Flame
+          }
+          label="Fire"
           active={
             fireModeActive
           }
-          activeText="DETECTED"
+          activeText="Detected"
           tone="critical"
         />
 
         <DetectionStatusCard
-          icon={CloudFog}
-          label="Smoke / Haze"
+          icon={
+            CloudFog
+          }
+          label="Smoke"
           active={
             smokeModeActive
           }
-          activeText="DETECTED"
+          activeText="Detected"
           tone="caution"
         />
 
         <DetectionStatusCard
-          icon={Waves}
-          label="Flood / Water"
+          icon={
+            Waves
+          }
+          label="Flood"
           active={
             floodModeActive
           }
-          activeText="DETECTED"
+          activeText="Detected"
           tone="info"
         />
       </div>
@@ -657,28 +789,28 @@ function DetectionBoxList({
       .boxes;
 
   return (
-    <div className="rounded-xl border border-[#1d2533] bg-[#07111f] p-4">
+    <div className="rounded-[5px] border border-white/[0.07] bg-[#05060d] p-3">
       <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 font-mono text-[9px] font-bold uppercase tracking-[0.14em] text-(--primary)">
+        <div className="flex items-center gap-2 font-mono text-[9px] font-semibold uppercase tracking-[0.06em] text-[#F6B23C]">
           <Target
-            size={14}
+            size={12}
           />
 
           Detection Boxes
         </div>
 
-        <span className="rounded-full border border-[#243147] bg-black px-2.5 py-1 font-mono text-[8px] font-bold uppercase text-(--muted)">
+        <span className="font-mono text-[8px] uppercase text-white/28">
           Best frame
         </span>
       </div>
 
-      <div className="mt-3 max-h-64 space-y-2 overflow-y-auto pr-1">
+      <div className="mt-3 max-h-64 space-y-1.5 overflow-y-auto pr-1">
         {boxes.length ===
-          0 && (
-          <div className="rounded border border-[#1d2533] bg-black p-3 text-[12px] text-(--muted)">
-            No objects detected above confidence threshold.
+        0 ? (
+          <div className="rounded-[4px] border border-white/[0.07] px-3 py-2 text-[10px] text-white/34">
+            No objects detected above the current confidence threshold.
           </div>
-        )}
+        ) : null}
 
         {boxes.map(
           (
@@ -695,10 +827,6 @@ function DetectionBoxList({
                 box.label,
               );
 
-            /**
-             * This now uses the flood helper, fixing TS6133
-             * while preserving flood/water classification.
-             */
             const floodLike =
               isFloodLabel(
                 box.label,
@@ -723,7 +851,7 @@ function DetectionBoxList({
                           ? "critical"
                           : "muted";
 
-            const toneStyle =
+            const style =
               toneClass[
                 tone
               ];
@@ -731,46 +859,46 @@ function DetectionBoxList({
             return (
               <div
                 key={`${box.label}-${box.frame_index ?? "frame"}-${index}`}
-                className={`rounded-lg border bg-black p-3 ${toneStyle.border}`}
+                className={[
+                  "flex items-center justify-between gap-3 rounded-[4px] border px-3 py-2",
+
+                  style.border,
+                ].join(" ")}
               >
-                <div className="flex items-center justify-between gap-3">
-                  <span className="font-mono text-[10px] font-bold uppercase text-(--foreground)">
+                <div className="min-w-0">
+                  <div className="truncate font-mono text-[9px] font-semibold uppercase text-white/66">
                     {
                       box.display_label
                     }
-                  </span>
+                  </div>
 
-                  <span
-                    className={`font-mono text-[10px] font-bold ${toneStyle.text}`}
-                  >
-                    {Math.round(
-                      box.confidence *
-                        100,
-                    )}
-                    %
-                  </span>
-                </div>
-
-                <div className="mt-2 flex flex-wrap gap-2">
-                  <span
-                    className={`rounded border px-2 py-1 font-mono text-[8px] font-bold uppercase ${toneStyle.border} ${toneStyle.bg} ${toneStyle.text}`}
-                  >
-                    {
-                      floodLike
-                        ? "flood"
-                        : box.category
-                    }
-                  </span>
-
-                  <span className="rounded border border-[#1d2533] px-2 py-1 font-mono text-[8px] font-bold uppercase text-(--muted)">
-                    Frame{" "}
+                  <div className="mt-0.5 font-mono text-[8px] text-white/28">
+                    {floodLike
+                      ? "flood"
+                      : box.category}
+                    {" "}
+                    · frame{" "}
                     {box.frame_index ??
                       analysis
                         .frame
                         ?.best_frame_index ??
                       "-"}
-                  </span>
+                  </div>
                 </div>
+
+                <span
+                  className={[
+                    "shrink-0 font-mono text-[10px] font-semibold",
+
+                    style.text,
+                  ].join(" ")}
+                >
+                  {Math.round(
+                    box.confidence *
+                      100,
+                  )}
+                  %
+                </span>
               </div>
             );
           },
@@ -791,30 +919,28 @@ function ModelEvents({
     CameraOpenCvAnalysis;
 }) {
   return (
-    <div className="rounded-xl border border-[#1d2533] bg-[#07111f] p-4">
-      <div className="flex items-center gap-2 font-mono text-[9px] font-bold uppercase tracking-[0.14em] text-(--primary)">
+    <div className="rounded-[5px] border border-white/[0.07] bg-[#05060d] p-3">
+      <div className="flex items-center gap-2 font-mono text-[9px] font-semibold uppercase tracking-[0.06em] text-[#F6B23C]">
         <Activity
-          size={14}
+          size={12}
         />
 
         Model Events
       </div>
 
-      <div className="mt-3 space-y-2">
-        {analysis
-          .events
-          .length ===
-          0 && (
-          <div className="rounded border border-[#1d2533] bg-black p-3 text-[12px] text-(--muted)">
-            No important detection event found.
+      <div className="mt-3 space-y-1.5">
+        {analysis.events.length ===
+        0 ? (
+          <div className="rounded-[4px] border border-white/[0.07] px-3 py-2 text-[10px] text-white/34">
+            No important model events.
           </div>
-        )}
+        ) : null}
 
         {analysis.events.map(
           (
             event,
           ) => {
-            const tone =
+            const style =
               toneClass[
                 getEventTone(
                   event.severity,
@@ -824,17 +950,23 @@ function ModelEvents({
             return (
               <div
                 key={`${event.type}-${event.created_at}`}
-                className={`rounded-lg border bg-black p-3 ${tone.border}`}
+                className={[
+                  "rounded-[4px] border px-3 py-2",
+                  style.border,
+                ].join(" ")}
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="font-mono text-[10px] font-bold uppercase text-(--foreground)">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="text-[10px] font-medium text-white/72">
                     {
                       event.title
                     }
                   </div>
 
                   <span
-                    className={`font-mono text-[8px] font-bold uppercase ${tone.text}`}
+                    className={[
+                      "font-mono text-[8px] font-semibold uppercase",
+                      style.text,
+                    ].join(" ")}
                   >
                     {
                       event.severity
@@ -842,7 +974,7 @@ function ModelEvents({
                   </span>
                 </div>
 
-                <div className="mt-2 text-[12px] leading-relaxed text-(--muted)">
+                <div className="mt-1 text-[9px] leading-[1.45] text-white/32">
                   {
                     event.message
                   }
@@ -857,19 +989,22 @@ function ModelEvents({
 }
 
 /* =========================================================
-   Main Component
+   OpenCV Analysis Panel
    ========================================================= */
 
 export function OpenCvAnalysisPanel({
   selectedVideo,
   analysis,
   onAnalysisComplete,
+  mode = "full",
 }: OpenCvAnalysisPanelProps) {
   const [
     loading,
     setLoading,
   ] =
-    useState(false);
+    useState(
+      false,
+    );
 
   const [
     error,
@@ -883,6 +1018,10 @@ export function OpenCvAnalysisPanel({
     Boolean(
       selectedVideo.src,
     );
+
+  /* =======================================================
+     Analyze
+     ======================================================= */
 
   async function analyzeSelectedVideo() {
     if (
@@ -917,19 +1056,21 @@ export function OpenCvAnalysisPanel({
             },
 
             body:
-              JSON.stringify({
-                source_id:
-                  selectedVideo.id,
+              JSON.stringify(
+                {
+                  source_id:
+                    selectedVideo.id,
 
-                sample_every:
-                  5,
+                  sample_every:
+                    5,
 
-                max_frames:
-                  160,
+                  max_frames:
+                    160,
 
-                confidence_threshold:
-                  0.25,
-              }),
+                  confidence_threshold:
+                    0.25,
+                },
+              ),
           },
         );
 
@@ -942,7 +1083,9 @@ export function OpenCvAnalysisPanel({
       }
 
       const data =
-        (await response.json()) as AnalyzeResponse;
+        (
+          await response.json()
+        ) as AnalyzeResponse;
 
       if (
         !data.ok ||
@@ -999,8 +1142,7 @@ export function OpenCvAnalysisPanel({
     ];
 
   const personCount =
-    analysis
-      ?.counts
+    analysis?.counts
       ?.person ??
     analysis
       ?.detections
@@ -1016,8 +1158,7 @@ export function OpenCvAnalysisPanel({
     0;
 
   const vehicleCount =
-    analysis
-      ?.counts
+    analysis?.counts
       ?.vehicle ??
     analysis
       ?.detections
@@ -1033,8 +1174,7 @@ export function OpenCvAnalysisPanel({
     0;
 
   const fireCount =
-    analysis
-      ?.counts
+    analysis?.counts
       ?.fire ??
     analysis
       ?.detections
@@ -1051,8 +1191,7 @@ export function OpenCvAnalysisPanel({
     0;
 
   const smokeCount =
-    analysis
-      ?.counts
+    analysis?.counts
       ?.smoke ??
     analysis
       ?.detections
@@ -1069,8 +1208,7 @@ export function OpenCvAnalysisPanel({
     0;
 
   const floodCount =
-    analysis
-      ?.counts
+    analysis?.counts
       ?.flood ??
     analysis
       ?.detections
@@ -1087,80 +1225,65 @@ export function OpenCvAnalysisPanel({
     0;
 
   /* =======================================================
-     UI
+     Compact First-Viewport Controls
      ======================================================= */
 
-  return (
-    <div className="grid gap-4">
-      {/* ===================================================
-          Analyzer Header
-          =================================================== */}
-
-      <div className="rounded-xl border border-[#1d2533] bg-[#07111f] p-4">
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            <div className="font-mono text-[9px] font-bold uppercase tracking-[0.16em] text-(--primary)">
-              YOLO + OpenCV Camera Analytics
-            </div>
-
-            <h3 className="mt-1 text-[15px] font-semibold text-(--foreground)">
-              {
-                selectedVideo.title
-              }
-            </h3>
-
-            <p className="mt-1 break-all text-[11px] leading-relaxed text-(--muted)">
-              {selectedVideo.src ??
-                "Simulated HUD feed"}
-            </p>
+  const controlContent = (
+    <div className="grid gap-2">
+      <div className="flex min-w-0 items-center justify-between gap-2">
+        <div className="min-w-0">
+          <div className="truncate text-[10px] font-medium text-white/64">
+            {
+              selectedVideo.title
+            }
           </div>
 
-          <BrainCircuit
-            size={20}
-            className="shrink-0 text-(--primary)"
-          />
+          <div className="mt-0.5 font-mono text-[8px] uppercase text-white/28">
+            YOLO + OpenCV
+          </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() =>
-            void analyzeSelectedVideo()
-          }
-          disabled={
-            loading ||
-            !canAnalyze
-          }
-          className="mt-4 flex w-full items-center justify-center gap-2 rounded border border-(--primary) bg-[rgba(246,178,60,0.08)] px-3 py-2.5 font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-(--primary) transition hover:bg-[rgba(246,178,60,0.12)] disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {loading ? (
-            <>
-              <Loader2
-                size={14}
-                className="animate-spin"
-              />
-
-              Running YOLO + OpenCV Analysis
-            </>
-          ) : (
-            <>
-              <PlayCircle
-                size={14}
-              />
-
-              Analyze with YOLO + Fire Mode
-            </>
-          )}
-        </button>
+        <BrainCircuit
+          size={14}
+          className="shrink-0 text-[#F6B23C]"
+        />
       </div>
 
-      {/* ===================================================
-          Error
-          =================================================== */}
+      <button
+        type="button"
+        onClick={() =>
+          void analyzeSelectedVideo()
+        }
+        disabled={
+          loading ||
+          !canAnalyze
+        }
+        className="flex h-[34px] w-full items-center justify-center gap-1.5 rounded-[4px] border border-[rgba(246,178,60,0.3)] bg-[rgba(246,178,60,0.055)] font-mono text-[8px] font-semibold uppercase tracking-[0.05em] text-[#F6B23C] transition hover:bg-[rgba(246,178,60,0.1)] disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        {loading ? (
+          <>
+            <Loader2
+              size={11}
+              className="animate-spin"
+            />
+
+            Analysing
+          </>
+        ) : (
+          <>
+            <PlayCircle
+              size={11}
+            />
+
+            Analyze Feed
+          </>
+        )}
+      </button>
 
       {error ? (
-        <div className="flex items-start gap-2 rounded-xl border border-(--critical) bg-[rgba(255,77,77,0.08)] p-3 text-[12px] leading-relaxed text-(--critical)">
+        <div className="flex items-start gap-1.5 rounded-[4px] border border-[rgba(255,90,99,0.26)] bg-[rgba(255,90,99,0.045)] px-2 py-1.5 text-[8px] leading-[1.4] text-[#FF5A63]">
           <AlertTriangle
-            size={14}
+            size={10}
             className="mt-0.5 shrink-0"
           />
 
@@ -1168,114 +1291,81 @@ export function OpenCvAnalysisPanel({
         </div>
       ) : null}
 
-      {/* ===================================================
-          Empty State
-          =================================================== */}
-
-      {!analysis ? (
-        <div className="rounded-xl border border-[#1d2533] bg-[#07111f] p-4 text-[12px] leading-relaxed text-(--muted)">
-          Select a real video source and click analysis. The backend will read frames through OpenCV, run YOLO object detection, and run the OpenCV fire/flame colour-signature mode.
-        </div>
-      ) : null}
-
-      {/* ===================================================
-          Analysis Result
-          =================================================== */}
-
       {analysis ? (
         <>
-          {/* Risk */}
-
           <div
-            className={`rounded-xl border p-4 ${riskStyle.border} ${riskStyle.bg}`}
+            className={[
+              "flex items-center justify-between rounded-[4px] border px-2.5 py-2",
+              riskStyle.border,
+              riskStyle.bg,
+            ].join(" ")}
           >
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <div className="font-mono text-[9px] font-bold uppercase tracking-[0.14em] text-(--muted)">
-                  Model Risk
-                </div>
-
-                <div
-                  className={`mt-1 font-mono text-[24px] font-bold uppercase ${riskStyle.text}`}
-                >
-                  {
-                    analysis.risk
-                  }
-                </div>
+            <div>
+              <div className="font-mono text-[8px] uppercase text-white/30">
+                Model Risk
               </div>
 
-              {analysis.risk ===
-              "low" ? (
-                <CheckCircle2
-                  size={28}
-                  className="text-(--nominal)"
-                />
-              ) : (
-                <ShieldAlert
-                  size={28}
-                  className={
-                    riskStyle.text
-                  }
-                />
-              )}
+              <div
+                className={[
+                  "mt-0.5 font-mono text-[11px] font-semibold uppercase",
+                  riskStyle.text,
+                ].join(" ")}
+              >
+                {
+                  analysis.risk
+                }
+              </div>
             </div>
+
+            {analysis.risk ===
+            "low" ? (
+              <CheckCircle2
+                size={16}
+                className="text-[#59D99A]"
+              />
+            ) : (
+              <ShieldAlert
+                size={16}
+                className={
+                  riskStyle.text
+                }
+              />
+            )}
           </div>
 
-          {/* Metrics */}
-
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-4 gap-1.5">
             <MetricBox
-              icon={Gauge}
-              label="Confidence"
+              icon={
+                Gauge
+              }
+              label="Conf."
               value={
                 confidence
               }
               suffix="%"
               tone="info"
+              compact
             />
 
             <MetricBox
-              icon={Target}
-              label="Detections"
+              icon={
+                Target
+              }
+              label="Detect"
               value={
                 analysis
                   .metrics
                   .detection_count
               }
               tone="info"
+              compact
             />
 
             <MetricBox
-              icon={UserRound}
-              label="Persons"
-              value={
-                personCount
+              icon={
+                Flame
               }
-              tone={
-                personCount >
-                0
-                  ? "info"
-                  : "muted"
-              }
-            />
-
-            <MetricBox
-              icon={Car}
-              label="Vehicles"
-              value={
-                vehicleCount
-              }
-              tone={
-                vehicleCount >
-                0
-                  ? "caution"
-                  : "muted"
-              }
-            />
-
-            <MetricBox
-              icon={Flame}
-              label="Fire / Flame"
+              label="Fire"
               value={
                 fireCount
               }
@@ -1285,10 +1375,13 @@ export function OpenCvAnalysisPanel({
                   ? "critical"
                   : "muted"
               }
+              compact
             />
 
             <MetricBox
-              icon={CloudFog}
+              icon={
+                CloudFog
+              }
               label="Smoke"
               value={
                 smokeCount
@@ -1299,132 +1392,322 @@ export function OpenCvAnalysisPanel({
                   ? "caution"
                   : "muted"
               }
-            />
-
-            <MetricBox
-              icon={Waves}
-              label="Flood / Water"
-              value={
-                floodCount
-              }
-              tone={
-                floodCount >
-                0
-                  ? "info"
-                  : "muted"
-              }
-            />
-
-            <MetricBox
-              icon={ScanSearch}
-              label="Frames"
-              value={
-                analysis
-                  .frames
-                  .sampled_frames
-              }
-              tone="nominal"
-            />
-
-            <MetricBox
-              icon={Activity}
-              label="Best Frame"
-              value={
-                analysis
-                  .frame
-                  ?.best_frame_index ??
-                "-"
-              }
-              tone="nominal"
+              compact
             />
           </div>
-
-          {/* Detection State */}
-
-          <div className="grid grid-cols-2 gap-3">
-            <DetectionStatusCard
-              icon={UserRound}
-              label="Person"
-              active={
-                analysis
-                  .detections
-                  .person
-              }
-              activeText="DETECTED"
-              tone="info"
-            />
-
-            <DetectionStatusCard
-              icon={Car}
-              label="Vehicle"
-              active={
-                analysis
-                  .detections
-                  .vehicle
-              }
-              activeText="DETECTED"
-              tone="caution"
-            />
-
-            <DetectionStatusCard
-              icon={Flame}
-              label="Fire / Flame"
-              active={Boolean(
-                analysis
-                  .detections
-                  .fire ||
-                  analysis
-                    .detections
-                    .flame,
-              )}
-              activeText="DETECTED"
-              tone="critical"
-            />
-
-            <DetectionStatusCard
-              icon={CloudFog}
-              label="Smoke"
-              active={
-                analysis
-                  .detections
-                  .smoke
-              }
-              activeText="DETECTED"
-              tone="caution"
-            />
-
-            <DetectionStatusCard
-              icon={Waves}
-              label="Flood / Water"
-              active={
-                analysis
-                  .detections
-                  .flood
-              }
-              activeText="DETECTED"
-              tone="info"
-            />
-          </div>
-
-          <FireModePanel
-            analysis={
-              analysis
-            }
-          />
-
-          <DetectionBoxList
-            analysis={
-              analysis
-            }
-          />
-
-          <ModelEvents
-            analysis={
-              analysis
-            }
-          />
         </>
-      ) : null}
+      ) : (
+        <div className="rounded-[4px] border border-white/[0.07] bg-[#05060d] px-2.5 py-2 text-[9px] leading-[1.45] text-white/30">
+          Run frame analysis to generate visual intelligence.
+        </div>
+      )}
+    </div>
+  );
+
+  /* =======================================================
+     Full Detailed Analysis
+     ======================================================= */
+
+  const detailsContent =
+    analysis ? (
+      <div className="grid gap-3">
+        <div
+          className={[
+            "flex items-center justify-between rounded-[5px] border p-3",
+            riskStyle.border,
+            riskStyle.bg,
+          ].join(" ")}
+        >
+          <div>
+            <div className="font-mono text-[8px] font-semibold uppercase tracking-[0.055em] text-white/30">
+              Model Risk
+            </div>
+
+            <div
+              className={[
+                "mt-1 font-mono text-[17px] font-semibold uppercase",
+                riskStyle.text,
+              ].join(" ")}
+            >
+              {
+                analysis.risk
+              }
+            </div>
+          </div>
+
+          {analysis.risk ===
+          "low" ? (
+            <CheckCircle2
+              size={21}
+              className="text-[#59D99A]"
+            />
+          ) : (
+            <ShieldAlert
+              size={21}
+              className={
+                riskStyle.text
+              }
+            />
+          )}
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-5">
+          <MetricBox
+            icon={
+              Gauge
+            }
+            label="Confidence"
+            value={
+              confidence
+            }
+            suffix="%"
+            tone="info"
+          />
+
+          <MetricBox
+            icon={
+              Target
+            }
+            label="Detections"
+            value={
+              analysis
+                .metrics
+                .detection_count
+            }
+            tone="info"
+          />
+
+          <MetricBox
+            icon={
+              UserRound
+            }
+            label="Persons"
+            value={
+              personCount
+            }
+            tone={
+              personCount >
+              0
+                ? "info"
+                : "muted"
+            }
+          />
+
+          <MetricBox
+            icon={
+              Car
+            }
+            label="Vehicles"
+            value={
+              vehicleCount
+            }
+            tone={
+              vehicleCount >
+              0
+                ? "caution"
+                : "muted"
+            }
+          />
+
+          <MetricBox
+            icon={
+              ScanSearch
+            }
+            label="Frames"
+            value={
+              analysis
+                .frames
+                .sampled_frames
+            }
+            tone="nominal"
+          />
+
+          <MetricBox
+            icon={
+              Flame
+            }
+            label="Fire"
+            value={
+              fireCount
+            }
+            tone={
+              fireCount >
+              0
+                ? "critical"
+                : "muted"
+            }
+          />
+
+          <MetricBox
+            icon={
+              CloudFog
+            }
+            label="Smoke"
+            value={
+              smokeCount
+            }
+            tone={
+              smokeCount >
+              0
+                ? "caution"
+                : "muted"
+            }
+          />
+
+          <MetricBox
+            icon={
+              Waves
+            }
+            label="Flood"
+            value={
+              floodCount
+            }
+            tone={
+              floodCount >
+              0
+                ? "info"
+                : "muted"
+            }
+          />
+
+          <MetricBox
+            icon={
+              Activity
+            }
+            label="Best Frame"
+            value={
+              analysis
+                .frame
+                ?.best_frame_index ??
+              "-"
+            }
+            tone="nominal"
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
+          <DetectionStatusCard
+            icon={
+              UserRound
+            }
+            label="Person"
+            active={
+              analysis
+                .detections
+                .person
+            }
+            activeText="Detected"
+            tone="info"
+          />
+
+          <DetectionStatusCard
+            icon={
+              Car
+            }
+            label="Vehicle"
+            active={
+              analysis
+                .detections
+                .vehicle
+            }
+            activeText="Detected"
+            tone="caution"
+          />
+
+          <DetectionStatusCard
+            icon={
+              Flame
+            }
+            label="Fire"
+            active={Boolean(
+              analysis
+                .detections
+                .fire ||
+                analysis
+                  .detections
+                  .flame,
+            )}
+            activeText="Detected"
+            tone="critical"
+          />
+
+          <DetectionStatusCard
+            icon={
+              CloudFog
+            }
+            label="Smoke"
+            active={
+              analysis
+                .detections
+                .smoke
+            }
+            activeText="Detected"
+            tone="caution"
+          />
+
+          <DetectionStatusCard
+            icon={
+              Waves
+            }
+            label="Flood"
+            active={
+              analysis
+                .detections
+                .flood
+            }
+            activeText="Detected"
+            tone="info"
+          />
+        </div>
+
+        <FireModePanel
+          analysis={
+            analysis
+          }
+        />
+
+        <DetectionBoxList
+          analysis={
+            analysis
+          }
+        />
+
+        <ModelEvents
+          analysis={
+            analysis
+          }
+        />
+      </div>
+    ) : (
+      <div className="rounded-[5px] border border-white/[0.07] bg-[#05060d] px-3 py-4 text-[10px] leading-[1.5] text-white/34">
+        No detailed analysis is available yet. Run analysis from the live
+        intelligence panel above.
+      </div>
+    );
+
+  /* =======================================================
+     Render Mode
+     ======================================================= */
+
+  if (
+    mode ===
+    "control"
+  ) {
+    return controlContent;
+  }
+
+  if (
+    mode ===
+    "details"
+  ) {
+    return detailsContent;
+  }
+
+  return (
+    <div className="grid gap-4">
+      {controlContent}
+
+      {detailsContent}
     </div>
   );
 }
