@@ -26,7 +26,7 @@ import type {
   LucideIcon,
 } from "lucide-react";
 
-import aeronexusWordmark from "../../assets/aeronexus-wordmark-dark.png";
+import aeronexusWordmark from "../../assets/aeronexus-wordmark.png";
 
 import type {
   PageId,
@@ -38,254 +38,157 @@ import {
 
 /* =========================================================
    MissionNexus V2
-   Application Shell
+   Global Application Shell
 
-   Aeronexus family hierarchy:
-
-   AERONEXUS | MissionNexus
-
-   Header follows GeoFusion geometry:
-   - 70px height
-   - compact Aeronexus wordmark
-   - single divider
-   - Manrope product typography
-   - Inter interface typography
+   GeoFusion product-family geometry:
+   - header: 70px
+   - exact Aeronexus wordmark asset
+   - logo: h-8 / sm:h-9 / xl:h-10
+   - divider: 24px
+   - MissionNexus: text-sm / sm:text-base
    ========================================================= */
 
 type AppShellProps = {
-  children:
-    ReactNode;
+  children: ReactNode;
 
-  activePage:
-    PageId;
+  activePage: PageId;
 
   onPageChange: (
-    page:
-      PageId,
+    page: PageId,
   ) => void;
 };
 
 type NavItem = {
-  id:
-    PageId;
+  id: PageId;
 
-  label:
-    string;
+  label: string;
 
-  description:
-    string;
+  description: string;
 
-  icon:
-    LucideIcon;
+  icon: LucideIcon;
 };
 
 type NavGroup = {
-  label:
-    string;
+  label: string;
 
-  items:
-    NavItem[];
+  items: NavItem[];
 };
 
-/* =========================================================
-   Navigation
-   ========================================================= */
+const navGroups: NavGroup[] = [
+  {
+    label: "Operations",
 
-const navGroups:
-  NavGroup[] = [
-    {
-      label:
-        "Operations",
+    items: [
+      {
+        id: "live-ops",
+        label: "Live Operations",
+        description:
+          "Tactical map and real-time mission awareness",
+        icon: Radar,
+      },
 
-      items: [
-        {
-          id:
-            "live-ops",
+      {
+        id: "mission-planner",
+        label: "Mission Planner",
+        description:
+          "Routes, waypoints, geofences and mission planning",
+        icon: Map,
+      },
 
-          label:
-            "Live Operations",
+      {
+        id: "drone-control",
+        label: "Drone Control",
+        description:
+          "Aircraft commands, payload and flight control",
+        icon: Gamepad2,
+      },
 
-          description:
-            "Real-time aircraft command and mission awareness",
+      {
+        id: "fleet",
+        label: "Fleet",
+        description:
+          "Aircraft assignment, state and operational readiness",
+        icon: Plane,
+      },
 
-          icon:
-            Radar,
-        },
+      {
+        id: "pre-flight",
+        label: "Pre-Flight",
+        description:
+          "Launch readiness and aircraft validation",
+        icon: ClipboardCheck,
+      },
+    ],
+  },
 
-        {
-          id:
-            "mission-planner",
+  {
+    label: "Intelligence",
 
-          label:
-            "Mission Planner",
+    items: [
+      {
+        id: "camera-ai",
+        label: "Vision Intelligence",
+        description:
+          "YOLO, OpenCV and aerial video analysis",
+        icon: Camera,
+      },
 
-          description:
-            "Routes, waypoints, geofences and mission planning",
+      {
+        id: "logs",
+        label: "Mission Debrief",
+        description:
+          "Logs, alerts, analytics and mission history",
+        icon: FileText,
+      },
 
-          icon:
-            Map,
-        },
+      {
+        id: "security",
+        label: "Security",
+        description:
+          "Secure sessions and telemetry integrity",
+        icon: ShieldCheck,
+      },
+    ],
+  },
 
-        {
-          id:
-            "drone-control",
+  {
+    label: "Systems",
 
-          label:
-            "Drone Control",
+    items: [
+      {
+        id: "drone-health",
+        label: "Drone Health",
+        description:
+          "Aircraft diagnostics and component condition",
+        icon: Gauge,
+      },
 
-          description:
-            "Aircraft commands, payload and flight control",
+      {
+        id: "battery",
+        label: "Battery & Power",
+        description:
+          "Power state, thermal behavior and endurance",
+        icon: Battery,
+      },
 
-          icon:
-            Gamepad2,
-        },
+      {
+        id: "maintenance",
+        label: "Maintenance",
+        description:
+          "Aircraft servicing and maintenance scheduling",
+        icon: Wrench,
+      },
 
-        {
-          id:
-            "fleet",
-
-          label:
-            "Fleet",
-
-          description:
-            "Aircraft assignment, state and operational readiness",
-
-          icon:
-            Plane,
-        },
-
-        {
-          id:
-            "pre-flight",
-
-          label:
-            "Pre-Flight",
-
-          description:
-            "Launch readiness and aircraft validation",
-
-          icon:
-            ClipboardCheck,
-        },
-      ],
-    },
-
-    {
-      label:
-        "Intelligence",
-
-      items: [
-        {
-          id:
-            "camera-ai",
-
-          label:
-            "Vision Intelligence",
-
-          description:
-            "YOLO, OpenCV and aerial video analysis",
-
-          icon:
-            Camera,
-        },
-
-        {
-          id:
-            "logs",
-
-          label:
-            "Mission Debrief",
-
-          description:
-            "Logs, analytics, events and mission audit history",
-
-          icon:
-            FileText,
-        },
-
-        {
-          id:
-            "security",
-
-          label:
-            "Security",
-
-          description:
-            "Secure command sessions and telemetry integrity",
-
-          icon:
-            ShieldCheck,
-        },
-      ],
-    },
-
-    {
-      label:
-        "Systems",
-
-      items: [
-        {
-          id:
-            "drone-health",
-
-          label:
-            "Drone Health",
-
-          description:
-            "Aircraft diagnostics and component condition",
-
-          icon:
-            Gauge,
-        },
-
-        {
-          id:
-            "battery",
-
-          label:
-            "Battery & Power",
-
-          description:
-            "Power state, thermal behavior and endurance",
-
-          icon:
-            Battery,
-        },
-
-        {
-          id:
-            "maintenance",
-
-          label:
-            "Maintenance",
-
-          description:
-            "Aircraft servicing and maintenance scheduling",
-
-          icon:
-            Wrench,
-        },
-
-        {
-          id:
-            "inventory",
-
-          label:
-            "Inventory",
-
-          description:
-            "Parts, payloads and operational assets",
-
-          icon:
-            Package,
-        },
-      ],
-    },
-  ];
-
-/* =========================================================
-   Typography
-   ========================================================= */
+      {
+        id: "inventory",
+        label: "Inventory",
+        description:
+          "Parts, payloads and operational assets",
+        icon: Package,
+      },
+    ],
+  },
+];
 
 const productFont = {
   fontFamily:
@@ -297,28 +200,18 @@ const interfaceFont = {
     '"Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
 };
 
-/* =========================================================
-   Helpers
-   ========================================================= */
-
 function isGroupActive(
-  group:
-    NavGroup,
-
-  activePage:
-    PageId,
+  group: NavGroup,
+  activePage: PageId,
 ) {
   return group.items.some(
-    (
-      item,
-    ) =>
-      item.id ===
-      activePage,
+    (item) =>
+      item.id === activePage,
   );
 }
 
 /* =========================================================
-   Desktop Navigation
+   Desktop Navigation Group
    ========================================================= */
 
 function DesktopNavGroup({
@@ -326,15 +219,12 @@ function DesktopNavGroup({
   activePage,
   onPageChange,
 }: {
-  group:
-    NavGroup;
+  group: NavGroup;
 
-  activePage:
-    PageId;
+  activePage: PageId;
 
   onPageChange: (
-    page:
-      PageId,
+    page: PageId,
   ) => void;
 }) {
   const active =
@@ -347,45 +237,23 @@ function DesktopNavGroup({
     <div className="group relative flex h-full items-center">
       <button
         type="button"
-        style={
-          productFont
-        }
+        style={productFont}
         className={[
           "relative flex h-full items-center gap-1.5",
-
           "text-[11px] font-semibold uppercase tracking-[0.08em]",
-
           "transition-colors duration-150",
 
           active
             ? "text-white"
-            : "text-white/70 hover:text-white",
-        ].join(
-          " ",
-        )}
+            : "text-white/68 hover:text-white",
+        ].join(" ")}
       >
-        {
-          group.label
-        }
+        {group.label}
 
         <ChevronDown
-          size={
-            12
-          }
-          strokeWidth={
-            1.8
-          }
-          className={[
-            "opacity-60",
-
-            "transition-transform duration-150",
-
-            "group-hover:rotate-180",
-
-            "group-focus-within:rotate-180",
-          ].join(
-            " ",
-          )}
+          size={12}
+          strokeWidth={1.8}
+          className="opacity-55 transition-transform duration-150 group-hover:rotate-180 group-focus-within:rotate-180"
         />
 
         {active ? (
@@ -396,54 +264,37 @@ function DesktopNavGroup({
         ) : null}
       </button>
 
-      {/* Hover bridge */}
-
-      <div className="pointer-events-none absolute left-1/2 top-full h-3 w-[320px] -translate-x-1/2" />
-
-      {/* Dropdown */}
+      <div className="pointer-events-none absolute left-1/2 top-full h-3 w-[326px] -translate-x-1/2" />
 
       <div
         className={[
           "pointer-events-none invisible absolute left-1/2 top-[calc(100%+10px)] z-[80]",
-
-          "w-[320px] -translate-x-1/2",
-
+          "w-[326px] -translate-x-1/2",
           "rounded-[6px] border border-white/10",
-
-          "bg-[rgba(5,6,13,0.97)] p-2",
-
+          "bg-[rgba(5,6,13,0.98)] p-2",
           "opacity-0",
-
-          "shadow-[0_22px_60px_rgba(0,0,0,0.42)]",
-
+          "shadow-[0_22px_60px_rgba(0,0,0,0.5)]",
           "backdrop-blur-[18px]",
-
           "transition-[opacity,visibility] duration-150",
-
-          "group-hover:pointer-events-auto group-hover:visible group-hover:opacity-100",
-
-          "group-focus-within:pointer-events-auto group-focus-within:visible group-focus-within:opacity-100",
-        ].join(
-          " ",
-        )}
+          "group-hover:pointer-events-auto",
+          "group-hover:visible",
+          "group-hover:opacity-100",
+          "group-focus-within:pointer-events-auto",
+          "group-focus-within:visible",
+          "group-focus-within:opacity-100",
+        ].join(" ")}
       >
         <div className="px-3 pb-2 pt-1">
           <div
-            style={
-              productFont
-            }
-            className="text-[9px] font-semibold uppercase tracking-[0.16em] text-white/35"
+            style={productFont}
+            className="text-[9px] font-semibold uppercase tracking-[0.16em] text-white/38"
           >
-            {
-              group.label
-            }
+            {group.label}
           </div>
         </div>
 
         {group.items.map(
-          (
-            item,
-          ) => {
+          (item) => {
             const Icon =
               item.icon;
 
@@ -453,9 +304,7 @@ function DesktopNavGroup({
 
             return (
               <button
-                key={
-                  item.id
-                }
+                key={item.id}
                 type="button"
                 onClick={() =>
                   onPageChange(
@@ -469,66 +318,43 @@ function DesktopNavGroup({
                 }
                 className={[
                   "flex w-full items-start gap-3 rounded-[6px] px-3 py-3 text-left",
-
                   "transition-colors duration-150",
 
                   itemActive
                     ? "bg-[rgba(246,178,60,0.08)]"
-                    : "hover:bg-white/[0.045]",
-                ].join(
-                  " ",
-                )}
+                    : "hover:bg-white/[0.04]",
+                ].join(" ")}
               >
                 <span
                   className={[
-                    "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-[6px] border",
+                    "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-[5px] border",
 
                     itemActive
-                      ? "border-[rgba(246,178,60,0.26)] bg-[rgba(246,178,60,0.07)] text-(--primary)"
-                      : "border-white/[0.08] bg-white/[0.025] text-white/50",
-                  ].join(
-                    " ",
-                  )}
+                      ? "border-[rgba(246,178,60,0.28)] bg-[rgba(246,178,60,0.07)] text-(--primary)"
+                      : "border-white/[0.08] bg-white/[0.02] text-white/50",
+                  ].join(" ")}
                 >
                   <Icon
-                    size={
-                      14
-                    }
-                    strokeWidth={
-                      1.6
-                    }
+                    size={14}
+                    strokeWidth={1.6}
                   />
                 </span>
 
                 <span className="min-w-0">
                   <span
-                    style={
-                      interfaceFont
-                    }
                     className={[
                       "block text-[12px] font-medium",
 
                       itemActive
                         ? "text-(--primary)"
                         : "text-white/90",
-                    ].join(
-                      " ",
-                    )}
+                    ].join(" ")}
                   >
-                    {
-                      item.label
-                    }
+                    {item.label}
                   </span>
 
-                  <span
-                    style={
-                      interfaceFont
-                    }
-                    className="mt-1 block text-[10px] leading-[1.55] text-white/40"
-                  >
-                    {
-                      item.description
-                    }
+                  <span className="mt-1 block text-[10px] leading-[1.55] text-white/42">
+                    {item.description}
                   </span>
                 </span>
               </button>
@@ -549,20 +375,16 @@ function MobileNavigation({
   onPageChange,
   onClose,
 }: {
-  activePage:
-    PageId;
+  activePage: PageId;
 
   onPageChange: (
-    page:
-      PageId,
+    page: PageId,
   ) => void;
 
-  onClose:
-    () => void;
+  onClose: () => void;
 }) {
   function changePage(
-    page:
-      PageId,
+    page: PageId,
   ) {
     onPageChange(
       page,
@@ -572,34 +394,24 @@ function MobileNavigation({
   }
 
   return (
-    <div className="absolute inset-x-0 top-[70px] border-b border-white/10 bg-[rgba(5,6,13,0.98)] shadow-[0_22px_60px_rgba(0,0,0,0.45)] backdrop-blur-[18px] xl:hidden">
+    <div className="absolute inset-x-0 top-[70px] border-b border-white/10 bg-[rgba(5,6,13,0.99)] shadow-[0_22px_60px_rgba(0,0,0,0.5)] backdrop-blur-[18px] min-[1380px]:hidden">
       <div className="mx-auto max-h-[calc(100vh-70px)] max-w-[1600px] overflow-y-auto px-5 py-5 sm:px-6 lg:px-10">
-        <div className="grid gap-6 md:grid-cols-3">
+        <div className="grid gap-7 md:grid-cols-3">
           {navGroups.map(
-            (
-              group,
-            ) => (
+            (group) => (
               <div
-                key={
-                  group.label
-                }
+                key={group.label}
               >
                 <div
-                  style={
-                    productFont
-                  }
-                  className="mb-3 text-[9px] font-semibold uppercase tracking-[0.16em] text-(--primary)"
+                  style={productFont}
+                  className="mb-3 text-[9px] font-semibold uppercase tracking-[0.15em] text-(--primary)"
                 >
-                  {
-                    group.label
-                  }
+                  {group.label}
                 </div>
 
                 <div className="grid gap-1">
                   {group.items.map(
-                    (
-                      item,
-                    ) => {
+                    (item) => {
                       const Icon =
                         item.icon;
 
@@ -609,43 +421,34 @@ function MobileNavigation({
 
                       return (
                         <button
-                          key={
-                            item.id
-                          }
+                          key={item.id}
                           type="button"
                           onClick={() =>
                             changePage(
                               item.id,
                             )
                           }
+                          aria-current={
+                            active
+                              ? "page"
+                              : undefined
+                          }
                           className={[
                             "flex items-center gap-3 rounded-[6px] px-3 py-2.5 text-left",
+                            "transition-colors duration-150",
 
                             active
                               ? "bg-[rgba(246,178,60,0.08)] text-(--primary)"
                               : "text-white/70 hover:bg-white/[0.035] hover:text-white",
-                          ].join(
-                            " ",
-                          )}
+                          ].join(" ")}
                         >
                           <Icon
-                            size={
-                              14
-                            }
-                            strokeWidth={
-                              1.6
-                            }
+                            size={14}
+                            strokeWidth={1.6}
                           />
 
-                          <span
-                            style={
-                              interfaceFont
-                            }
-                            className="text-[12px]"
-                          >
-                            {
-                              item.label
-                            }
+                          <span className="text-[12px]">
+                            {item.label}
                           </span>
                         </button>
                       );
@@ -666,33 +469,21 @@ function MobileNavigation({
               )
             }
             className={[
-              "flex h-[42px] w-full items-center justify-center gap-2",
-
+              "flex h-[40px] w-full items-center justify-center gap-2",
               "rounded-[6px] border border-white/10",
 
               activePage ===
               "settings"
                 ? "bg-white/[0.06] text-white"
                 : "bg-transparent text-white/70",
-            ].join(
-              " ",
-            )}
+            ].join(" ")}
           >
             <Settings
-              size={
-                14
-              }
-              strokeWidth={
-                1.6
-              }
+              size={14}
+              strokeWidth={1.6}
             />
 
-            <span
-              style={
-                interfaceFont
-              }
-              className="text-[12px]"
-            >
+            <span className="text-[12px]">
               Settings
             </span>
           </button>
@@ -710,25 +501,20 @@ function MissionNexusHeader({
   activePage,
   onPageChange,
 }: {
-  activePage:
-    PageId;
+  activePage: PageId;
 
   onPageChange: (
-    page:
-      PageId,
+    page: PageId,
   ) => void;
 }) {
   const [
     mobileOpen,
     setMobileOpen,
   ] =
-    useState(
-      false,
-    );
+    useState(false);
 
   function changePage(
-    page:
-      PageId,
+    page: PageId,
   ) {
     onPageChange(
       page,
@@ -741,27 +527,19 @@ function MissionNexusHeader({
 
   return (
     <header
-      style={
-        interfaceFont
-      }
+      style={interfaceFont}
       className={[
         "fixed inset-x-0 top-0 z-50",
-
         "h-[70px]",
-
         "border-b border-white/10",
-
-        "bg-[rgba(5,6,13,0.96)]",
-
+        "bg-[rgba(5,6,13,0.97)]",
         "backdrop-blur-[18px]",
-      ].join(
-        " ",
-      )}
+      ].join(" ")}
     >
-      <div className="mx-auto flex h-full w-full max-w-[1600px] items-center px-5 sm:px-6 lg:px-10 2xl:px-14">
-        {/* ===============================================
-            Aeronexus | MissionNexus
-            =============================================== */}
+      <div className="mx-auto flex h-full w-full max-w-[1600px] items-center px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-14">
+        {/* =================================================
+            EXACT GEOFUSION PRODUCT LOCKUP
+            ================================================= */}
 
         <button
           type="button"
@@ -774,63 +552,45 @@ function MissionNexusHeader({
           className="flex min-w-0 shrink-0 items-center"
         >
           <img
-            src={
-              aeronexusWordmark
-            }
+            src={aeronexusWordmark}
             alt="Aeronexus"
-            className="h-auto w-[114px] shrink-0 object-contain"
+            className="h-8 w-auto object-contain sm:h-9 xl:h-10"
           />
 
           <span
             aria-hidden="true"
-            className="mx-[15px] h-[28px] w-px shrink-0 bg-white/12"
+            className="mx-3 h-6 w-px shrink-0 bg-white/15"
           />
 
           <span
-            style={
-              productFont
-            }
-            className="truncate whitespace-nowrap text-[16px] font-normal tracking-[-0.025em] text-white/90"
+            style={productFont}
+            className="truncate text-sm font-medium tracking-[-0.01em] text-white/75 sm:text-base"
           >
             MissionNexus
           </span>
         </button>
 
-        {/* ===============================================
-            Desktop Navigation
-            =============================================== */}
+        {/* Desktop nav */}
 
         <nav
           aria-label="MissionNexus primary navigation"
-          className="ml-auto hidden h-full items-center gap-8 xl:flex"
+          className="ml-auto hidden h-full items-center gap-8 min-[1380px]:flex"
         >
           {navGroups.map(
-            (
-              group,
-            ) => (
+            (group) => (
               <DesktopNavGroup
-                key={
-                  group.label
-                }
-                group={
-                  group
-                }
-                activePage={
-                  activePage
-                }
-                onPageChange={
-                  changePage
-                }
+                key={group.label}
+                group={group}
+                activePage={activePage}
+                onPageChange={changePage}
               />
             ),
           )}
         </nav>
 
-        {/* ===============================================
-            Utilities
-            =============================================== */}
+        {/* Utilities */}
 
-        <div className="ml-auto flex items-center gap-2 xl:ml-8">
+        <div className="ml-auto flex items-center gap-2 min-[1380px]:ml-8">
           <button
             type="button"
             onClick={() =>
@@ -845,44 +605,30 @@ function MissionNexusHeader({
                 : undefined
             }
             className={[
-              "hidden h-[42px] items-center justify-center gap-2 rounded-[6px] border px-4 lg:flex",
-
+              "hidden h-[40px] items-center justify-center gap-2 rounded-[6px] border px-4",
+              "text-[12px]",
               "transition-[background-color,border-color,color] duration-150",
+              "sm:flex",
 
               activePage ===
               "settings"
                 ? "border-white/20 bg-white/[0.06] text-white"
-                : "border-white/10 bg-[rgba(5,6,13,0.9)] text-white/70 hover:border-white/20 hover:bg-white/[0.035] hover:text-white",
-            ].join(
-              " ",
-            )}
+                : "border-white/10 bg-[rgba(5,6,13,0.9)] text-white/68 hover:border-white/20 hover:bg-white/[0.04] hover:text-white",
+            ].join(" ")}
           >
             <Settings
-              size={
-                14
-              }
-              strokeWidth={
-                1.6
-              }
+              size={14}
+              strokeWidth={1.6}
             />
 
-            <span
-              style={
-                interfaceFont
-              }
-              className="text-[12px] font-normal"
-            >
-              Settings
-            </span>
+            Settings
           </button>
 
           <button
             type="button"
             onClick={() =>
               setMobileOpen(
-                (
-                  current,
-                ) =>
+                (current) =>
                   !current,
               )
             }
@@ -891,38 +637,26 @@ function MissionNexusHeader({
                 ? "Close navigation"
                 : "Open navigation"
             }
-            aria-expanded={
-              mobileOpen
-            }
+            aria-expanded={mobileOpen}
             className={[
-              "flex h-[42px] w-[42px] items-center justify-center rounded-[6px] border border-white/10",
-
-              "bg-[rgba(5,6,13,0.9)] text-white/60",
-
+              "flex h-[40px] w-[40px] items-center justify-center",
+              "rounded-[6px] border border-white/10",
+              "bg-[rgba(5,6,13,0.9)]",
+              "text-white/58",
               "transition-[background-color,border-color,color] duration-150",
-
-              "hover:border-white/20 hover:bg-white/[0.035] hover:text-white",
-            ].join(
-              " ",
-            )}
+              "hover:border-white/20 hover:bg-white/[0.04] hover:text-white",
+              "min-[1380px]:hidden",
+            ].join(" ")}
           >
             {mobileOpen ? (
               <X
-                size={
-                  16
-                }
-                strokeWidth={
-                  1.6
-                }
+                size={16}
+                strokeWidth={1.6}
               />
             ) : (
               <Menu
-                size={
-                  16
-                }
-                strokeWidth={
-                  1.6
-                }
+                size={16}
+                strokeWidth={1.6}
               />
             )}
           </button>
@@ -931,12 +665,8 @@ function MissionNexusHeader({
 
       {mobileOpen ? (
         <MobileNavigation
-          activePage={
-            activePage
-          }
-          onPageChange={
-            onPageChange
-          }
+          activePage={activePage}
+          onPageChange={onPageChange}
           onClose={() =>
             setMobileOpen(
               false,
@@ -959,35 +689,21 @@ export function AppShell({
 }: AppShellProps) {
   return (
     <div
-      style={
-        interfaceFont
-      }
-      className="flex min-h-screen flex-col bg-(--background) text-(--foreground)"
+      style={interfaceFont}
+      className="min-h-screen bg-(--background) text-(--foreground)"
     >
       <MissionNexusHeader
-        activePage={
-          activePage
-        }
-        onPageChange={
-          onPageChange
-        }
+        activePage={activePage}
+        onPageChange={onPageChange}
       />
 
-      {/* 70px matches the GeoFusion product-family header. */}
-
-      <main className="min-h-[calc(100vh-70px)] flex-1 pt-[70px]">
-        {
-          children
-        }
+      <main className="pt-[70px]">
+        {children}
       </main>
 
       <MissionFooter
-        activePage={
-          activePage
-        }
-        onPageChange={
-          onPageChange
-        }
+        activePage={activePage}
+        onPageChange={onPageChange}
       />
     </div>
   );
