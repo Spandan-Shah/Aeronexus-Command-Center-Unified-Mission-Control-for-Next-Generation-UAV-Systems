@@ -8,6 +8,7 @@ import {
   Camera,
   ChevronDown,
   ClipboardCheck,
+  Crosshair,
   FileText,
   Gamepad2,
   Gauge,
@@ -40,195 +41,257 @@ import {
    MissionNexus V2
    Global Application Shell
 
-   Header stays above Leaflet:
-   - Header: z-[5000]
-   - Main: relative z-0
+   Header:
+   - Fixed 70px
+   - z-[5000]
+   - Remains above Leaflet and tactical overlays
 
-   Desktop primary navigation:
+   Primary Groups:
    - Operations
    - Intelligence
    - Systems
-
-   Explicit font-size: 9px
    ========================================================= */
 
 type AppShellProps = {
-  children: ReactNode;
+  children:
+    ReactNode;
 
-  activePage: PageId;
+  activePage:
+    PageId;
 
   onPageChange: (
-    page: PageId,
+    page:
+      PageId,
   ) => void;
 };
 
 type NavItem = {
-  id: PageId;
+  id:
+    PageId;
 
-  label: string;
+  label:
+    string;
 
-  description: string;
+  description:
+    string;
 
-  icon: LucideIcon;
+  icon:
+    LucideIcon;
 };
 
 type NavGroup = {
-  label: string;
+  label:
+    string;
 
-  items: NavItem[];
+  items:
+    NavItem[];
 };
 
 /* =========================================================
    Navigation
    ========================================================= */
 
-const navGroups: NavGroup[] = [
+const navGroups:
+  NavGroup[] = [
   {
-    label: "Operations",
+    label:
+      "Operations",
 
     items: [
       {
-        id: "live-ops",
+        id:
+          "live-ops",
 
-        label: "Live Operations",
+        label:
+          "Live Operations",
 
         description:
           "Tactical map and real-time mission awareness",
 
-        icon: Radar,
+        icon:
+          Radar,
       },
 
       {
-        id: "mission-planner",
+        id:
+          "mission-planner",
 
-        label: "Mission Planner",
+        label:
+          "Mission Planner",
 
         description:
           "Routes, waypoints, geofences and mission planning",
 
-        icon: Map,
+        icon:
+          Map,
       },
 
       {
-        id: "drone-control",
+        id:
+          "drone-control",
 
-        label: "Drone Control",
+        label:
+          "Drone Control",
 
         description:
           "Aircraft commands, payload and flight control",
 
-        icon: Gamepad2,
+        icon:
+          Gamepad2,
       },
 
       {
-        id: "fleet",
+        id:
+          "autonomous-intercept",
 
-        label: "Fleet",
+        label:
+          "Autonomous Intercept",
+
+        description:
+          "Leader-follower AI guidance, prediction and shadow simulation",
+
+        icon:
+          Crosshair,
+      },
+
+      {
+        id:
+          "fleet",
+
+        label:
+          "Fleet",
 
         description:
           "Aircraft assignment and operational readiness",
 
-        icon: Plane,
+        icon:
+          Plane,
       },
 
       {
-        id: "pre-flight",
+        id:
+          "pre-flight",
 
-        label: "Pre-Flight",
+        label:
+          "Pre-Flight",
 
         description:
           "Launch readiness and aircraft validation",
 
-        icon: ClipboardCheck,
+        icon:
+          ClipboardCheck,
       },
     ],
   },
 
   {
-    label: "Intelligence",
+    label:
+      "Intelligence",
 
     items: [
       {
-        id: "camera-ai",
+        id:
+          "camera-ai",
 
-        label: "Vision Intelligence",
+        label:
+          "Vision Intelligence",
 
         description:
           "YOLO, OpenCV and aerial video analysis",
 
-        icon: Camera,
+        icon:
+          Camera,
       },
 
       {
-        id: "logs",
+        id:
+          "logs",
 
-        label: "Mission Debrief",
+        label:
+          "Mission Debrief",
 
         description:
           "Logs, alerts, analytics and mission history",
 
-        icon: FileText,
+        icon:
+          FileText,
       },
 
       {
-        id: "security",
+        id:
+          "security",
 
-        label: "Security",
+        label:
+          "Security",
 
         description:
           "Secure sessions and telemetry integrity",
 
-        icon: ShieldCheck,
+        icon:
+          ShieldCheck,
       },
     ],
   },
 
   {
-    label: "Systems",
+    label:
+      "Systems",
 
     items: [
       {
-        id: "drone-health",
+        id:
+          "drone-health",
 
-        label: "Drone Health",
+        label:
+          "Drone Health",
 
         description:
           "Aircraft diagnostics and component condition",
 
-        icon: Gauge,
+        icon:
+          Gauge,
       },
 
       {
-        id: "battery",
+        id:
+          "battery",
 
-        label: "Battery & Power",
+        label:
+          "Battery & Power",
 
         description:
           "Power state, thermal behavior and endurance",
 
-        icon: Battery,
+        icon:
+          Battery,
       },
 
       {
-        id: "maintenance",
+        id:
+          "maintenance",
 
-        label: "Maintenance",
+        label:
+          "Maintenance",
 
         description:
           "Aircraft servicing and maintenance scheduling",
 
-        icon: Wrench,
+        icon:
+          Wrench,
       },
 
       {
-        id: "inventory",
+        id:
+          "inventory",
 
-        label: "Inventory",
+        label:
+          "Inventory",
 
         description:
           "Parts, payloads and operational assets",
 
-        icon: Package,
+        icon:
+          Package,
       },
     ],
   },
@@ -253,12 +316,18 @@ const interfaceFont = {
    ========================================================= */
 
 function isGroupActive(
-  group: NavGroup,
-  activePage: PageId,
+  group:
+    NavGroup,
+
+  activePage:
+    PageId,
 ) {
   return group.items.some(
-    (item) =>
-      item.id === activePage,
+    (
+      item,
+    ) =>
+      item.id ===
+      activePage,
   );
 }
 
@@ -271,12 +340,15 @@ function DesktopNavGroup({
   activePage,
   onPageChange,
 }: {
-  group: NavGroup;
+  group:
+    NavGroup;
 
-  activePage: PageId;
+  activePage:
+    PageId;
 
   onPageChange: (
-    page: PageId,
+    page:
+      PageId,
   ) => void;
 }) {
   const active =
@@ -287,22 +359,16 @@ function DesktopNavGroup({
 
   return (
     <div className="group relative flex h-full items-center">
-      {/* ===================================================
-          Primary desktop navigation label
-
-          Explicit 9px inline font-size is intentional.
-          This prevents inherited or global CSS from
-          overriding the compact header typography.
-          =================================================== */}
-
       <button
         type="button"
         style={{
           ...productFont,
 
-          fontSize: "12px",
+          fontSize:
+            "12px",
 
-          lineHeight: "1",
+          lineHeight:
+            "1",
         }}
         className={[
           "relative flex h-full items-center gap-1",
@@ -340,15 +406,11 @@ function DesktopNavGroup({
         ) : null}
       </button>
 
-      {/* ===================================================
-          Hover bridge
-          =================================================== */}
+      {/* Hover bridge */}
 
-      <div className="pointer-events-none absolute left-1/2 top-full h-3 w-[300px] -translate-x-1/2" />
+      <div className="pointer-events-none absolute left-1/2 top-full h-3 w-[320px] -translate-x-1/2" />
 
-      {/* ===================================================
-          Dropdown
-          =================================================== */}
+      {/* Dropdown */}
 
       <div
         className={[
@@ -356,7 +418,7 @@ function DesktopNavGroup({
 
           "z-[5100]",
 
-          "w-[300px] -translate-x-1/2",
+          "w-[320px] -translate-x-1/2",
 
           "rounded-[6px] border border-white/10",
 
@@ -385,15 +447,21 @@ function DesktopNavGroup({
       >
         <div className="px-3 pb-2 pt-1">
           <div
-            style={productFont}
+            style={
+              productFont
+            }
             className="text-[9px] font-semibold uppercase tracking-[0.13em] text-white/38"
           >
-            {group.label}
+            {
+              group.label
+            }
           </div>
         </div>
 
         {group.items.map(
-          (item) => {
+          (
+            item,
+          ) => {
             const Icon =
               item.icon;
 
@@ -403,7 +471,9 @@ function DesktopNavGroup({
 
             return (
               <button
-                key={item.id}
+                key={
+                  item.id
+                }
                 type="button"
                 onClick={() =>
                   onPageChange(
@@ -429,8 +499,6 @@ function DesktopNavGroup({
                     : "hover:bg-white/[0.04]",
                 ].join(" ")}
               >
-                {/* Icon */}
-
                 <span
                   className={[
                     "mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center",
@@ -448,8 +516,6 @@ function DesktopNavGroup({
                   />
                 </span>
 
-                {/* Text */}
-
                 <span className="min-w-0">
                   <span
                     className={[
@@ -460,11 +526,15 @@ function DesktopNavGroup({
                         : "text-white/88",
                     ].join(" ")}
                   >
-                    {item.label}
+                    {
+                      item.label
+                    }
                   </span>
 
                   <span className="mt-1 block text-[10px] leading-[1.45] text-white/40">
-                    {item.description}
+                    {
+                      item.description
+                    }
                   </span>
                 </span>
               </button>
@@ -485,16 +555,20 @@ function MobileNavigation({
   onPageChange,
   onClose,
 }: {
-  activePage: PageId;
+  activePage:
+    PageId;
 
   onPageChange: (
-    page: PageId,
+    page:
+      PageId,
   ) => void;
 
-  onClose: () => void;
+  onClose:
+    () => void;
 }) {
   function changePage(
-    page: PageId,
+    page:
+      PageId,
   ) {
     onPageChange(
       page,
@@ -524,20 +598,30 @@ function MobileNavigation({
       <div className="mx-auto max-h-[calc(100vh-70px)] max-w-[1600px] overflow-y-auto px-5 py-5 sm:px-6 lg:px-10">
         <div className="grid gap-6 md:grid-cols-3">
           {navGroups.map(
-            (group) => (
+            (
+              group,
+            ) => (
               <div
-                key={group.label}
+                key={
+                  group.label
+                }
               >
                 <div
-                  style={productFont}
+                  style={
+                    productFont
+                  }
                   className="mb-3 text-[10px] font-semibold uppercase tracking-[0.11em] text-(--primary)"
                 >
-                  {group.label}
+                  {
+                    group.label
+                  }
                 </div>
 
                 <div className="grid gap-1">
                   {group.items.map(
-                    (item) => {
+                    (
+                      item,
+                    ) => {
                       const Icon =
                         item.icon;
 
@@ -547,7 +631,9 @@ function MobileNavigation({
 
                       return (
                         <button
-                          key={item.id}
+                          key={
+                            item.id
+                          }
                           type="button"
                           onClick={() =>
                             changePage(
@@ -579,7 +665,9 @@ function MobileNavigation({
                           />
 
                           <span className="text-[11px]">
-                            {item.label}
+                            {
+                              item.label
+                            }
                           </span>
                         </button>
                       );
@@ -590,8 +678,6 @@ function MobileNavigation({
             ),
           )}
         </div>
-
-        {/* Settings */}
 
         <div className="mt-5 border-t border-white/[0.07] pt-4">
           <button
@@ -641,20 +727,25 @@ function MissionNexusHeader({
   activePage,
   onPageChange,
 }: {
-  activePage: PageId;
+  activePage:
+    PageId;
 
   onPageChange: (
-    page: PageId,
+    page:
+      PageId,
   ) => void;
 }) {
   const [
     mobileOpen,
     setMobileOpen,
   ] =
-    useState(false);
+    useState(
+      false,
+    );
 
   function changePage(
-    page: PageId,
+    page:
+      PageId,
   ) {
     onPageChange(
       page,
@@ -667,12 +758,10 @@ function MissionNexusHeader({
 
   return (
     <header
-      style={interfaceFont}
+      style={
+        interfaceFont
+      }
       className={[
-        /*
-         * Leaflet uses high internal z-index values.
-         * Header stays above the map.
-         */
         "fixed inset-x-0 top-0 z-[5000]",
 
         "h-[70px]",
@@ -691,9 +780,9 @@ function MissionNexusHeader({
           "px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-14",
         ].join(" ")}
       >
-        {/* =================================================
+        {/* ===============================================
             Aeronexus | MissionNexus
-            ================================================= */}
+            =============================================== */}
 
         <button
           type="button"
@@ -706,7 +795,9 @@ function MissionNexusHeader({
           className="flex min-w-0 shrink-0 items-center"
         >
           <img
-            src={aeronexusWordmark}
+            src={
+              aeronexusWordmark
+            }
             alt="Aeronexus"
             className="h-8 w-auto shrink-0 object-contain sm:h-9 xl:h-10"
           />
@@ -717,40 +808,50 @@ function MissionNexusHeader({
           />
 
           <span
-            style={productFont}
+            style={
+              productFont
+            }
             className="truncate text-[15px] font-medium tracking-[-0.01em] text-white/78"
           >
             MissionNexus
           </span>
         </button>
 
-        {/* =================================================
-            Desktop Header Navigation
-            ================================================= */}
+        {/* ===============================================
+            Desktop Navigation
+            =============================================== */}
 
         <nav
           aria-label="MissionNexus primary navigation"
           className="ml-auto hidden h-full items-center gap-6 min-[1380px]:flex"
         >
           {navGroups.map(
-            (group) => (
+            (
+              group,
+            ) => (
               <DesktopNavGroup
-                key={group.label}
-                group={group}
-                activePage={activePage}
-                onPageChange={changePage}
+                key={
+                  group.label
+                }
+                group={
+                  group
+                }
+                activePage={
+                  activePage
+                }
+                onPageChange={
+                  changePage
+                }
               />
             ),
           )}
         </nav>
 
-        {/* =================================================
+        {/* ===============================================
             Header Utilities
-            ================================================= */}
+            =============================================== */}
 
         <div className="ml-auto flex items-center gap-2 min-[1380px]:ml-6">
-          {/* Settings */}
-
           <button
             type="button"
             onClick={() =>
@@ -789,13 +890,13 @@ function MissionNexusHeader({
             Settings
           </button>
 
-          {/* Compact navigation */}
-
           <button
             type="button"
             onClick={() =>
               setMobileOpen(
-                (current) =>
+                (
+                  current,
+                ) =>
                   !current,
               )
             }
@@ -804,7 +905,9 @@ function MissionNexusHeader({
                 ? "Close navigation"
                 : "Open navigation"
             }
-            aria-expanded={mobileOpen}
+            aria-expanded={
+              mobileOpen
+            }
             className={[
               "flex h-[36px] w-[36px] items-center justify-center",
 
@@ -836,14 +939,18 @@ function MissionNexusHeader({
         </div>
       </div>
 
-      {/* ===================================================
+      {/* ===============================================
           Mobile Navigation
-          =================================================== */}
+          =============================================== */}
 
       {mobileOpen ? (
         <MobileNavigation
-          activePage={activePage}
-          onPageChange={onPageChange}
+          activePage={
+            activePage
+          }
+          onPageChange={
+            onPageChange
+          }
           onClose={() =>
             setMobileOpen(
               false,
@@ -866,32 +973,32 @@ export function AppShell({
 }: AppShellProps) {
   return (
     <div
-      style={interfaceFont}
+      style={
+        interfaceFont
+      }
       className="min-h-screen bg-(--background) text-(--foreground)"
     >
       <MissionNexusHeader
-        activePage={activePage}
-        onPageChange={onPageChange}
+        activePage={
+          activePage
+        }
+        onPageChange={
+          onPageChange
+        }
       />
-
-      {/* ===================================================
-          Main Content
-
-          z-0 keeps Leaflet underneath the global header.
-          =================================================== */}
 
       <main className="relative z-0 pt-[70px]">
         {children}
       </main>
 
-      {/* ===================================================
-          Footer
-          =================================================== */}
-
       <div className="relative z-0">
         <MissionFooter
-          activePage={activePage}
-          onPageChange={onPageChange}
+          activePage={
+            activePage
+          }
+          onPageChange={
+            onPageChange
+          }
         />
       </div>
     </div>
