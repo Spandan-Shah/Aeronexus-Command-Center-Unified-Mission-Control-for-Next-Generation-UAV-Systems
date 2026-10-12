@@ -19,7 +19,6 @@ import {
   Lock,
   MapPinned,
   Plane,
-  Power,
   Radio,
   RotateCcw,
   ShieldAlert,
@@ -39,28 +38,6 @@ import {
 /* =========================================================
    MissionNexus V2
    Drone Control
-
-   PRIMARY VIEWPORT
-   ---------------------------------------------------------
-   Header
-   Critical telemetry strip
-
-   Main operator workspace
-   ├─ Flight command console
-   ├─ Safety gate
-   └─ Live aircraft state
-
-   SECONDARY CONTENT
-   ---------------------------------------------------------
-   Payload controls
-   Connection diagnostics
-   Real-flight readiness
-   Future flight functions
-   Command audit
-   ========================================================= */
-
-/* =========================================================
-   Types
    ========================================================= */
 
 type DroneCommand =
@@ -243,9 +220,6 @@ const commandButtons: CommandButton[] = [
 
 /* =========================================================
    Future functionality
-
-   Kept below the primary workspace because these functions
-   are not currently connected to the command backend.
    ========================================================= */
 
 const futureCommands = [
@@ -753,7 +727,7 @@ function PayloadToggle({
         onToggle
       }
       className={[
-        "flex min-h-[54px] items-center justify-between gap-3",
+        "flex min-h-[54px] w-full items-center justify-between gap-3",
 
         "rounded-[5px] border",
 
@@ -1117,7 +1091,7 @@ export function DroneControl() {
     );
 
   /* =======================================================
-     Metric Strip
+     Metrics
      ======================================================= */
 
   const flightMetrics:
@@ -1585,8 +1559,6 @@ export function DroneControl() {
                 ============================================= */}
 
             <div className="grid min-h-0 grid-rows-[42px_auto_minmax(0,1fr)]">
-              {/* Console header */}
-
               <div className="flex items-center justify-between gap-3 border-b border-white/[0.08] bg-[#06080b] px-3">
                 <div className="flex items-center gap-2">
                   <Plane
@@ -1651,8 +1623,6 @@ export function DroneControl() {
               {/* Safety Gate */}
 
               <div className="grid min-h-0 xl:grid-cols-[0.82fr_1.18fr]">
-                {/* Safety summary */}
-
                 <div className="border-b border-white/[0.08] p-3 xl:border-b-0 xl:border-r">
                   <div className="flex items-start gap-3">
                     <div
@@ -1720,8 +1690,6 @@ export function DroneControl() {
                     </p>
                   </div>
 
-                  {/* Phase 0 override */}
-
                   <button
                     type="button"
                     onClick={() =>
@@ -1756,7 +1724,7 @@ export function DroneControl() {
                   </button>
                 </div>
 
-                {/* Safety checks */}
+                {/* Validation checks */}
 
                 <div className="min-h-0 overflow-y-auto">
                   <div className="flex h-[38px] items-center justify-between border-b border-white/[0.07] px-3">
@@ -1796,12 +1764,10 @@ export function DroneControl() {
             </div>
 
             {/* =============================================
-                RIGHT — LIVE AIRCRAFT STATE
+                RIGHT — AIRCRAFT STATE
                 ============================================= */}
 
             <aside className="grid min-h-0 grid-rows-[52px_auto_auto_minmax(0,1fr)] border-t border-white/[0.08] bg-[#07090d] xl:border-l xl:border-t-0">
-              {/* Header */}
-
               <div className="flex items-center justify-between gap-3 border-b border-white/[0.08] px-3">
                 <div>
                   <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.075em] text-[#F6B23C]">
@@ -1827,8 +1793,6 @@ export function DroneControl() {
                     : "No Telemetry"}
                 </span>
               </div>
-
-              {/* Flight state */}
 
               <div className="border-b border-white/[0.08] px-3 py-2">
                 <InfoRow
@@ -1896,8 +1860,6 @@ export function DroneControl() {
                 />
               </div>
 
-              {/* Link summary */}
-
               <div className="grid grid-cols-2 border-b border-white/[0.08]">
                 <div className="border-r border-white/[0.07] px-3 py-3">
                   <div className="font-mono text-[9px] uppercase tracking-[0.06em] text-white/32">
@@ -1939,8 +1901,6 @@ export function DroneControl() {
                   </div>
                 </div>
               </div>
-
-              {/* System notices */}
 
               <div className="min-h-0 overflow-y-auto p-3">
                 {error ? (
@@ -2098,22 +2058,31 @@ export function DroneControl() {
                 }
               />
 
-              <div className="md:col-span-2">
-                <PayloadToggle
-                  label="Secure Telemetry"
-                  description="Goblin Wisp secure session payload flag"
-                  icon={
-                    ShieldCheck
-                  }
-                  enabled={
-                    payloadState.secureTelemetry
-                  }
-                  onToggle={() =>
-                    togglePayload(
-                      "secureTelemetry",
-                    )
-                  }
-                />
+              {/* ===========================================
+                  Secure Telemetry
+
+                  Last standalone card is centered while
+                  preserving the same width as one grid card.
+                  =========================================== */}
+
+              <div className="flex justify-center md:col-span-2">
+                <div className="w-full md:w-[calc(50%-0.25rem)]">
+                  <PayloadToggle
+                    label="Secure Telemetry"
+                    description="Goblin Wisp secure session payload flag"
+                    icon={
+                      ShieldCheck
+                    }
+                    enabled={
+                      payloadState.secureTelemetry
+                    }
+                    onToggle={() =>
+                      togglePayload(
+                        "secureTelemetry",
+                      )
+                    }
+                  />
+                </div>
               </div>
             </div>
           </SecondarySection>
