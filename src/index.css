@@ -1,23 +1,130 @@
 @import "tailwindcss";
 
-:root {
-  --background: #000000;
-  --panel: #07111f;
-  --panel-elevated: #0c1a2b;
-  --border: #223852;
-  --foreground: #e5eef8;
-  --muted: #8fa3b8;
+/* =========================================================
+   AERONEXUS · MISSIONNEXUS
+   GLOBAL DESIGN SYSTEM
+   ========================================================= */
 
-  --hud: #f6b23c;
+:root {
+  color-scheme: dark;
+
+  /* =======================================================
+     Core Backgrounds
+     ======================================================= */
+
+  --background: #030405;
+  --background-deep: #000000;
+  --background-elevated: #050607;
+
+  --surface-0: #050607;
+  --surface-1: #080a0c;
+  --surface-2: #0c0f12;
+  --surface-3: #11151a;
+  --surface-hover: #151a20;
+
+  /*
+   * Backward-compatible aliases.
+   *
+   * Existing MissionNexus pages currently reference these
+   * variables, so do not remove them.
+   */
+  --panel: var(--surface-1);
+  --panel-elevated: var(--surface-2);
+
+  /* =======================================================
+     Aeronexus Brand
+     ======================================================= */
+
   --primary: #f6b23c;
-  --cyan: #29d3ff;
-  --nominal: #49e58f;
+  --primary-hover: #ffc45f;
+  --primary-bright: #ffd37d;
+
+  --primary-soft: rgba(246, 178, 60, 0.1);
+  --primary-muted: rgba(246, 178, 60, 0.16);
+  --primary-border: rgba(246, 178, 60, 0.28);
+  --primary-glow: rgba(246, 178, 60, 0.14);
+
+  /*
+   * Keep HUD as an alias because older components already use
+   * --hud.
+   */
+  --hud: var(--primary);
+
+  /* =======================================================
+     Operational Accent Colors
+     ======================================================= */
+
+  --cyan: #4fc3f7;
+  --blue: #5aa9ff;
+
+  --nominal: #59d99a;
   --caution: #f6b23c;
-  --critical: #ff4d4d;
+  --critical: #ff5a63;
   --info: #5aa9ff;
+
+  /* =======================================================
+     Typography
+     ======================================================= */
+
+  --foreground: #f2f4f7;
+  --foreground-strong: #ffffff;
+
+  --muted: #9098a2;
+  --muted-strong: #b5bbc3;
+  --muted-soft: #626a74;
+  --muted-faint: #414850;
+
+  /* =======================================================
+     Borders
+     ======================================================= */
+
+  --border: #1c2229;
+  --border-strong: #29313a;
+
+  --border-soft: rgba(255, 255, 255, 0.07);
+  --border-subtle: rgba(255, 255, 255, 0.045);
+
+  /* =======================================================
+     Shadows
+     ======================================================= */
+
+  --shadow-small:
+    0 8px 30px rgba(0, 0, 0, 0.2);
+
+  --shadow-panel:
+    0 20px 60px rgba(0, 0, 0, 0.34);
+
+  --shadow-floating:
+    0 30px 100px rgba(0, 0, 0, 0.58);
+
+  /* =======================================================
+     Geometry
+     ======================================================= */
+
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+
+  /* =======================================================
+     Motion
+     ======================================================= */
+
+  --motion-fast: 120ms;
+  --motion-normal: 180ms;
+  --motion-slow: 280ms;
+
+  --ease-standard:
+    cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-* {
+/* =========================================================
+   Document Foundation
+   ========================================================= */
+
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
@@ -26,29 +133,73 @@ body,
 #root {
   min-height: 100%;
   margin: 0;
-  background: var(--background);
-  color: var(--foreground);
 }
 
 html {
+  background: var(--background-deep);
   scroll-behavior: smooth;
 }
 
 body {
   min-width: 320px;
+
   overflow-x: hidden;
   overflow-y: auto;
+
+  background:
+    radial-gradient(
+      circle at 50% -10%,
+      rgba(246, 178, 60, 0.035),
+      transparent 28rem
+    ),
+    var(--background);
+
+  color: var(--foreground);
+
   font-family:
     Inter,
+    "SF Pro Display",
+    "SF Pro Text",
     system-ui,
     -apple-system,
     BlinkMacSystemFont,
     "Segoe UI",
     sans-serif;
+
+  font-feature-settings:
+    "kern" 1,
+    "liga" 1,
+    "calt" 1;
+
   text-rendering: geometricPrecision;
+
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+#root {
+  isolation: isolate;
+}
+
+/* =========================================================
+   Selection
+   ========================================================= */
+
+::selection {
+  background:
+    rgba(
+      246,
+      178,
+      60,
+      0.25
+    );
+
+  color: #ffffff;
+}
+
+/* =========================================================
+   Generic Elements
+   ========================================================= */
 
 button,
 input,
@@ -67,6 +218,7 @@ button:disabled {
 
 a {
   color: inherit;
+  text-decoration: none;
 }
 
 img,
@@ -76,167 +228,1788 @@ canvas {
   display: block;
 }
 
+img {
+  max-width: 100%;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color:
+    transparent;
+}
+
+/* =========================================================
+   Keyboard Focus
+   ========================================================= */
+
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline:
+    1px solid
+    rgba(
+      246,
+      178,
+      60,
+      0.8
+    );
+
+  outline-offset: 3px;
+}
+
+/* =========================================================
+   MissionNexus Typography
+   ========================================================= */
+
+.mn-heading {
+  margin: 0;
+
+  color:
+    var(
+      --foreground-strong
+    );
+
+  font-family:
+    Inter,
+    system-ui,
+    sans-serif;
+
+  font-weight: 600;
+
+  letter-spacing:
+    -0.035em;
+
+  line-height: 1.08;
+}
+
+.mn-heading-xl {
+  font-size:
+    clamp(
+      2rem,
+      3vw,
+      4rem
+    );
+
+  font-weight: 600;
+
+  letter-spacing:
+    -0.045em;
+
+  line-height: 0.98;
+}
+
+.mn-heading-lg {
+  font-size:
+    clamp(
+      1.5rem,
+      2vw,
+      2.4rem
+    );
+
+  letter-spacing:
+    -0.04em;
+}
+
+.mn-heading-md {
+  font-size:
+    1.25rem;
+
+  letter-spacing:
+    -0.025em;
+}
+
+.mn-eyebrow {
+  color:
+    var(
+      --primary
+    );
+
+  font-family:
+    "JetBrains Mono",
+    "SFMono-Regular",
+    Consolas,
+    monospace;
+
+  font-size:
+    0.625rem;
+
+  font-weight: 600;
+
+  letter-spacing:
+    0.16em;
+
+  line-height:
+    1.4;
+
+  text-transform:
+    uppercase;
+}
+
+.mn-label {
+  color:
+    var(
+      --muted
+    );
+
+  font-family:
+    "JetBrains Mono",
+    "SFMono-Regular",
+    Consolas,
+    monospace;
+
+  font-size:
+    0.625rem;
+
+  font-weight: 500;
+
+  letter-spacing:
+    0.11em;
+
+  line-height:
+    1.4;
+
+  text-transform:
+    uppercase;
+}
+
+.mn-copy {
+  color:
+    var(
+      --muted
+    );
+
+  font-size:
+    0.8125rem;
+
+  line-height:
+    1.7;
+}
+
+/* =========================================================
+   Existing Tactical Typography
+   ========================================================= */
+
+/*
+ * Preserved so all existing MissionNexus modules continue
+ * working without modification.
+ */
+
 .text-hud {
   font-family:
     "JetBrains Mono",
-    "Consolas",
+    "SFMono-Regular",
+    Consolas,
     monospace;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+
+  font-weight: 500;
+
+  letter-spacing:
+    0.055em;
+
+  text-transform:
+    uppercase;
 }
 
 .text-metric {
   font-family:
     "JetBrains Mono",
-    "Consolas",
+    "SFMono-Regular",
+    Consolas,
     monospace;
-  letter-spacing: -0.02em;
+
+  font-variant-numeric:
+    tabular-nums;
+
+  letter-spacing:
+    -0.02em;
 }
+
+.mn-metric {
+  font-family:
+    "JetBrains Mono",
+    "SFMono-Regular",
+    Consolas,
+    monospace;
+
+  font-variant-numeric:
+    tabular-nums;
+
+  letter-spacing:
+    -0.025em;
+}
+
+/* =========================================================
+   MissionNexus Surfaces
+   ========================================================= */
+
+.mn-surface {
+  border:
+    1px solid
+    var(
+      --border-soft
+    );
+
+  background:
+    var(
+      --surface-1
+    );
+}
+
+.mn-panel {
+  border:
+    1px solid
+    var(
+      --border-soft
+    );
+
+  border-radius:
+    var(
+      --radius-md
+    );
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(
+        255,
+        255,
+        255,
+        0.018
+      ),
+      rgba(
+        255,
+        255,
+        255,
+        0.006
+      )
+    ),
+    var(
+      --surface-1
+    );
+
+  box-shadow:
+    var(
+      --shadow-small
+    );
+}
+
+.mn-panel-elevated {
+  border:
+    1px solid
+    var(
+      --border-soft
+    );
+
+  border-radius:
+    var(
+      --radius-md
+    );
+
+  background:
+    var(
+      --surface-2
+    );
+
+  box-shadow:
+    var(
+      --shadow-panel
+    );
+}
+
+.mn-glass {
+  border:
+    1px solid
+    rgba(
+      255,
+      255,
+      255,
+      0.08
+    );
+
+  background:
+    rgba(
+      5,
+      7,
+      9,
+      0.78
+    );
+
+  box-shadow:
+    0 16px 55px
+    rgba(
+      0,
+      0,
+      0,
+      0.35
+    );
+
+  backdrop-filter:
+    blur(18px);
+
+  -webkit-backdrop-filter:
+    blur(18px);
+}
+
+/* =========================================================
+   Mission Cards
+   ========================================================= */
+
+.mn-card {
+  position:
+    relative;
+
+  overflow:
+    hidden;
+
+  border:
+    1px solid
+    var(
+      --border-soft
+    );
+
+  border-radius:
+    var(
+      --radius-md
+    );
+
+  background:
+    var(
+      --surface-1
+    );
+}
+
+.mn-card::before {
+  position:
+    absolute;
+
+  inset:
+    0 auto auto 0;
+
+  width:
+    3rem;
+
+  height:
+    1px;
+
+  background:
+    rgba(
+      246,
+      178,
+      60,
+      0.45
+    );
+
+  content:
+    "";
+
+  pointer-events:
+    none;
+}
+
+.mn-card-interactive {
+  transition:
+    border-color
+      var(
+        --motion-normal
+      )
+      var(
+        --ease-standard
+      ),
+    background-color
+      var(
+        --motion-normal
+      )
+      var(
+        --ease-standard
+      ),
+    transform
+      var(
+        --motion-normal
+      )
+      var(
+        --ease-standard
+      );
+}
+
+.mn-card-interactive:hover {
+  border-color:
+    rgba(
+      246,
+      178,
+      60,
+      0.22
+    );
+
+  background:
+    var(
+      --surface-2
+    );
+
+  transform:
+    translateY(
+      -1px
+    );
+}
+
+/* =========================================================
+   Dividers
+   ========================================================= */
+
+.mn-divider {
+  width:
+    100%;
+
+  height:
+    1px;
+
+  background:
+    var(
+      --border-soft
+    );
+}
+
+.mn-section-rule {
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  gap:
+    0.75rem;
+}
+
+.mn-section-rule::after {
+  height:
+    1px;
+
+  flex:
+    1;
+
+  background:
+    linear-gradient(
+      90deg,
+      rgba(
+        255,
+        255,
+        255,
+        0.1
+      ),
+      transparent
+    );
+
+  content:
+    "";
+}
+
+/* =========================================================
+   Chips / Badges
+   ========================================================= */
+
+.mn-chip {
+  display:
+    inline-flex;
+
+  min-height:
+    1.6rem;
+
+  align-items:
+    center;
+
+  gap:
+    0.4rem;
+
+  border:
+    1px solid
+    var(
+      --border-soft
+    );
+
+  border-radius:
+    999px;
+
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.025
+    );
+
+  padding:
+    0.3rem
+    0.55rem;
+
+  color:
+    var(
+      --muted
+    );
+
+  font-family:
+    "JetBrains Mono",
+    Consolas,
+    monospace;
+
+  font-size:
+    0.56rem;
+
+  font-weight: 600;
+
+  letter-spacing:
+    0.08em;
+
+  line-height: 1;
+
+  text-transform:
+    uppercase;
+}
+
+.mn-chip-primary {
+  border-color:
+    var(
+      --primary-border
+    );
+
+  background:
+    var(
+      --primary-soft
+    );
+
+  color:
+    var(
+      --primary
+    );
+}
+
+.mn-chip-nominal {
+  border-color:
+    rgba(
+      89,
+      217,
+      154,
+      0.22
+    );
+
+  background:
+    rgba(
+      89,
+      217,
+      154,
+      0.07
+    );
+
+  color:
+    var(
+      --nominal
+    );
+}
+
+.mn-chip-critical {
+  border-color:
+    rgba(
+      255,
+      90,
+      99,
+      0.22
+    );
+
+  background:
+    rgba(
+      255,
+      90,
+      99,
+      0.07
+    );
+
+  color:
+    var(
+      --critical
+    );
+}
+
+/* =========================================================
+   Buttons
+   ========================================================= */
+
+.mn-button {
+  display:
+    inline-flex;
+
+  min-height:
+    2.35rem;
+
+  align-items:
+    center;
+
+  justify-content:
+    center;
+
+  gap:
+    0.5rem;
+
+  border-radius:
+    var(
+      --radius-sm
+    );
+
+  padding:
+    0.55rem
+    0.9rem;
+
+  font-family:
+    "JetBrains Mono",
+    Consolas,
+    monospace;
+
+  font-size:
+    0.625rem;
+
+  font-weight: 600;
+
+  letter-spacing:
+    0.1em;
+
+  line-height: 1;
+
+  text-transform:
+    uppercase;
+
+  transition:
+    background-color
+      var(
+        --motion-fast
+      )
+      var(
+        --ease-standard
+      ),
+    border-color
+      var(
+        --motion-fast
+      )
+      var(
+        --ease-standard
+      ),
+    color
+      var(
+        --motion-fast
+      )
+      var(
+        --ease-standard
+      ),
+    transform
+      var(
+        --motion-fast
+      )
+      var(
+        --ease-standard
+      );
+}
+
+.mn-button:active {
+  transform:
+    translateY(
+      1px
+    );
+}
+
+.mn-button-primary {
+  border:
+    1px solid
+    var(
+      --primary-border
+    );
+
+  background:
+    var(
+      --primary-soft
+    );
+
+  color:
+    var(
+      --primary
+    );
+}
+
+.mn-button-primary:hover {
+  border-color:
+    rgba(
+      246,
+      178,
+      60,
+      0.5
+    );
+
+  background:
+    rgba(
+      246,
+      178,
+      60,
+      0.14
+    );
+
+  color:
+    var(
+      --primary-hover
+    );
+}
+
+.mn-button-secondary {
+  border:
+    1px solid
+    var(
+      --border-soft
+    );
+
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.025
+    );
+
+  color:
+    var(
+      --muted-strong
+    );
+}
+
+.mn-button-secondary:hover {
+  border-color:
+    var(
+      --border-strong
+    );
+
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.045
+    );
+
+  color:
+    #ffffff;
+}
+
+/* =========================================================
+   Form Controls
+   ========================================================= */
+
+.mn-input,
+.mn-select,
+.mn-textarea {
+  width:
+    100%;
+
+  border:
+    1px solid
+    var(
+      --border-soft
+    );
+
+  border-radius:
+    var(
+      --radius-sm
+    );
+
+  background:
+    #050607;
+
+  color:
+    var(
+      --foreground
+    );
+
+  transition:
+    border-color
+      var(
+        --motion-fast
+      )
+      var(
+        --ease-standard
+      ),
+    background-color
+      var(
+        --motion-fast
+      )
+      var(
+        --ease-standard
+      );
+}
+
+.mn-input,
+.mn-select {
+  min-height:
+    2.5rem;
+
+  padding:
+    0 0.75rem;
+}
+
+.mn-textarea {
+  min-height:
+    7rem;
+
+  padding:
+    0.75rem;
+
+  resize:
+    vertical;
+}
+
+.mn-input:hover,
+.mn-select:hover,
+.mn-textarea:hover {
+  border-color:
+    var(
+      --border-strong
+    );
+}
+
+.mn-input:focus,
+.mn-select:focus,
+.mn-textarea:focus {
+  border-color:
+    rgba(
+      246,
+      178,
+      60,
+      0.48
+    );
+
+  background:
+    #07090b;
+
+  box-shadow:
+    0 0 0 3px
+    rgba(
+      246,
+      178,
+      60,
+      0.05
+    );
+
+  outline:
+    none;
+}
+
+.mn-input::placeholder,
+.mn-textarea::placeholder {
+  color:
+    var(
+      --muted-faint
+    );
+}
+
+/* =========================================================
+   Range Controls
+   ========================================================= */
+
+input[type="range"] {
+  accent-color:
+    var(
+      --primary
+    );
+}
+
+/* =========================================================
+   Status Indicators
+   ========================================================= */
+
+.mn-status-dot {
+  display:
+    inline-block;
+
+  width:
+    0.42rem;
+
+  height:
+    0.42rem;
+
+  flex:
+    0 0 auto;
+
+  border-radius:
+    999px;
+
+  background:
+    currentColor;
+}
+
+.mn-status-nominal {
+  color:
+    var(
+      --nominal
+    );
+}
+
+.mn-status-caution {
+  color:
+    var(
+      --caution
+    );
+}
+
+.mn-status-critical {
+  color:
+    var(
+      --critical
+    );
+}
+
+.mn-status-info {
+  color:
+    var(
+      --info
+    );
+}
+
+/* =========================================================
+   Tactical Background Grid
+   ========================================================= */
 
 .bg-tactical-grid {
   background-image:
-    linear-gradient(to right, rgba(41, 211, 255, 0.08) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(41, 211, 255, 0.08) 1px, transparent 1px);
-  background-size: 32px 32px;
+    linear-gradient(
+      to right,
+      rgba(
+        255,
+        255,
+        255,
+        0.035
+      )
+      1px,
+      transparent
+      1px
+    ),
+    linear-gradient(
+      to bottom,
+      rgba(
+        255,
+        255,
+        255,
+        0.035
+      )
+      1px,
+      transparent
+      1px
+    );
+
+  background-size:
+    32px
+    32px;
 }
 
 .bg-tactical-grid-fine {
   background-image:
-    linear-gradient(to right, rgba(41, 211, 255, 0.06) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(41, 211, 255, 0.06) 1px, transparent 1px);
-  background-size: 12px 12px;
+    linear-gradient(
+      to right,
+      rgba(
+        255,
+        255,
+        255,
+        0.026
+      )
+      1px,
+      transparent
+      1px
+    ),
+    linear-gradient(
+      to bottom,
+      rgba(
+        255,
+        255,
+        255,
+        0.026
+      )
+      1px,
+      transparent
+      1px
+    );
+
+  background-size:
+    12px
+    12px;
+}
+
+/* =========================================================
+   Subtle Mission Grid
+   ========================================================= */
+
+.mn-grid {
+  position:
+    relative;
+}
+
+.mn-grid::before {
+  position:
+    absolute;
+
+  inset:
+    0;
+
+  background-image:
+    linear-gradient(
+      to right,
+      rgba(
+        255,
+        255,
+        255,
+        0.022
+      )
+      1px,
+      transparent
+      1px
+    ),
+    linear-gradient(
+      to bottom,
+      rgba(
+        255,
+        255,
+        255,
+        0.022
+      )
+      1px,
+      transparent
+      1px
+    );
+
+  background-size:
+    40px
+    40px;
+
+  content:
+    "";
+
+  mask-image:
+    linear-gradient(
+      to bottom,
+      rgba(
+        0,
+        0,
+        0,
+        0.8
+      ),
+      transparent
+    );
+
+  pointer-events:
+    none;
+}
+
+/* =========================================================
+   Scanline
+   ========================================================= */
+
+/*
+ * Preserved for existing tactical visualization components.
+ * Reduced visual intensity compared with the previous version.
+ */
+
+.scanline {
+  position:
+    relative;
 }
 
 .scanline::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    to bottom,
-    transparent 0%,
-    rgba(246, 178, 60, 0.12) 50%,
-    transparent 100%
-  );
-  background-size: 100% 8px;
-  pointer-events: none;
-  animation: scanline 6s linear infinite;
-  opacity: 0.35;
+  position:
+    absolute;
+
+  inset:
+    0;
+
+  background:
+    linear-gradient(
+      to bottom,
+      transparent
+        0%,
+      rgba(
+        246,
+        178,
+        60,
+        0.055
+      )
+        50%,
+      transparent
+        100%
+    );
+
+  background-size:
+    100%
+    10px;
+
+  content:
+    "";
+
+  opacity:
+    0.24;
+
+  pointer-events:
+    none;
+
+  animation:
+    scanline
+    8s
+    linear
+    infinite;
 }
 
 @keyframes scanline {
   0% {
-    background-position: 0 -100%;
+    background-position:
+      0
+      -100%;
   }
 
   100% {
-    background-position: 0 100%;
+    background-position:
+      0
+      100%;
   }
 }
 
+/* =========================================================
+   Radar Sweep
+   ========================================================= */
+
 @keyframes sweep {
   0% {
-    transform: rotate(0deg);
+    transform:
+      rotate(
+        0deg
+      );
   }
 
   100% {
-    transform: rotate(360deg);
+    transform:
+      rotate(
+        360deg
+      );
   }
 }
 
 .radar-sweep {
-  animation: sweep 4s linear infinite;
-  transform-origin: center;
+  transform-origin:
+    center;
+
+  animation:
+    sweep
+    4s
+    linear
+    infinite;
 }
+
+/* =========================================================
+   Pulse Indicator
+   ========================================================= */
 
 @keyframes pulse-ring {
   0% {
-    transform: scale(0.6);
-    opacity: 0.45;
+    transform:
+      scale(
+        0.65
+      );
+
+    opacity:
+      0.4;
   }
 
   100% {
-    transform: scale(1.8);
-    opacity: 0;
+    transform:
+      scale(
+        1.8
+      );
+
+    opacity:
+      0;
   }
 }
 
-.pulse-dot::before {
-  content: "";
-  position: absolute;
-  inset: -6px;
-  border-radius: 9999px;
-  background: currentColor;
-  opacity: 0.4;
-  animation: pulse-ring 1.8s ease-out infinite;
+.pulse-dot {
+  position:
+    relative;
 }
 
+.pulse-dot::before {
+  position:
+    absolute;
+
+  inset:
+    -6px;
+
+  border-radius:
+    9999px;
+
+  background:
+    currentColor;
+
+  content:
+    "";
+
+  opacity:
+    0.35;
+
+  animation:
+    pulse-ring
+    1.8s
+    ease-out
+    infinite;
+}
+
+/* =========================================================
+   Technical Table
+   ========================================================= */
+
+.mn-table {
+  width:
+    100%;
+
+  border-collapse:
+    collapse;
+}
+
+.mn-table th {
+  border-bottom:
+    1px solid
+    var(
+      --border-soft
+    );
+
+  padding:
+    0.7rem
+    0.8rem;
+
+  color:
+    var(
+      --muted-soft
+    );
+
+  font-family:
+    "JetBrains Mono",
+    Consolas,
+    monospace;
+
+  font-size:
+    0.56rem;
+
+  font-weight:
+    600;
+
+  letter-spacing:
+    0.1em;
+
+  text-align:
+    left;
+
+  text-transform:
+    uppercase;
+}
+
+.mn-table td {
+  border-bottom:
+    1px solid
+    var(
+      --border-subtle
+    );
+
+  padding:
+    0.75rem
+    0.8rem;
+
+  color:
+    var(
+      --muted-strong
+    );
+
+  font-size:
+    0.75rem;
+}
+
+.mn-table tbody tr {
+  transition:
+    background-color
+      var(
+        --motion-fast
+      )
+      ease;
+}
+
+.mn-table tbody tr:hover {
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.018
+    );
+}
+
+/* =========================================================
+   Scrollbars
+   ========================================================= */
+
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width:
+    9px;
+
+  height:
+    9px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #000000;
+  background:
+    #020304;
 }
 
 ::-webkit-scrollbar-thumb {
-  border: 2px solid #000000;
-  border-radius: 999px;
-  background: rgba(143, 163, 184, 0.45);
+  border:
+    2px solid
+    #020304;
+
+  border-radius:
+    999px;
+
+  background:
+    #343a41;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(246, 178, 60, 0.72);
+  background:
+    rgba(
+      246,
+      178,
+      60,
+      0.62
+    );
 }
 
+/* Firefox */
+
+* {
+  scrollbar-width:
+    thin;
+
+  scrollbar-color:
+    #343a41
+    #020304;
+}
+
+/* =========================================================
+   Leaflet
+   ========================================================= */
+
 .leaflet-container {
-  background: #07111f !important;
+  background:
+    #050608
+    !important;
+
+  color:
+    var(
+      --foreground
+    );
+
   font-family:
     Inter,
     system-ui,
     -apple-system,
     BlinkMacSystemFont,
     "Segoe UI",
-    sans-serif !important;
+    sans-serif
+    !important;
+}
+
+/* =========================================================
+   Leaflet Zoom Controls
+   ========================================================= */
+
+.leaflet-bar {
+  overflow:
+    hidden;
+
+  border:
+    1px solid
+    rgba(
+      255,
+      255,
+      255,
+      0.1
+    )
+    !important;
+
+  border-radius:
+    6px
+    !important;
+
+  box-shadow:
+    0 12px 35px
+    rgba(
+      0,
+      0,
+      0,
+      0.32
+    )
+    !important;
 }
 
 .leaflet-control-zoom a {
-  border-color: var(--border) !important;
-  background: rgba(5, 13, 24, 0.92) !important;
-  color: var(--foreground) !important;
+  border-color:
+    rgba(
+      255,
+      255,
+      255,
+      0.07
+    )
+    !important;
+
+  background:
+    rgba(
+      5,
+      7,
+      9,
+      0.94
+    )
+    !important;
+
+  color:
+    var(
+      --muted-strong
+    )
+    !important;
+
+  transition:
+    background-color
+      var(
+        --motion-fast
+      )
+      ease,
+    color
+      var(
+        --motion-fast
+      )
+      ease;
 }
 
 .leaflet-control-zoom a:hover {
-  background: rgba(12, 26, 43, 0.96) !important;
-  color: var(--primary) !important;
+  background:
+    rgba(
+      12,
+      15,
+      18,
+      0.98
+    )
+    !important;
+
+  color:
+    var(
+      --primary
+    )
+    !important;
 }
 
+/* =========================================================
+   Leaflet Attribution
+   ========================================================= */
+
 .leaflet-control-attribution {
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: rgba(5, 13, 24, 0.82) !important;
-  color: #8fa3b8 !important;
+  border:
+    1px solid
+    rgba(
+      255,
+      255,
+      255,
+      0.08
+    );
+
+  border-radius:
+    5px;
+
+  background:
+    rgba(
+      4,
+      6,
+      8,
+      0.84
+    )
+    !important;
+
+  color:
+    var(
+      --muted-soft
+    )
+    !important;
+
   font-family:
     "JetBrains Mono",
-    "Consolas",
+    Consolas,
     monospace;
-  font-size: 9px;
-  padding: 3px 6px;
+
+  font-size:
+    8px;
+
+  letter-spacing:
+    0.02em;
+
+  padding:
+    3px
+    6px;
+
+  backdrop-filter:
+    blur(
+      12px
+    );
 }
 
 .leaflet-control-attribution a {
-  color: var(--primary) !important;
-  text-decoration: none;
+  color:
+    var(
+      --primary
+    )
+    !important;
+
+  text-decoration:
+    none;
 }
+
+/* =========================================================
+   Leaflet Popup
+   ========================================================= */
 
 .leaflet-popup-content-wrapper,
 .leaflet-popup-tip {
-  border: 1px solid var(--border);
-  background: rgba(5, 13, 24, 0.94) !important;
-  color: var(--foreground) !important;
+  border:
+    1px solid
+    rgba(
+      255,
+      255,
+      255,
+      0.09
+    );
+
+  background:
+    rgba(
+      5,
+      7,
+      9,
+      0.96
+    )
+    !important;
+
+  color:
+    var(
+      --foreground
+    )
+    !important;
+
+  box-shadow:
+    0 20px 55px
+    rgba(
+      0,
+      0,
+      0,
+      0.45
+    )
+    !important;
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius:
+    7px
+    !important;
+
+  backdrop-filter:
+    blur(
+      14px
+    );
 }
 
 .leaflet-popup-content {
-  margin: 10px 12px !important;
-  color: var(--foreground) !important;
+  margin:
+    11px
+    13px
+    !important;
+
+  color:
+    var(
+      --foreground
+    )
+    !important;
+}
+
+.leaflet-popup-close-button {
+  color:
+    var(
+      --muted
+    )
+    !important;
+}
+
+.leaflet-popup-close-button:hover {
+  color:
+    var(
+      --primary
+    )
+    !important;
+}
+
+/* =========================================================
+   Leaflet Tooltips
+   ========================================================= */
+
+.leaflet-tooltip {
+  border:
+    1px solid
+    var(
+      --border-soft
+    )
+    !important;
+
+  border-radius:
+    5px
+    !important;
+
+  background:
+    rgba(
+      5,
+      7,
+      9,
+      0.94
+    )
+    !important;
+
+  color:
+    var(
+      --foreground
+    )
+    !important;
+
+  box-shadow:
+    0 10px 30px
+    rgba(
+      0,
+      0,
+      0,
+      0.35
+    )
+    !important;
+
+  font-size:
+    10px;
+}
+
+/* =========================================================
+   Recharts
+   ========================================================= */
+
+.recharts-default-tooltip {
+  border:
+    1px solid
+    var(
+      --border-soft
+    )
+    !important;
+
+  border-radius:
+    6px
+    !important;
+
+  background:
+    rgba(
+      5,
+      7,
+      9,
+      0.96
+    )
+    !important;
+
+  box-shadow:
+    var(
+      --shadow-panel
+    )
+    !important;
+}
+
+.recharts-tooltip-label {
+  color:
+    var(
+      --foreground
+    )
+    !important;
+}
+
+.recharts-cartesian-grid line {
+  stroke:
+    rgba(
+      255,
+      255,
+      255,
+      0.055
+    );
+}
+
+/* =========================================================
+   Reduced Motion
+   ========================================================= */
+
+@media (
+  prefers-reduced-motion:
+    reduce
+) {
+  html {
+    scroll-behavior:
+      auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior:
+      auto
+      !important;
+
+    animation-duration:
+      0.01ms
+      !important;
+
+    animation-iteration-count:
+      1
+      !important;
+
+    transition-duration:
+      0.01ms
+      !important;
+  }
+
+  .scanline::after,
+  .radar-sweep,
+  .pulse-dot::before {
+    animation:
+      none
+      !important;
+  }
+}
+
+/* =========================================================
+   Compact Displays
+   ========================================================= */
+
+@media (
+  max-width:
+    768px
+) {
+  .mn-heading-xl {
+    font-size:
+      2rem;
+  }
+
+  .mn-panel,
+  .mn-panel-elevated {
+    border-radius:
+      6px;
+  }
 }
