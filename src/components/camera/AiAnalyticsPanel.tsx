@@ -1,6 +1,5 @@
 import {
   AlertTriangle,
-  Camera,
   Flame,
   ShieldAlert,
   ShieldCheck,
@@ -64,11 +63,9 @@ function DetectionStatus({
     | "caution";
 }) {
   const activeClass =
-    tone ===
-    "critical"
+    tone === "critical"
       ? "border-[rgba(255,90,99,0.3)] bg-[rgba(255,90,99,0.055)] text-[#FF5A63]"
-      : tone ===
-          "caution"
+      : tone === "caution"
         ? "border-[rgba(246,178,60,0.28)] bg-[rgba(246,178,60,0.055)] text-[#F6B23C]"
         : "border-[rgba(90,169,255,0.28)] bg-[rgba(90,169,255,0.055)] text-[#5AA9FF]";
 
@@ -76,21 +73,17 @@ function DetectionStatus({
     <div
       className={[
         "rounded-[4px] border p-2",
-
         active
           ? activeClass
           : "border-white/[0.07] bg-[#05060d] text-white/28",
       ].join(" ")}
     >
       <div className="flex items-center justify-between gap-2">
-        <Icon
-          size={13}
-        />
+        <Icon size={13} />
 
         <span
           className={[
             "font-mono text-[7px] font-semibold uppercase tracking-[0.05em]",
-
             active
               ? ""
               : "text-[#59D99A]",
@@ -234,8 +227,7 @@ export function AiAnalyticsPanel({
             className="mt-0.5 shrink-0"
           />
 
-          Backend offline:
-          {" "}
+          Backend offline:{" "}
           {error}
         </div>
       ) : null}
@@ -255,7 +247,6 @@ export function AiAnalyticsPanel({
         <span
           className={[
             "font-mono text-[9px] font-semibold uppercase",
-
             getRiskClass(
               risk,
             ),
