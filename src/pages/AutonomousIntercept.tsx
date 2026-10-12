@@ -13,8 +13,8 @@ import {
   Radio,
   RotateCcw,
   Route,
-  Satellite,
   ShieldCheck,
+  SlidersHorizontal,
   Target,
   Usb,
 } from "lucide-react";
@@ -35,10 +35,6 @@ import type {
   PredictorMode,
 } from "../hooks/useInterceptSimulation";
 
-/* =========================================================
-   Types
-   ========================================================= */
-
 type MetricTone =
   | "nominal"
   | "caution"
@@ -47,10 +43,17 @@ type MetricTone =
   | "muted";
 
 type Metric = {
-  label: string;
-  value: string;
-  icon: LucideIcon;
-  tone: MetricTone;
+  label:
+    string;
+
+  value:
+    string;
+
+  icon:
+    LucideIcon;
+
+  tone:
+    MetricTone;
 };
 
 const toneClass:
@@ -71,15 +74,12 @@ const toneClass:
     "text-[#5AA9FF]",
 
   muted:
-    "text-white/38",
+    "text-white/42",
 };
 
-/* =========================================================
-   Formatting
-   ========================================================= */
-
 function formatDistance(
-  meters: number,
+  meters:
+    number,
 ) {
   if (
     meters >=
@@ -135,35 +135,29 @@ function formatError(
   )} m`;
 }
 
-/* =========================================================
-   Metric
-   ========================================================= */
-
 function MetricCell({
   metric,
 }: {
-  metric: Metric;
+  metric:
+    Metric;
 }) {
   const Icon =
     metric.icon;
 
-  const tone =
-    toneClass[
-      metric.tone
-    ];
-
   return (
-    <div className="flex min-w-0 items-center justify-between gap-2 border-r border-white/[0.07] px-3 last:border-r-0">
+    <div className="flex min-w-0 items-center justify-between gap-3 border-r border-white/[0.07] px-4 last:border-r-0">
       <div className="min-w-0">
-        <div className="font-mono text-[9px] font-semibold uppercase tracking-[0.065em] text-white/36">
+        <div className="font-mono text-[10px] font-semibold uppercase tracking-[0.06em] text-white/40">
           {metric.label}
         </div>
 
         <div
           className={[
-            "mt-1 truncate font-mono text-[15px] font-semibold leading-none",
+            "mt-1.5 truncate font-mono text-[16px] font-semibold leading-none",
 
-            tone,
+            toneClass[
+              metric.tone
+            ],
           ].join(" ")}
         >
           {metric.value}
@@ -171,40 +165,44 @@ function MetricCell({
       </div>
 
       <Icon
-        size={15}
+        size={17}
         strokeWidth={1.6}
         className={[
           "shrink-0",
-          tone,
+
+          toneClass[
+            metric.tone
+          ],
         ].join(" ")}
       />
     </div>
   );
 }
 
-/* =========================================================
-   State Row
-   ========================================================= */
-
 function StateRow({
   label,
   value,
   valueClass =
-    "text-white/70",
+    "text-white/72",
 }: {
-  label: string;
-  value: string;
-  valueClass?: string;
+  label:
+    string;
+
+  value:
+    string;
+
+  valueClass?:
+    string;
 }) {
   return (
-    <div className="flex min-h-[29px] items-center justify-between gap-3 border-b border-white/[0.055] last:border-b-0">
-      <span className="text-[10px] text-white/38">
+    <div className="flex min-h-[34px] items-center justify-between gap-4 border-b border-white/[0.055] last:border-b-0">
+      <span className="text-[11px] text-white/44">
         {label}
       </span>
 
       <span
         className={[
-          "max-w-[62%] truncate text-right font-mono text-[10px] font-medium",
+          "max-w-[64%] truncate text-right font-mono text-[11px] font-medium",
 
           valueClass,
         ].join(" ")}
@@ -215,20 +213,22 @@ function StateRow({
   );
 }
 
-/* =========================================================
-   Command Button
-   ========================================================= */
-
 function CommandButton({
   label,
-  icon: Icon,
+  icon:
+    Icon,
   onClick,
   tone =
     "normal",
 }: {
-  label: string;
-  icon: LucideIcon;
-  onClick: () => void;
+  label:
+    string;
+
+  icon:
+    LucideIcon;
+
+  onClick:
+    () => void;
 
   tone?:
     | "normal"
@@ -238,29 +238,30 @@ function CommandButton({
   const style =
     tone ===
     "danger"
-      ? "border-[rgba(255,90,99,0.26)] bg-[rgba(255,90,99,0.045)] text-[#FF5A63] hover:bg-[rgba(255,90,99,0.09)]"
+      ? "border-[rgba(255,90,99,0.28)] bg-[rgba(255,90,99,0.045)] text-[#FF5A63] hover:bg-[rgba(255,90,99,0.10)]"
       : tone ===
           "primary"
-        ? "border-[rgba(246,178,60,0.3)] bg-[rgba(246,178,60,0.06)] text-[#F6B23C] hover:bg-[rgba(246,178,60,0.11)]"
-        : "border-white/[0.08] bg-[#05060d] text-white/58 hover:border-white/[0.16] hover:text-white";
+        ? "border-[rgba(246,178,60,0.30)] bg-[rgba(246,178,60,0.07)] text-[#F6B23C] hover:bg-[rgba(246,178,60,0.12)]"
+        : "border-white/[0.09] bg-[#05060d] text-white/64 hover:border-white/[0.18] hover:text-white";
 
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={
+        onClick
+      }
       className={[
-        "flex h-[38px] items-center justify-center gap-2 rounded-[5px] border px-2",
+        "flex h-10 items-center justify-center gap-2 rounded-[5px] border px-3",
 
-        "font-mono text-[9px] font-semibold uppercase tracking-[0.04em]",
+        "font-mono text-[10px] font-semibold uppercase tracking-[0.035em]",
 
-        "transition-colors duration-150",
+        "transition-colors",
 
         style,
       ].join(" ")}
     >
       <Icon
-        size={12}
-        strokeWidth={1.65}
+        size={13}
       />
 
       {label}
@@ -268,125 +269,139 @@ function CommandButton({
   );
 }
 
-/* =========================================================
-   Predictor Button
-   ========================================================= */
-
 function PredictorButton({
   label,
   description,
   active,
   onClick,
 }: {
-  label: string;
-  description: string;
-  active: boolean;
-  onClick: () => void;
+  label:
+    string;
+
+  description:
+    string;
+
+  active:
+    boolean;
+
+  onClick:
+    () => void;
 }) {
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={
+        onClick
+      }
       className={[
-        "rounded-[5px] border p-2.5 text-left transition-colors",
+        "min-h-[64px] rounded-[5px] border p-3 text-left transition-colors",
 
         active
           ? "border-[rgba(246,178,60,0.32)] bg-[rgba(246,178,60,0.06)]"
-          : "border-white/[0.07] bg-[#05060d] hover:border-white/[0.14]",
+          : "border-white/[0.08] bg-[#05060d] hover:border-white/[0.15]",
       ].join(" ")}
     >
       <div
         className={[
-          "font-mono text-[9px] font-semibold uppercase",
+          "font-mono text-[10px] font-semibold uppercase",
 
           active
             ? "text-[#F6B23C]"
-            : "text-white/54",
+            : "text-white/60",
         ].join(" ")}
       >
         {label}
       </div>
 
-      <div className="mt-1 text-[9px] leading-[1.4] text-white/30">
+      <div className="mt-1.5 text-[10px] leading-[1.45] text-white/36">
         {description}
       </div>
     </button>
   );
 }
 
-/* =========================================================
-   Evidence Metric
-   ========================================================= */
-
-function EvidenceMetric({
+function RangeControl({
   label,
   value,
-  description,
-  tone,
+  suffix,
+  min,
+  max,
+  step,
+  onChange,
 }: {
-  label: string;
-  value: string;
-  description: string;
+  label:
+    string;
 
-  tone:
-    | "neutral"
-    | "green"
-    | "amber"
-    | "red";
+  value:
+    number;
+
+  suffix:
+    string;
+
+  min:
+    number;
+
+  max:
+    number;
+
+  step:
+    number;
+
+  onChange:
+    (
+      value:
+        number,
+    ) => void;
 }) {
-  const valueClass =
-    tone ===
-    "green"
-      ? "text-[#59D99A]"
-      : tone ===
-          "amber"
-        ? "text-[#F6B23C]"
-        : tone ===
-            "red"
-          ? "text-[#FF5A63]"
-          : "text-white/66";
-
-  const borderClass =
-    tone ===
-    "green"
-      ? "border-[rgba(89,217,154,0.20)] bg-[rgba(89,217,154,0.03)]"
-      : tone ===
-          "amber"
-        ? "border-[rgba(246,178,60,0.20)] bg-[rgba(246,178,60,0.03)]"
-        : tone ===
-            "red"
-          ? "border-[rgba(255,90,99,0.20)] bg-[rgba(255,90,99,0.03)]"
-          : "border-white/[0.07] bg-[#05060d]";
-
   return (
-    <div
-      className={[
-        "rounded-[5px] border p-3",
-        borderClass,
-      ].join(" ")}
-    >
-      <div className="font-mono text-[9px] uppercase tracking-[0.04em] text-white/34">
-        {label}
+    <div className="rounded-[5px] border border-white/[0.07] bg-[#05060d] p-3">
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-[11px] font-medium text-white/58">
+          {label}
+        </span>
+
+        <span className="font-mono text-[13px] font-semibold text-[#F6B23C]">
+          {value.toFixed(
+            step <
+            1
+              ? 1
+              : 0,
+          )}{" "}
+          {suffix}
+        </span>
       </div>
 
-      <div
-        className={[
-          "mt-2 font-mono text-[18px] font-semibold",
-          valueClass,
-        ].join(" ")}
-      >
-        {value}
-      </div>
-
-      <div className="mt-1 text-[10px] leading-[1.45] text-white/30">
-        {description}
-      </div>
+      <input
+        type="range"
+        min={
+          min
+        }
+        max={
+          max
+        }
+        step={
+          step
+        }
+        value={
+          value
+        }
+        onChange={(
+          event,
+        ) =>
+          onChange(
+            Number(
+              event.target.value,
+            ),
+          )
+        }
+        className="mt-3 w-full accent-[#F6B23C]"
+      />
     </div>
   );
 }
 
 /* =========================================================
-   Autonomous Intercept
+   Page
    ========================================================= */
 
 export function AutonomousIntercept() {
@@ -396,7 +411,7 @@ export function AutonomousIntercept() {
   } =
     useInterceptSimulation();
 
-  const aiConfidence =
+  const confidence =
     Math.round(
       snapshot.ai
         .confidence *
@@ -412,33 +427,12 @@ export function AutonomousIntercept() {
       .validationSamples >=
     3;
 
-  const mlImproving =
+  const mlWinning =
     evidenceReady &&
     improvement !==
       null &&
     improvement >
       0;
-
-  const improvementTone:
-    | "green"
-    | "amber"
-    | "red" =
-    !evidenceReady
-      ? "amber"
-      : mlImproving
-        ? "green"
-        : "red";
-
-  const improvementValue =
-    improvement ===
-    null
-      ? "WARMING"
-      : `${improvement >=
-          0
-          ? "+"
-          : ""}${improvement.toFixed(
-          1,
-        )}%`;
 
   const metrics:
     Metric[] = [
@@ -543,8 +537,8 @@ export function AutonomousIntercept() {
         value:
           snapshot.ai
             .ready
-            ? `${aiConfidence}%`
-            : "WARMING",
+            ? `${confidence}%`
+            : "TRAINING",
 
         icon:
           BrainCircuit,
@@ -558,87 +552,45 @@ export function AutonomousIntercept() {
     ];
 
   function selectPredictor(
-    predictor:
+    mode:
       PredictorMode,
   ) {
     actions.setPredictorMode(
-      predictor,
+      mode,
     );
   }
 
   return (
     <div className="bg-[#05060d] text-white">
-      {/* ===================================================
-          PRIMARY VIEWPORT
-          =================================================== */}
-
       <section className="xl:h-[calc(100vh-70px)] xl:overflow-hidden">
-        <div
-          className={[
-            "mx-auto w-full max-w-[1600px]",
+        <div className="mx-auto grid w-full max-w-[1600px] gap-2 px-4 pb-3 pt-2 sm:px-6 lg:px-8 xl:h-full xl:grid-rows-[50px_70px_minmax(0,1fr)] xl:px-10 2xl:px-14">
+          {/* Header */}
 
-            "px-4 pb-3 pt-2",
-
-            "sm:px-6",
-
-            "lg:px-8",
-
-            "xl:grid xl:h-full",
-
-            "xl:grid-rows-[44px_64px_minmax(0,1fr)]",
-
-            "xl:gap-2",
-
-            "xl:px-10",
-
-            "2xl:px-14",
-          ].join(" ")}
-        >
-          {/* =================================================
-              Header
-              ================================================= */}
-
-          <header className="flex min-w-0 items-center justify-between gap-4 border-b border-white/[0.08]">
+          <header className="flex items-center justify-between gap-4 border-b border-white/[0.08]">
             <div className="min-w-0">
-              <h1 className="text-[16px] font-medium tracking-[-0.02em] text-white">
+              <h1 className="text-[18px] font-semibold tracking-[-0.02em] text-white">
                 Autonomous Intercept
               </h1>
 
-              <p className="mt-0.5 hidden truncate text-[11px] text-white/42 sm:block">
-                Fixed-wing leader–follower AI guidance · trajectory prediction · non-contact shadowing
+              <p className="mt-0.5 hidden text-[12px] text-white/44 sm:block">
+                Fixed-wing leader–follower prediction, adaptive airspeed control and non-contact shadowing
               </p>
             </div>
 
-            <div className="flex shrink-0 items-center gap-2">
-              <div className="flex h-[30px] items-center gap-2 rounded-[4px] border border-[rgba(89,217,154,0.22)] bg-[rgba(89,217,154,0.04)] px-2.5 font-mono text-[9px] font-semibold uppercase tracking-[0.05em] text-[#59D99A]">
-                <span className="h-1.5 w-1.5 rounded-full bg-[#59D99A]" />
-
-                Phase 1 Simulation
+            <div className="flex items-center gap-2">
+              <div className="rounded-[4px] border border-[rgba(89,217,154,0.22)] bg-[rgba(89,217,154,0.04)] px-3 py-2 font-mono text-[10px] font-semibold uppercase text-[#59D99A]">
+                ● Simulation Active
               </div>
 
-              <div className="hidden h-[30px] items-center gap-2 rounded-[4px] border border-[rgba(246,178,60,0.22)] bg-[rgba(246,178,60,0.04)] px-2.5 font-mono text-[9px] font-semibold uppercase tracking-[0.05em] text-[#F6B23C] md:flex">
-                <Satellite
-                  size={11}
-                />
-
-                Real Satellite Map
-              </div>
-
-              <div className="hidden h-[30px] items-center gap-2 rounded-[4px] border border-[rgba(90,169,255,0.22)] bg-[rgba(90,169,255,0.04)] px-2.5 font-mono text-[9px] font-semibold uppercase tracking-[0.05em] text-[#5AA9FF] lg:flex">
-                <ShieldCheck
-                  size={11}
-                />
-
+              <div className="hidden rounded-[4px] border border-[rgba(90,169,255,0.22)] bg-[rgba(90,169,255,0.04)] px-3 py-2 font-mono text-[10px] font-semibold uppercase text-[#5AA9FF] md:block">
                 Human-in-loop
               </div>
             </div>
           </header>
 
-          {/* =================================================
-              Metrics
-              ================================================= */}
+          {/* Metrics */}
 
-          <section className="my-2 grid grid-cols-2 overflow-hidden rounded-[6px] border border-white/[0.08] bg-[#07090d] md:grid-cols-3 xl:my-0 xl:grid-cols-6">
+          <section className="grid grid-cols-2 overflow-hidden rounded-[6px] border border-white/[0.08] bg-[#07090d] md:grid-cols-3 xl:grid-cols-6">
             {metrics.map(
               (
                 metric,
@@ -655,34 +607,26 @@ export function AutonomousIntercept() {
             )}
           </section>
 
-          {/* =================================================
-              Workspace
-              ================================================= */}
+          {/* Main workspace */}
 
-          <section className="mt-3 grid min-h-[780px] overflow-hidden rounded-[6px] border border-white/[0.09] bg-[#020304] xl:mt-0 xl:min-h-0 xl:grid-cols-[minmax(0,1fr)_410px] 2xl:grid-cols-[minmax(0,1fr)_430px]">
-            {/* ===============================================
-                Map
-                =============================================== */}
+          <section className="grid min-h-[800px] overflow-hidden rounded-[6px] border border-white/[0.09] bg-[#020304] xl:min-h-0 xl:grid-cols-[minmax(0,1fr)_440px] 2xl:grid-cols-[minmax(0,1fr)_460px]">
+            {/* Left map */}
 
-            <div className="grid min-h-0 grid-rows-[42px_minmax(0,1fr)]">
-              <div className="flex items-center justify-between gap-3 border-b border-white/[0.08] bg-[#06080b] px-3">
-                <div className="flex min-w-0 items-center gap-2">
+            <div className="grid min-h-0 grid-rows-[44px_minmax(0,1fr)]">
+              <div className="flex items-center justify-between gap-3 border-b border-white/[0.08] bg-[#06080b] px-4">
+                <div className="flex items-center gap-2">
                   <MapPinned
-                    size={13}
-                    className="shrink-0 text-[#F6B23C]"
+                    size={14}
+                    className="text-[#F6B23C]"
                   />
 
-                  <span className="truncate text-[12px] font-medium text-white/84">
+                  <span className="text-[13px] font-medium text-white/84">
                     Geospatial Intercept Workspace
-                  </span>
-
-                  <span className="hidden rounded-[3px] border border-[rgba(89,217,154,0.18)] bg-[rgba(89,217,154,0.035)] px-1.5 py-0.5 font-mono text-[8px] uppercase text-[#59D99A] lg:inline">
-                    Live
                   </span>
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <span className="font-mono text-[9px] text-white/32">
+                  <span className="font-mono text-[10px] text-white/36">
                     T+
                     {
                       snapshot.simTimeSeconds.toFixed(
@@ -697,15 +641,15 @@ export function AutonomousIntercept() {
                     onClick={
                       actions.toggleRunning
                     }
-                    className="flex h-[28px] items-center gap-1.5 rounded-[4px] border border-white/[0.08] bg-[#05060d] px-2.5 font-mono text-[8px] font-semibold uppercase text-white/54 transition hover:border-white/[0.16] hover:text-white"
+                    className="flex h-8 items-center gap-2 rounded-[4px] border border-white/[0.08] bg-[#05060d] px-3 font-mono text-[9px] font-semibold uppercase text-white/60 hover:text-white"
                   >
                     {snapshot.running ? (
                       <Pause
-                        size={10}
+                        size={11}
                       />
                     ) : (
                       <Play
-                        size={10}
+                        size={11}
                       />
                     )}
 
@@ -719,10 +663,10 @@ export function AutonomousIntercept() {
                     onClick={
                       actions.reset
                     }
-                    className="flex h-[28px] items-center gap-1.5 rounded-[4px] border border-white/[0.08] bg-[#05060d] px-2.5 font-mono text-[8px] font-semibold uppercase text-white/54 transition hover:border-white/[0.16] hover:text-white"
+                    className="flex h-8 items-center gap-2 rounded-[4px] border border-white/[0.08] bg-[#05060d] px-3 font-mono text-[9px] font-semibold uppercase text-white/60 hover:text-white"
                   >
                     <RotateCcw
-                      size={10}
+                      size={11}
                     />
 
                     Reset
@@ -737,192 +681,244 @@ export function AutonomousIntercept() {
               />
             </div>
 
-            {/* ===============================================
-                RIGHT RAIL
-                =============================================== */}
+            {/* Right rail */}
 
             <aside className="min-h-0 overflow-y-auto border-t border-white/[0.08] bg-[#07090d] xl:border-l xl:border-t-0">
-              {/* =============================================
-                  Mission State
-                  ============================================= */}
+              {/* Mission state */}
 
-              <div className="border-b border-white/[0.08]">
-                <div className="flex h-[48px] items-center justify-between gap-3 px-3">
+              <section className="border-b border-white/[0.08] px-4 py-3">
+                <div className="flex items-center justify-between gap-3">
                   <div>
-                    <div className="font-mono text-[10px] font-semibold uppercase tracking-[0.065em] text-[#F6B23C]">
+                    <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.06em] text-[#F6B23C]">
                       Intercept State
                     </div>
 
-                    <div className="mt-0.5 text-[10px] text-white/34">
+                    <div className="mt-1 text-[11px] text-white/38">
                       Autonomous mission state machine
                     </div>
                   </div>
 
-                  <span
-                    className={[
-                      "rounded-[4px] border px-2 py-1 font-mono text-[9px] font-semibold uppercase",
-
-                      snapshot.mode ===
-                      "ABORT"
-                        ? "border-[rgba(255,90,99,0.3)] bg-[rgba(255,90,99,0.04)] text-[#FF5A63]"
-                        : "border-[rgba(90,169,255,0.25)] bg-[rgba(90,169,255,0.04)] text-[#5AA9FF]",
-                    ].join(" ")}
-                  >
+                  <span className="rounded-[4px] border border-[rgba(90,169,255,0.24)] bg-[rgba(90,169,255,0.04)] px-2.5 py-1.5 font-mono text-[10px] font-semibold text-[#5AA9FF]">
                     {
                       snapshot.mode
                     }
                   </span>
                 </div>
-              </div>
+              </section>
 
-              {/* =============================================
-                  Leader
-                  ============================================= */}
+              {/* Aircraft */}
 
-              <div className="border-b border-white/[0.08] px-3 py-3">
-                <div className="mb-2 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+              <section className="grid border-b border-white/[0.08] md:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+                <div className="border-b border-white/[0.08] px-4 py-3 md:border-b-0 md:border-r xl:border-b xl:border-r-0 2xl:border-b-0 2xl:border-r">
+                  <div className="mb-2 flex items-center gap-2">
                     <Plane
-                      size={13}
+                      size={14}
                       className="text-[#F6B23C]"
                     />
 
-                    <span className="text-[11px] font-medium text-white/76">
+                    <span className="text-[12px] font-semibold text-white/78">
                       Leader · SYSID 1
                     </span>
                   </div>
 
-                  <span className="font-mono text-[9px] text-[#F6B23C]">
-                    {
-                      snapshot.leader.mode
-                    }
-                  </span>
+                  <StateRow
+                    label="Airspeed"
+                    value={`${snapshot.leader.airspeed.toFixed(
+                      1,
+                    )} m/s`}
+                  />
+
+                  <StateRow
+                    label="Heading"
+                    value={`${snapshot.leader.heading.toFixed(
+                      0,
+                    )}°`}
+                  />
+
+                  <StateRow
+                    label="Turn Rate"
+                    value={`${snapshot.leader.turnRate.toFixed(
+                      1,
+                    )}°/s`}
+                  />
                 </div>
 
-                <StateRow
-                  label="Airspeed"
-                  value={`${snapshot.leader.airspeed.toFixed(
-                    1,
-                  )} m/s`}
-                />
-
-                <StateRow
-                  label="Heading"
-                  value={`${snapshot.leader.heading.toFixed(
-                    0,
-                  )}°`}
-                />
-
-                <StateRow
-                  label="Turn Rate"
-                  value={`${snapshot.leader.turnRate.toFixed(
-                    1,
-                  )}°/s`}
-                />
-
-                <StateRow
-                  label="Bank"
-                  value={`${snapshot.leader.bank.toFixed(
-                    1,
-                  )}°`}
-                />
-
-                <StateRow
-                  label="Altitude"
-                  value={`${snapshot.leader.altitude.toFixed(
-                    1,
-                  )} m`}
-                />
-              </div>
-
-              {/* =============================================
-                  Follower
-                  ============================================= */}
-
-              <div className="border-b border-white/[0.08] px-3 py-3">
-                <div className="mb-2 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+                <div className="px-4 py-3">
+                  <div className="mb-2 flex items-center gap-2">
                     <Plane
-                      size={13}
+                      size={14}
                       className="text-[#5AA9FF]"
                     />
 
-                    <span className="text-[11px] font-medium text-white/76">
+                    <span className="text-[12px] font-semibold text-white/78">
                       Follower · SYSID 2
                     </span>
                   </div>
 
-                  <span className="font-mono text-[9px] text-[#5AA9FF]">
+                  <StateRow
+                    label="Airspeed"
+                    value={`${snapshot.follower.airspeed.toFixed(
+                      1,
+                    )} m/s`}
+                  />
+
+                  <StateRow
+                    label="Heading"
+                    value={`${snapshot.follower.heading.toFixed(
+                      0,
+                    )}°`}
+                  />
+
+                  <StateRow
+                    label="Speed Delta"
+                    value={`${snapshot.speedControl.airspeedDelta.toFixed(
+                      1,
+                    )} m/s`}
+                    valueClass="text-[#5AA9FF]"
+                  />
+                </div>
+              </section>
+
+              {/* Speed control */}
+
+              <section className="border-b border-white/[0.08] px-4 py-4">
+                <div className="mb-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <SlidersHorizontal
+                      size={14}
+                      className="text-[#F6B23C]"
+                    />
+
+                    <span className="text-[13px] font-semibold text-white/80">
+                      Airspeed Control
+                    </span>
+                  </div>
+
+                  <span className="font-mono text-[10px] text-[#59D99A]">
                     {
-                      snapshot.follower.mode
+                      snapshot.speedControl
+                        .adaptiveSync
+                        ? "ADAPTIVE"
+                        : "BASIC"
                     }
                   </span>
                 </div>
 
-                <StateRow
-                  label="Airspeed"
-                  value={`${snapshot.follower.airspeed.toFixed(
-                    1,
-                  )} m/s`}
-                />
+                <div className="grid gap-2">
+                  <RangeControl
+                    label="Leader Target Airspeed"
+                    value={
+                      snapshot.speedControl
+                        .leaderCommandedAirspeed
+                    }
+                    suffix="m/s"
+                    min={
+                      14
+                    }
+                    max={
+                      34
+                    }
+                    step={
+                      0.5
+                    }
+                    onChange={
+                      actions.setLeaderCommandedAirspeed
+                    }
+                  />
 
-                <StateRow
-                  label="Heading"
-                  value={`${snapshot.follower.heading.toFixed(
-                    0,
-                  )}°`}
-                />
+                  <RangeControl
+                    label="Follower Maximum Airspeed"
+                    value={
+                      snapshot.speedControl
+                        .followerMaxAirspeed
+                    }
+                    suffix="m/s"
+                    min={
+                      18
+                    }
+                    max={
+                      38
+                    }
+                    step={
+                      0.5
+                    }
+                    onChange={
+                      actions.setFollowerMaxAirspeed
+                    }
+                  />
+                </div>
 
-                <StateRow
-                  label="Relative Bearing"
-                  value={`${snapshot.relativeBearingDegrees.toFixed(
-                    0,
-                  )}°`}
-                />
+                <button
+                  type="button"
+                  onClick={() =>
+                    actions.setAdaptiveSpeedSync(
+                      !snapshot.speedControl
+                        .adaptiveSync,
+                    )
+                  }
+                  className={[
+                    "mt-2 flex min-h-10 w-full items-center justify-between rounded-[5px] border px-3",
 
-                <StateRow
-                  label="Bank"
-                  value={`${snapshot.follower.bank.toFixed(
-                    1,
-                  )}°`}
-                />
+                    snapshot.speedControl
+                      .adaptiveSync
+                      ? "border-[rgba(89,217,154,0.22)] bg-[rgba(89,217,154,0.035)]"
+                      : "border-white/[0.08] bg-[#05060d]",
+                  ].join(" ")}
+                >
+                  <div className="text-left">
+                    <div className="text-[11px] font-medium text-white/66">
+                      Adaptive Speed Synchronization
+                    </div>
 
-                <StateRow
-                  label="Altitude"
-                  value={`${snapshot.follower.altitude.toFixed(
-                    1,
-                  )} m`}
-                />
-              </div>
+                    <div className="mt-0.5 text-[10px] text-white/32">
+                      Distance error + closing-rate damping
+                    </div>
+                  </div>
 
-              {/* =============================================
-                  AI / ML
-                  ============================================= */}
+                  <span
+                    className={[
+                      "font-mono text-[10px] font-semibold",
 
-              <div className="border-b border-white/[0.08] px-3 py-3">
-                <div className="mb-3 flex items-center justify-between gap-3">
+                      snapshot.speedControl
+                        .adaptiveSync
+                        ? "text-[#59D99A]"
+                        : "text-white/30",
+                    ].join(" ")}
+                  >
+                    {snapshot.speedControl
+                      .adaptiveSync
+                      ? "ON"
+                      : "OFF"}
+                  </span>
+                </button>
+              </section>
+
+              {/* ML */}
+
+              <section className="border-b border-white/[0.08] px-4 py-4">
+                <div className="mb-3 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <BrainCircuit
-                      size={13}
+                      size={15}
                       className="text-[#59D99A]"
                     />
 
-                    <span className="text-[11px] font-medium text-white/76">
-                      AI / ML Guidance
+                    <span className="text-[13px] font-semibold text-white/80">
+                      Machine Learning
                     </span>
                   </div>
 
-                  <span className="font-mono text-[9px] text-[#59D99A]">
+                  <span className="font-mono text-[10px] text-[#59D99A]">
                     {snapshot.ai.ready
-                      ? `${aiConfidence}% CONF`
-                      : "LEARNING"}
+                      ? `${confidence}% CONF`
+                      : "TRAINING"}
                   </span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
                   <PredictorButton
                     label="Baseline"
-                    description="Constant velocity projection"
+                    description="Constant-velocity future projection"
                     active={
                       snapshot.predictorMode ===
                       "baseline"
@@ -935,8 +931,8 @@ export function AutonomousIntercept() {
                   />
 
                   <PredictorButton
-                    label="ML Regression"
-                    description="Learned curved trajectory prediction"
+                    label="Online ML"
+                    description="SGD model learning from future-position error"
                     active={
                       snapshot.predictorMode ===
                       "ml"
@@ -959,92 +955,47 @@ export function AutonomousIntercept() {
                   />
 
                   <StateRow
+                    label="Training Samples"
+                    value={`${snapshot.ai.trainingSamples}`}
+                  />
+
+                  <StateRow
                     label="Prediction Horizon"
                     value={`${snapshot.ai.predictionHorizonSeconds}s`}
                   />
 
                   <StateRow
-                    label="Model Residual"
-                    value={`${snapshot.ai.residualMeters.toFixed(
-                      1,
-                    )} m`}
-                  />
-
-                  <StateRow
-                    label="Target Separation"
-                    value={`${snapshot.desiredSeparationMeters.toFixed(
-                      0,
-                    )} m`}
-                    valueClass="text-[#59D99A]"
-                  />
-
-                  <StateRow
-                    label="Protected Radius"
-                    value={`${snapshot.minimumSeparationMeters.toFixed(
-                      0,
-                    )} m`}
-                    valueClass={
-                      snapshot.separationSafe
-                        ? "text-[#59D99A]"
-                        : "text-[#FF5A63]"
-                    }
-                  />
-                </div>
-
-                <div className="mt-3">
-                  <div className="mb-1.5 flex items-center justify-between font-mono text-[9px] uppercase text-white/34">
-                    <span>
-                      Shadow Separation
-                    </span>
-
-                    <span className="text-[#F6B23C]">
-                      {
-                        snapshot.desiredSeparationMeters
-                      }
-                      m
-                    </span>
-                  </div>
-
-                  <input
-                    type="range"
-                    min="110"
-                    max="300"
-                    step="10"
+                    label="Mean ML Error"
                     value={
-                      snapshot.desiredSeparationMeters
-                    }
-                    onChange={(
-                      event,
-                    ) =>
-                      actions.setDesiredSeparation(
-                        Number(
-                          event.target.value,
-                        ),
+                      formatError(
+                        snapshot.performance
+                          .mlErrorMeters,
                       )
                     }
-                    className="w-full accent-[#F6B23C]"
+                  />
+
+                  <StateRow
+                    label="Baseline Error"
+                    value={
+                      formatError(
+                        snapshot.performance
+                          .baselineErrorMeters,
+                      )
+                    }
                   />
                 </div>
-              </div>
+              </section>
 
-              {/* =============================================
-                  Commands
-                  ============================================= */}
+              {/* Mission commands */}
 
-              <div className="border-b border-white/[0.08] px-3 py-3">
-                <div className="mb-2 flex items-center justify-between">
-                  <span className="text-[11px] font-medium text-white/72">
-                    Mission Commands
-                  </span>
-
-                  <span className="font-mono text-[8px] uppercase tracking-[0.05em] text-white/28">
-                    Operator Authorized
-                  </span>
+              <section className="border-b border-white/[0.08] px-4 py-4">
+                <div className="mb-3 text-[13px] font-semibold text-white/80">
+                  Mission Commands
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
                   <CommandButton
-                    label="Start Track"
+                    label="Track"
                     icon={
                       Target
                     }
@@ -1054,7 +1005,7 @@ export function AutonomousIntercept() {
                   />
 
                   <CommandButton
-                    label="Start Intercept"
+                    label="Intercept"
                     icon={
                       Navigation
                     }
@@ -1105,41 +1056,31 @@ export function AutonomousIntercept() {
                     tone="danger"
                   />
                 </div>
-              </div>
+              </section>
 
-              {/* =============================================
-                  RadioMaster
-                  ============================================= */}
+              {/* Radio */}
 
-              <div className="px-3 py-3">
+              <section className="px-4 py-4">
                 <div className="flex items-start gap-3 rounded-[5px] border border-white/[0.08] bg-[#05060d] p-3">
-                  <div
-                    className={[
-                      "flex h-8 w-8 shrink-0 items-center justify-center rounded-[4px] border",
-
-                      snapshot.gamepad.connected
-                        ? "border-[rgba(89,217,154,0.24)] bg-[rgba(89,217,154,0.035)] text-[#59D99A]"
-                        : "border-white/[0.08] text-white/30",
-                    ].join(" ")}
-                  >
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[4px] border border-white/[0.08] text-white/42">
                     <Usb
-                      size={14}
+                      size={15}
                     />
                   </div>
 
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-[11px] font-medium text-white/72">
+                      <span className="text-[12px] font-semibold text-white/72">
                         RadioMaster USB
                       </span>
 
                       <span
                         className={[
-                          "font-mono text-[9px] font-semibold uppercase",
+                          "font-mono text-[10px] font-semibold uppercase",
 
                           snapshot.gamepad.connected
                             ? "text-[#59D99A]"
-                            : "text-white/30",
+                            : "text-white/32",
                         ].join(" ")}
                       >
                         {snapshot.gamepad.connected
@@ -1148,178 +1089,104 @@ export function AutonomousIntercept() {
                       </span>
                     </div>
 
-                    <div className="mt-1 truncate text-[9px] text-white/30">
+                    <div className="mt-1 text-[10px] text-white/34">
                       {snapshot.gamepad.connected
                         ? snapshot.gamepad.id
-                        : "Connect USB controller and move a stick or button."}
+                        : "Browser Gamepad API ready for leader control"}
                     </div>
-
-                    {snapshot.gamepad.connected ? (
-                      <div className="mt-2 font-mono text-[9px] text-white/36">
-                        A0 turn{" "}
-                        {
-                          snapshot.gamepad.steeringAxis.toFixed(
-                            2,
-                          )
-                        }
-
-                        {" · "}
-
-                        A1 speed{" "}
-                        {
-                          snapshot.gamepad.speedAxis.toFixed(
-                            2,
-                          )
-                        }
-                      </div>
-                    ) : null}
                   </div>
                 </div>
-              </div>
+              </section>
             </aside>
           </section>
         </div>
       </section>
 
-      {/* ===================================================
-          SECONDARY TECHNICAL EVIDENCE
-          =================================================== */}
+      {/* Secondary evidence */}
 
       <section className="border-t border-white/[0.08] bg-[#05060d]">
         <div className="mx-auto grid w-full max-w-[1600px] gap-4 px-4 py-5 sm:px-6 lg:px-8 xl:grid-cols-2 xl:px-10 2xl:px-14">
-          {/* ===============================================
-              Prediction Evidence
-              =============================================== */}
-
           <section className="overflow-hidden rounded-[6px] border border-white/[0.08] bg-[#07090d]">
-            <div className="flex min-h-[52px] items-center justify-between border-b border-white/[0.07] px-4">
-              <div>
-                <div className="font-mono text-[9px] font-semibold uppercase tracking-[0.08em] text-[#F6B23C]">
-                  Prediction Evidence
-                </div>
-
-                <div className="mt-0.5 text-[14px] font-medium text-white/86">
-                  Baseline vs ML Trajectory Prediction
-                </div>
+            <div className="border-b border-white/[0.07] px-4 py-3">
+              <div className="font-mono text-[10px] font-semibold uppercase tracking-[0.07em] text-[#F6B23C]">
+                Prediction Evidence
               </div>
 
-              <BrainCircuit
-                size={16}
-                className="text-[#59D99A]"
-              />
+              <div className="mt-1 text-[15px] font-semibold text-white/84">
+                Measured Baseline vs Online ML
+              </div>
             </div>
 
             <div className="grid gap-3 p-4 md:grid-cols-3">
-              <EvidenceMetric
-                label="Baseline Error"
-                value={
-                  formatError(
-                    snapshot.performance
-                      .baselineErrorMeters,
-                  )
-                }
-                description="Constant-velocity future-position error"
-                tone="neutral"
-              />
-
-              <EvidenceMetric
-                label="ML Error"
-                value={
-                  formatError(
-                    snapshot.performance
-                      .mlErrorMeters,
-                  )
-                }
-                description="Learned curved-trajectory prediction error"
-                tone="green"
-              />
-
-              <EvidenceMetric
-                label="Measured Improvement"
-                value={
-                  improvementValue
-                }
-                description={`${snapshot.performance.validationSamples} validated future predictions`}
-                tone={
-                  improvementTone
-                }
-              />
-            </div>
-
-            <div className="grid gap-3 px-4 pb-4 md:grid-cols-2">
               <div className="rounded-[5px] border border-white/[0.07] bg-[#05060d] p-3">
-                <div className="font-mono text-[9px] font-semibold uppercase tracking-[0.05em] text-white/36">
-                  Evaluation Method
+                <div className="text-[10px] uppercase text-white/36">
+                  Baseline Error
                 </div>
 
-                <p className="mt-2 text-[10px] leading-[1.55] text-white/38">
-                  Both predictors generate future leader positions over the same
-                  horizon. Once that horizon expires, MissionNexus compares each
-                  prediction against the leader's actual simulated position and
-                  records the measured position error.
-                </p>
+                <div className="mt-2 font-mono text-[18px] font-semibold text-white/68">
+                  {formatError(
+                    snapshot.performance
+                      .baselineErrorMeters,
+                  )}
+                </div>
               </div>
 
-              <div
-                className={[
-                  "rounded-[5px] border p-3",
+              <div className="rounded-[5px] border border-[rgba(89,217,154,0.20)] bg-[rgba(89,217,154,0.03)] p-3">
+                <div className="text-[10px] uppercase text-white/36">
+                  ML Error
+                </div>
 
-                  !evidenceReady
-                    ? "border-[rgba(246,178,60,0.18)] bg-[rgba(246,178,60,0.025)]"
-                    : mlImproving
-                      ? "border-[rgba(89,217,154,0.18)] bg-[rgba(89,217,154,0.025)]"
-                      : "border-[rgba(255,90,99,0.18)] bg-[rgba(255,90,99,0.025)]",
-                ].join(" ")}
-              >
-                <div className="font-mono text-[9px] font-semibold uppercase tracking-[0.05em] text-white/36">
-                  Current Verdict
+                <div className="mt-2 font-mono text-[18px] font-semibold text-[#59D99A]">
+                  {formatError(
+                    snapshot.performance
+                      .mlErrorMeters,
+                  )}
+                </div>
+              </div>
+
+              <div className="rounded-[5px] border border-[rgba(246,178,60,0.20)] bg-[rgba(246,178,60,0.03)] p-3">
+                <div className="text-[10px] uppercase text-white/36">
+                  Improvement
                 </div>
 
                 <div
                   className={[
-                    "mt-2 font-mono text-[14px] font-semibold",
+                    "mt-2 font-mono text-[18px] font-semibold",
 
                     !evidenceReady
                       ? "text-[#F6B23C]"
-                      : mlImproving
+                      : mlWinning
                         ? "text-[#59D99A]"
                         : "text-[#FF5A63]",
                   ].join(" ")}
                 >
                   {!evidenceReady
-                    ? "MODEL WARMING"
-                    : mlImproving
-                      ? "ML PREDICTOR LEADING"
-                      : "BASELINE CURRENTLY LEADING"}
+                    ? "TRAINING"
+                    : `${improvement !== null &&
+                      improvement >= 0
+                        ? "+"
+                        : ""}${improvement?.toFixed(
+                        1,
+                      )}%`}
                 </div>
-
-                <p className="mt-2 text-[10px] leading-[1.5] text-white/36">
-                  MissionNexus reports the measured result directly. A learned
-                  predictor is not marked superior unless its validated position
-                  error is actually lower than the baseline.
-                </p>
               </div>
             </div>
           </section>
 
-          {/* ===============================================
-              Integration Status
-              =============================================== */}
-
           <section className="overflow-hidden rounded-[6px] border border-white/[0.08] bg-[#07090d]">
-            <div className="flex min-h-[52px] items-center justify-between border-b border-white/[0.07] px-4">
+            <div className="flex items-center justify-between border-b border-white/[0.07] px-4 py-3">
               <div>
-                <div className="font-mono text-[9px] font-semibold uppercase tracking-[0.08em] text-[#F6B23C]">
-                  Integration Status
+                <div className="font-mono text-[10px] font-semibold uppercase tracking-[0.07em] text-[#F6B23C]">
+                  System Status
                 </div>
 
-                <div className="mt-0.5 text-[14px] font-medium text-white/86">
-                  Autonomous Intercept Architecture
+                <div className="mt-1 text-[15px] font-semibold text-white/84">
+                  Phase-1 Intercept Architecture
                 </div>
               </div>
 
               <Cpu
-                size={16}
+                size={17}
                 className="text-[#5AA9FF]"
               />
             </div>
@@ -1327,94 +1194,43 @@ export function AutonomousIntercept() {
             <div className="p-4">
               <StateRow
                 label="Leader"
-                value="SYSID 1 · manual / simulation"
+                value="SYSID 1 · controlled"
                 valueClass="text-[#F6B23C]"
               />
 
               <StateRow
                 label="Follower"
-                value="SYSID 2 · AI guided"
+                value="SYSID 2 · autonomous"
                 valueClass="text-[#5AA9FF]"
               />
 
               <StateRow
-                label="Basemap"
-                value="Real satellite imagery"
+                label="ML Training"
+                value={`${snapshot.ai.trainingSamples} online samples`}
                 valueClass="text-[#59D99A]"
               />
 
               <StateRow
-                label="Phase-1 Coordinates"
-                value="Local ENU → geographic projection"
-                valueClass="text-white/62"
-              />
-
-              <StateRow
-                label="Current Predictor"
+                label="Adaptive Speed"
                 value={
-                  snapshot.predictorMode ===
-                  "ml"
-                    ? "Online ML Regression"
-                    : "Constant Velocity"
+                  snapshot.speedControl
+                    .adaptiveSync
+                    ? "ENABLED"
+                    : "DISABLED"
                 }
                 valueClass="text-[#59D99A]"
               />
 
               <StateRow
-                label="Prediction Horizon"
-                value={`${snapshot.ai.predictionHorizonSeconds}s`}
-                valueClass="text-white/62"
+                label="Safety Radius"
+                value={`${snapshot.minimumSeparationMeters} m`}
               />
 
               <StateRow
-                label="Safety Model"
-                value={`Non-contact · ${snapshot.minimumSeparationMeters} m protected radius`}
-                valueClass={
-                  snapshot.separationSafe
-                    ? "text-[#59D99A]"
-                    : "text-[#FF5A63]"
-                }
-              />
-
-              <StateRow
-                label="Shadow Distance"
-                value={`${snapshot.desiredSeparationMeters} m`}
+                label="Next"
+                value="ArduPlane SITL + MAVLink"
                 valueClass="text-[#F6B23C]"
               />
-
-              <StateRow
-                label="RadioMaster"
-                value={
-                  snapshot.gamepad.connected
-                    ? "USB CONNECTED"
-                    : "Browser Gamepad API ready"
-                }
-                valueClass={
-                  snapshot.gamepad.connected
-                    ? "text-[#59D99A]"
-                    : "text-white/42"
-                }
-              />
-
-              <StateRow
-                label="Next Integration"
-                value="ArduPlane SITL · MAVLink GPS"
-                valueClass="text-[#F6B23C]"
-              />
-            </div>
-
-            <div className="px-4 pb-4">
-              <div className="rounded-[5px] border border-[rgba(90,169,255,0.16)] bg-[rgba(90,169,255,0.025)] p-3">
-                <div className="font-mono text-[9px] font-semibold uppercase tracking-[0.05em] text-[#5AA9FF]">
-                  Phase-2 Transition
-                </div>
-
-                <p className="mt-2 text-[10px] leading-[1.55] text-white/38">
-                  The map is already geographical. Phase 2 removes the temporary
-                  ENU-to-map projection and feeds the same visualization from
-                  leader and follower MAVLink GPS telemetry.
-                </p>
-              </div>
             </div>
           </section>
         </div>
