@@ -300,7 +300,7 @@ function DesktopNavGroup({
         style={{
           ...productFont,
 
-          fontSize: "9px",
+          fontSize: "12px",
 
           lineHeight: "1",
         }}
