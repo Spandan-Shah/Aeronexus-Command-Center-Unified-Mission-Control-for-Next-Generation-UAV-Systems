@@ -28,10 +28,6 @@ import type {
   CameraVideoSource,
 } from "./VideoSourceLibrary";
 
-/* =========================================================
-   Public Types
-   ========================================================= */
-
 export type CameraDetectionBox = {
   label: string;
 
@@ -123,6 +119,7 @@ export type CameraOpenCvAnalysis = {
     smoke: boolean;
     flood: boolean;
     confidence: number;
+
     boxes:
       CameraDetectionBox[];
   };
@@ -179,16 +176,8 @@ type Tone =
   | "info"
   | "muted";
 
-/* =========================================================
-   Backend
-   ========================================================= */
-
 const API_BASE_URL =
   "http://127.0.0.1:8000";
-
-/* =========================================================
-   Detection Labels
-   ========================================================= */
 
 const fireLabels =
   new Set([
@@ -216,10 +205,6 @@ const floodLabels =
     "floodwater",
     "water",
   ]);
-
-/* =========================================================
-   Tone System
-   ========================================================= */
 
 const toneClass:
   Record<
@@ -289,7 +274,7 @@ const toneClass:
 
   muted: {
     text:
-      "text-white/34",
+      "text-white/38",
 
     border:
       "border-white/[0.07]",
@@ -298,13 +283,9 @@ const toneClass:
       "bg-[#05060d]",
 
     dot:
-      "bg-white/24",
+      "bg-white/26",
   },
 };
-
-/* =========================================================
-   Detection Helpers
-   ========================================================= */
 
 function normalizeLabel(
   label: string,
@@ -344,10 +325,6 @@ function isFloodLabel(
   );
 }
 
-/* =========================================================
-   Tone Helpers
-   ========================================================= */
-
 function getRiskTone(
   risk?: string,
 ): Tone {
@@ -385,36 +362,27 @@ function getEventTone(
     severity.toLowerCase();
 
   if (
-    value ===
-    "critical"
+    value === "critical"
   ) {
     return "critical";
   }
 
   if (
-    value ===
-      "high" ||
-    value ===
-      "medium" ||
-    value ===
-      "warning"
+    value === "high" ||
+    value === "medium" ||
+    value === "warning"
   ) {
     return "caution";
   }
 
   if (
-    value ===
-    "info"
+    value === "info"
   ) {
     return "info";
   }
 
   return "nominal";
 }
-
-/* =========================================================
-   Metric Box
-   ========================================================= */
 
 function MetricBox({
   label,
@@ -447,33 +415,36 @@ function MetricBox({
   return (
     <div
       className={[
-        "rounded-[4px] border bg-[#05060d]",
+        "flex flex-col justify-between rounded-[5px] border bg-[#05060d]",
 
         compact
-          ? "p-2"
-          : "p-3",
+          ? "min-h-[60px] px-2.5 py-2"
+          : "min-h-[76px] p-3",
 
         style.border,
       ].join(" ")}
     >
-      <div className="flex items-center gap-1.5 font-mono text-[8px] font-semibold uppercase tracking-[0.055em] text-white/30">
+      <div className="flex items-center gap-2 font-mono text-[9px] font-semibold uppercase tracking-[0.04em] text-white/38">
         <Icon
-          size={10}
+          size={12}
+          strokeWidth={1.6}
           className={
             style.text
           }
         />
 
-        {label}
+        <span className="truncate">
+          {label}
+        </span>
       </div>
 
       <div
         className={[
-          "mt-1 font-mono font-semibold",
+          "mt-2 font-mono font-semibold leading-none",
 
           compact
-            ? "text-[12px]"
-            : "text-[15px]",
+            ? "text-[14px]"
+            : "text-[17px]",
 
           style.text,
         ].join(" ")}
@@ -485,17 +456,13 @@ function MetricBox({
   );
 }
 
-/* =========================================================
-   Detection State
-   ========================================================= */
-
 function DetectionStatusCard({
   icon: Icon,
   label,
   active,
   activeText,
   clearText =
-    "CLEAR",
+    "Clear",
   tone,
 }: {
   icon:
@@ -521,14 +488,15 @@ function DetectionStatusCard({
   return (
     <div
       className={[
-        "rounded-[5px] border bg-[#05060d] p-3",
+        "flex min-h-[76px] flex-col justify-between rounded-[5px] border bg-[#05060d] p-3",
 
         style.border,
       ].join(" ")}
     >
       <div className="flex items-center justify-between gap-2">
         <Icon
-          size={14}
+          size={15}
+          strokeWidth={1.6}
           className={
             style.text
           }
@@ -536,8 +504,7 @@ function DetectionStatusCard({
 
         <span
           className={[
-            "h-1.5 w-1.5 rounded-full",
-
+            "h-2 w-2 rounded-full",
             active
               ? toneClass[
                   tone
@@ -549,28 +516,25 @@ function DetectionStatusCard({
         />
       </div>
 
-      <div className="mt-2 font-mono text-[9px] font-semibold uppercase text-white/64">
-        {label}
-      </div>
+      <div className="mt-2">
+        <div className="text-[11px] font-medium text-white/72">
+          {label}
+        </div>
 
-      <div
-        className={[
-          "mt-0.5 font-mono text-[8px] font-semibold uppercase",
-
-          style.text,
-        ].join(" ")}
-      >
-        {active
-          ? activeText
-          : clearText}
+        <div
+          className={[
+            "mt-1 font-mono text-[9px] font-semibold uppercase tracking-[0.04em]",
+            style.text,
+          ].join(" ")}
+        >
+          {active
+            ? activeText
+            : clearText}
+        </div>
       </div>
     </div>
   );
 }
-
-/* =========================================================
-   Fire / Disaster Analysis
-   ========================================================= */
 
 function FireModePanel({
   analysis,
@@ -629,20 +593,25 @@ function FireModePanel({
     0;
 
   return (
-    <div className="rounded-[5px] border border-[rgba(255,90,99,0.2)] bg-[rgba(255,90,99,0.025)] p-3">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 font-mono text-[9px] font-semibold uppercase tracking-[0.06em] text-[#FF5A63]">
-          <Flame
-            size={12}
-          />
+    <div className="rounded-[6px] border border-[rgba(255,90,99,0.2)] bg-[rgba(255,90,99,0.025)] p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2 font-mono text-[10px] font-semibold uppercase tracking-[0.045em] text-[#FF5A63]">
+            <Flame
+              size={13}
+            />
 
-          Fire / disaster signatures
+            Fire / Disaster Signatures
+          </div>
+
+          <div className="mt-1 text-[11px] text-white/38">
+            OpenCV fire, smoke and flood indicators
+          </div>
         </div>
 
         <span
           className={[
-            "font-mono text-[8px] font-semibold uppercase",
-
+            "font-mono text-[9px] font-semibold uppercase tracking-[0.04em]",
             fireModeActive ||
             smokeModeActive
               ? "text-[#FF5A63]"
@@ -656,7 +625,7 @@ function FireModePanel({
         </span>
       </div>
 
-      <div className="mt-3 grid grid-cols-2 gap-2 md:grid-cols-4">
+      <div className="mt-4 grid grid-cols-2 gap-2 md:grid-cols-4">
         <MetricBox
           icon={
             Flame
@@ -732,7 +701,7 @@ function FireModePanel({
         />
       </div>
 
-      <div className="mt-2 grid grid-cols-3 gap-2">
+      <div className="mt-3 grid grid-cols-3 gap-2">
         <DetectionStatusCard
           icon={
             Flame
@@ -773,10 +742,6 @@ function FireModePanel({
   );
 }
 
-/* =========================================================
-   Detection Box List
-   ========================================================= */
-
 function DetectionBoxList({
   analysis,
 }: {
@@ -789,25 +754,25 @@ function DetectionBoxList({
       .boxes;
 
   return (
-    <div className="rounded-[5px] border border-white/[0.07] bg-[#05060d] p-3">
+    <div className="rounded-[6px] border border-white/[0.08] bg-[#05060d] p-4">
       <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 font-mono text-[9px] font-semibold uppercase tracking-[0.06em] text-[#F6B23C]">
+        <div className="flex items-center gap-2 font-mono text-[10px] font-semibold uppercase tracking-[0.045em] text-[#F6B23C]">
           <Target
-            size={12}
+            size={13}
           />
 
           Detection Boxes
         </div>
 
-        <span className="font-mono text-[8px] uppercase text-white/28">
-          Best frame
+        <span className="font-mono text-[9px] uppercase text-white/34">
+          Best Frame
         </span>
       </div>
 
-      <div className="mt-3 max-h-64 space-y-1.5 overflow-y-auto pr-1">
+      <div className="mt-3 max-h-64 space-y-2 overflow-y-auto pr-1">
         {boxes.length ===
         0 ? (
-          <div className="rounded-[4px] border border-white/[0.07] px-3 py-2 text-[10px] text-white/34">
+          <div className="rounded-[5px] border border-white/[0.07] px-3 py-3 text-[11px] text-white/38">
             No objects detected above the current confidence threshold.
           </div>
         ) : null}
@@ -860,24 +825,23 @@ function DetectionBoxList({
               <div
                 key={`${box.label}-${box.frame_index ?? "frame"}-${index}`}
                 className={[
-                  "flex items-center justify-between gap-3 rounded-[4px] border px-3 py-2",
-
+                  "flex min-h-[50px] items-center justify-between gap-4 rounded-[5px] border px-3 py-2.5",
                   style.border,
                 ].join(" ")}
               >
                 <div className="min-w-0">
-                  <div className="truncate font-mono text-[9px] font-semibold uppercase text-white/66">
+                  <div className="truncate text-[11px] font-medium text-white/76">
                     {
                       box.display_label
                     }
                   </div>
 
-                  <div className="mt-0.5 font-mono text-[8px] text-white/28">
+                  <div className="mt-1 font-mono text-[9px] text-white/32">
                     {floodLike
-                      ? "flood"
+                      ? "Flood"
                       : box.category}
                     {" "}
-                    · frame{" "}
+                    · Frame{" "}
                     {box.frame_index ??
                       analysis
                         .frame
@@ -888,8 +852,7 @@ function DetectionBoxList({
 
                 <span
                   className={[
-                    "shrink-0 font-mono text-[10px] font-semibold",
-
+                    "shrink-0 font-mono text-[12px] font-semibold",
                     style.text,
                   ].join(" ")}
                 >
@@ -908,10 +871,6 @@ function DetectionBoxList({
   );
 }
 
-/* =========================================================
-   Model Events
-   ========================================================= */
-
 function ModelEvents({
   analysis,
 }: {
@@ -919,19 +878,19 @@ function ModelEvents({
     CameraOpenCvAnalysis;
 }) {
   return (
-    <div className="rounded-[5px] border border-white/[0.07] bg-[#05060d] p-3">
-      <div className="flex items-center gap-2 font-mono text-[9px] font-semibold uppercase tracking-[0.06em] text-[#F6B23C]">
+    <div className="rounded-[6px] border border-white/[0.08] bg-[#05060d] p-4">
+      <div className="flex items-center gap-2 font-mono text-[10px] font-semibold uppercase tracking-[0.045em] text-[#F6B23C]">
         <Activity
-          size={12}
+          size={13}
         />
 
         Model Events
       </div>
 
-      <div className="mt-3 space-y-1.5">
+      <div className="mt-3 space-y-2">
         {analysis.events.length ===
         0 ? (
-          <div className="rounded-[4px] border border-white/[0.07] px-3 py-2 text-[10px] text-white/34">
+          <div className="rounded-[5px] border border-white/[0.07] px-3 py-3 text-[11px] text-white/38">
             No important model events.
           </div>
         ) : null}
@@ -951,12 +910,12 @@ function ModelEvents({
               <div
                 key={`${event.type}-${event.created_at}`}
                 className={[
-                  "rounded-[4px] border px-3 py-2",
+                  "rounded-[5px] border px-3 py-3",
                   style.border,
                 ].join(" ")}
               >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="text-[10px] font-medium text-white/72">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="text-[11px] font-medium text-white/76">
                     {
                       event.title
                     }
@@ -964,7 +923,7 @@ function ModelEvents({
 
                   <span
                     className={[
-                      "font-mono text-[8px] font-semibold uppercase",
+                      "shrink-0 font-mono text-[9px] font-semibold uppercase",
                       style.text,
                     ].join(" ")}
                   >
@@ -974,7 +933,7 @@ function ModelEvents({
                   </span>
                 </div>
 
-                <div className="mt-1 text-[9px] leading-[1.45] text-white/32">
+                <div className="mt-1.5 text-[10px] leading-[1.5] text-white/38">
                   {
                     event.message
                   }
@@ -987,10 +946,6 @@ function ModelEvents({
     </div>
   );
 }
-
-/* =========================================================
-   OpenCV Analysis Panel
-   ========================================================= */
 
 export function OpenCvAnalysisPanel({
   selectedVideo,
@@ -1018,10 +973,6 @@ export function OpenCvAnalysisPanel({
     Boolean(
       selectedVideo.src,
     );
-
-  /* =======================================================
-     Analyze
-     ======================================================= */
 
   async function analyzeSelectedVideo() {
     if (
@@ -1115,10 +1066,6 @@ export function OpenCvAnalysisPanel({
       );
     }
   }
-
-  /* =======================================================
-     Derived Analysis
-     ======================================================= */
 
   const confidence =
     Math.round(
@@ -1224,29 +1171,27 @@ export function OpenCvAnalysisPanel({
       .length ??
     0;
 
-  /* =======================================================
-     Compact First-Viewport Controls
-     ======================================================= */
-
   const controlContent = (
-    <div className="grid gap-2">
-      <div className="flex min-w-0 items-center justify-between gap-2">
+    <div className="grid gap-3">
+      <div className="flex min-w-0 items-center justify-between gap-3">
         <div className="min-w-0">
-          <div className="truncate text-[10px] font-medium text-white/64">
+          <div className="truncate text-[12px] font-medium text-white/76">
             {
               selectedVideo.title
             }
           </div>
 
-          <div className="mt-0.5 font-mono text-[8px] uppercase text-white/28">
+          <div className="mt-1 font-mono text-[9px] font-semibold uppercase tracking-[0.045em] text-white/34">
             YOLO + OpenCV
           </div>
         </div>
 
-        <BrainCircuit
-          size={14}
-          className="shrink-0 text-[#F6B23C]"
-        />
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[5px] border border-[rgba(246,178,60,0.2)] bg-[rgba(246,178,60,0.035)]">
+          <BrainCircuit
+            size={15}
+            className="text-[#F6B23C]"
+          />
+        </div>
       </div>
 
       <button
@@ -1258,21 +1203,21 @@ export function OpenCvAnalysisPanel({
           loading ||
           !canAnalyze
         }
-        className="flex h-[34px] w-full items-center justify-center gap-1.5 rounded-[4px] border border-[rgba(246,178,60,0.3)] bg-[rgba(246,178,60,0.055)] font-mono text-[8px] font-semibold uppercase tracking-[0.05em] text-[#F6B23C] transition hover:bg-[rgba(246,178,60,0.1)] disabled:cursor-not-allowed disabled:opacity-40"
+        className="flex h-[38px] w-full items-center justify-center gap-2 rounded-[5px] border border-[rgba(246,178,60,0.3)] bg-[rgba(246,178,60,0.055)] px-3 font-mono text-[9px] font-semibold uppercase tracking-[0.045em] text-[#F6B23C] transition hover:bg-[rgba(246,178,60,0.1)] disabled:cursor-not-allowed disabled:opacity-40"
       >
         {loading ? (
           <>
             <Loader2
-              size={11}
+              size={13}
               className="animate-spin"
             />
 
-            Analysing
+            Analysing Feed
           </>
         ) : (
           <>
             <PlayCircle
-              size={11}
+              size={13}
             />
 
             Analyze Feed
@@ -1281,9 +1226,9 @@ export function OpenCvAnalysisPanel({
       </button>
 
       {error ? (
-        <div className="flex items-start gap-1.5 rounded-[4px] border border-[rgba(255,90,99,0.26)] bg-[rgba(255,90,99,0.045)] px-2 py-1.5 text-[8px] leading-[1.4] text-[#FF5A63]">
+        <div className="flex items-start gap-2 rounded-[5px] border border-[rgba(255,90,99,0.26)] bg-[rgba(255,90,99,0.045)] px-3 py-2.5 text-[10px] leading-[1.45] text-[#FF5A63]">
           <AlertTriangle
-            size={10}
+            size={12}
             className="mt-0.5 shrink-0"
           />
 
@@ -1295,19 +1240,19 @@ export function OpenCvAnalysisPanel({
         <>
           <div
             className={[
-              "flex items-center justify-between rounded-[4px] border px-2.5 py-2",
+              "flex min-h-[58px] items-center justify-between rounded-[5px] border px-3",
               riskStyle.border,
               riskStyle.bg,
             ].join(" ")}
           >
             <div>
-              <div className="font-mono text-[8px] uppercase text-white/30">
+              <div className="font-mono text-[9px] font-semibold uppercase tracking-[0.04em] text-white/36">
                 Model Risk
               </div>
 
               <div
                 className={[
-                  "mt-0.5 font-mono text-[11px] font-semibold uppercase",
+                  "mt-1 font-mono text-[13px] font-semibold uppercase",
                   riskStyle.text,
                 ].join(" ")}
               >
@@ -1320,12 +1265,12 @@ export function OpenCvAnalysisPanel({
             {analysis.risk ===
             "low" ? (
               <CheckCircle2
-                size={16}
+                size={18}
                 className="text-[#59D99A]"
               />
             ) : (
               <ShieldAlert
-                size={16}
+                size={18}
                 className={
                   riskStyle.text
                 }
@@ -1333,7 +1278,7 @@ export function OpenCvAnalysisPanel({
             )}
           </div>
 
-          <div className="grid grid-cols-4 gap-1.5">
+          <div className="grid grid-cols-4 gap-2">
             <MetricBox
               icon={
                 Gauge
@@ -1397,35 +1342,32 @@ export function OpenCvAnalysisPanel({
           </div>
         </>
       ) : (
-        <div className="rounded-[4px] border border-white/[0.07] bg-[#05060d] px-2.5 py-2 text-[9px] leading-[1.45] text-white/30">
-          Run frame analysis to generate visual intelligence.
+        <div className="rounded-[5px] border border-white/[0.07] bg-[#05060d] px-3 py-3 text-[10px] leading-[1.5] text-white/38">
+          Run frame analysis to generate visual intelligence for the selected
+          source.
         </div>
       )}
     </div>
   );
 
-  /* =======================================================
-     Full Detailed Analysis
-     ======================================================= */
-
   const detailsContent =
     analysis ? (
-      <div className="grid gap-3">
+      <div className="grid gap-4">
         <div
           className={[
-            "flex items-center justify-between rounded-[5px] border p-3",
+            "flex min-h-[72px] items-center justify-between rounded-[6px] border p-4",
             riskStyle.border,
             riskStyle.bg,
           ].join(" ")}
         >
           <div>
-            <div className="font-mono text-[8px] font-semibold uppercase tracking-[0.055em] text-white/30">
+            <div className="font-mono text-[10px] font-semibold uppercase tracking-[0.045em] text-white/38">
               Model Risk
             </div>
 
             <div
               className={[
-                "mt-1 font-mono text-[17px] font-semibold uppercase",
+                "mt-1 font-mono text-[18px] font-semibold uppercase",
                 riskStyle.text,
               ].join(" ")}
             >
@@ -1438,12 +1380,12 @@ export function OpenCvAnalysisPanel({
           {analysis.risk ===
           "low" ? (
             <CheckCircle2
-              size={21}
+              size={24}
               className="text-[#59D99A]"
             />
           ) : (
             <ShieldAlert
-              size={21}
+              size={24}
               className={
                 riskStyle.text
               }
@@ -1679,26 +1621,20 @@ export function OpenCvAnalysisPanel({
         />
       </div>
     ) : (
-      <div className="rounded-[5px] border border-white/[0.07] bg-[#05060d] px-3 py-4 text-[10px] leading-[1.5] text-white/34">
-        No detailed analysis is available yet. Run analysis from the live
-        intelligence panel above.
+      <div className="rounded-[6px] border border-white/[0.07] bg-[#05060d] px-4 py-5 text-[11px] leading-[1.55] text-white/40">
+        No detailed analysis is available yet. Run analysis from the Live
+        Intelligence panel above.
       </div>
     );
 
-  /* =======================================================
-     Render Mode
-     ======================================================= */
-
   if (
-    mode ===
-    "control"
+    mode === "control"
   ) {
     return controlContent;
   }
 
   if (
-    mode ===
-    "details"
+    mode === "details"
   ) {
     return detailsContent;
   }
