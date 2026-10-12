@@ -29,23 +29,6 @@ import {
   useUnifiedTelemetry,
 } from "../../hooks/useUnifiedTelemetry";
 
-/* =========================================================
-   MissionNexus V2
-   Pure Tactical Map Canvas
-
-   No buttons.
-   No map HUD.
-   No AOI control.
-   No layers button.
-   No HOME button.
-   No MISSION button.
-   No UAV button.
-   No coordinate panel.
-   No GPS status card.
-
-   All MissionNexus controls live in LiveOps right rail.
-   ========================================================= */
-
 export type MapLayerId =
   | "live-drone"
   | "drones"
@@ -67,80 +50,51 @@ export type MapLayerState =
   >;
 
 export type AeroWorldMapState = {
-  baseMap:
-    BaseMapId;
+  baseMap: BaseMapId;
 
-  layers:
-    MapLayerState;
+  layers: MapLayerState;
 
-  zoom:
-    number;
+  zoom: number;
 
-  gpsAvailable:
-    boolean;
+  gpsAvailable: boolean;
 };
 
 export type AeroWorldMapHandle = {
-  zoomIn:
-    () => void;
+  zoomIn: () => void;
 
-  zoomOut:
-    () => void;
+  zoomOut: () => void;
 
-  focusAoi:
-    () => void;
+  focusAoi: () => void;
 
-  focusHome:
-    () => void;
+  focusHome: () => void;
 
-  focusMission:
-    () => void;
+  focusMission: () => void;
 
-  focusUav:
-    () => void;
+  focusUav: () => void;
 
-  toggleBaseMap:
-    () => void;
+  toggleBaseMap: () => void;
 
   toggleLayer: (
-    layer:
-      MapLayerId,
+    layer: MapLayerId,
   ) => void;
 };
 
 type AeroWorldMapProps = {
   onStateChange?: (
-    state:
-      AeroWorldMapState,
+    state: AeroWorldMapState,
   ) => void;
 };
 
-const defaultLayers:
-  MapLayerState = {
-    "live-drone":
-      true,
-
-    drones:
-      true,
-
-    route:
-      true,
-
-    geofence:
-      true,
-
-    restricted:
-      true,
-
-    contacts:
-      true,
-
-    heat:
-      true,
-
-    home:
-      true,
-  };
+const defaultLayers: MapLayerState = {
+  "live-drone": true,
+  drones: true,
+  route: true,
+  geofence: true,
+  restricted: true,
+  contacts: true,
+  heat: true,
+  home: true,
+};
 
 const baseMaps = {
   osm: {
@@ -161,11 +115,8 @@ const baseMaps = {
 } satisfies Record<
   BaseMapId,
   {
-    url:
-      string;
-
-    attribution:
-      string;
+    url: string;
+    attribution: string;
   }
 >;
 
@@ -201,8 +152,7 @@ function createWorldBounds() {
 }
 
 function getRiskColor(
-  risk?:
-    string,
+  risk?: string,
 ) {
   const normalized =
     risk?.toLowerCase();
@@ -213,25 +163,21 @@ function getRiskColor(
     normalized ===
       "high"
   ) {
-    return colors
-      .critical;
+    return colors.critical;
   }
 
   if (
     normalized ===
     "medium"
   ) {
-    return colors
-      .primary;
+    return colors.primary;
   }
 
-  return colors
-    .nominal;
+  return colors.nominal;
 }
 
 function createLiveDroneIcon(
-  risk?:
-    string,
+  risk?: string,
 ) {
   const color =
     getRiskColor(
@@ -341,29 +287,14 @@ export const AeroWorldMap =
             Layer | null
           >
         >({
-          "live-drone":
-            null,
-
-          drones:
-            null,
-
-          route:
-            null,
-
-          geofence:
-            null,
-
-          restricted:
-            null,
-
-          contacts:
-            null,
-
-          heat:
-            null,
-
-          home:
-            null,
+          "live-drone": null,
+          drones: null,
+          route: null,
+          geofence: null,
+          restricted: null,
+          contacts: null,
+          heat: null,
+          home: null,
         });
 
       const [
@@ -393,10 +324,6 @@ export const AeroWorldMap =
             2,
           ),
         );
-
-      /* =====================================================
-         Initialize map
-         ===================================================== */
 
       useEffect(
         () => {
@@ -457,9 +384,7 @@ export const AeroWorldMap =
 
           const tileLayer =
             L.tileLayer(
-              baseMaps
-                .osm
-                .url,
+              baseMaps.osm.url,
               {
                 minZoom:
                   2,
@@ -474,8 +399,7 @@ export const AeroWorldMap =
                   worldBounds,
 
                 attribution:
-                  baseMaps
-                    .osm
+                  baseMaps.osm
                     .attribution,
               },
             ).addTo(
@@ -485,9 +409,72 @@ export const AeroWorldMap =
           baseTileRef.current =
             tileLayer;
 
-          /* -----------------------------------------------
-             Live aircraft
-             ----------------------------------------------- */
+          /* =================================================
+             Leaflet Attribution
+             Content = 13px
+             ================================================= */
+
+          const styleAttribution =
+            () => {
+              const element =
+                containerRef.current
+                  ?.querySelector(
+                    ".leaflet-control-attribution",
+                  ) as
+                  | HTMLElement
+                  | null;
+
+              if (
+                !element
+              ) {
+                return;
+              }
+
+              element.style.fontSize =
+                "13px";
+
+              element.style.lineHeight =
+                "1.35";
+
+              element.style.padding =
+                "4px 7px";
+
+              element.style.background =
+                "rgba(5, 6, 13, 0.84)";
+
+              element.style.color =
+                "rgba(255,255,255,0.74)";
+
+              element.style.borderRadius =
+                "4px 0 0 0";
+
+              element
+                .querySelectorAll(
+                  "a",
+                )
+                .forEach(
+                  (
+                    link,
+                  ) => {
+                    const anchor =
+                      link as HTMLElement;
+
+                    anchor.style.color =
+                      "#9CCAFF";
+
+                    anchor.style.fontSize =
+                      "13px";
+                  },
+                );
+            };
+
+          styleAttribution();
+
+          const attributionTimer =
+            window.setTimeout(
+              styleAttribution,
+              120,
+            );
 
           const liveDroneLayer =
             L.layerGroup()
@@ -498,18 +485,13 @@ export const AeroWorldMap =
           liveDroneLayerRef.current =
             liveDroneLayer;
 
-          /* -----------------------------------------------
-             Geofence
-             ----------------------------------------------- */
-
           const geofenceLayer =
             L.geoJSON(
               geofenceZone,
               {
                 style: {
                   color:
-                    colors
-                      .nominal,
+                    colors.nominal,
 
                   weight:
                     2,
@@ -518,8 +500,7 @@ export const AeroWorldMap =
                     "6 6",
 
                   fillColor:
-                    colors
-                      .nominal,
+                    colors.nominal,
 
                   fillOpacity:
                     0.055,
@@ -529,25 +510,19 @@ export const AeroWorldMap =
               map,
             );
 
-          /* -----------------------------------------------
-             Restricted zones
-             ----------------------------------------------- */
-
           const restrictedLayer =
             L.geoJSON(
               restrictedZones,
               {
                 style: {
                   color:
-                    colors
-                      .critical,
+                    colors.critical,
 
                   weight:
                     2,
 
                   fillColor:
-                    colors
-                      .critical,
+                    colors.critical,
 
                   fillOpacity:
                     0.1,
@@ -557,18 +532,13 @@ export const AeroWorldMap =
               map,
             );
 
-          /* -----------------------------------------------
-             Mission route
-             ----------------------------------------------- */
-
           const routeLayer =
             L.geoJSON(
               missionRoute,
               {
                 style: {
                   color:
-                    colors
-                      .info,
+                    colors.info,
 
                   weight:
                     3,
@@ -583,10 +553,6 @@ export const AeroWorldMap =
             ).addTo(
               map,
             );
-
-          /* -----------------------------------------------
-             Heat areas
-             ----------------------------------------------- */
 
           const heatLayer =
             L.geoJSON(
@@ -604,12 +570,10 @@ export const AeroWorldMap =
                           450,
 
                         color:
-                          colors
-                            .critical,
+                          colors.critical,
 
                         fillColor:
-                          colors
-                            .critical,
+                          colors.critical,
 
                         fillOpacity:
                           0.14,
@@ -625,10 +589,6 @@ export const AeroWorldMap =
             ).addTo(
               map,
             );
-
-          /* -----------------------------------------------
-             Home
-             ----------------------------------------------- */
 
           const homeLayer =
             L.geoJSON(
@@ -646,15 +606,13 @@ export const AeroWorldMap =
                           7,
 
                         color:
-                          colors
-                            .background,
+                          colors.background,
 
                         weight:
                           2,
 
                         fillColor:
-                          colors
-                            .nominal,
+                          colors.nominal,
 
                         fillOpacity:
                           1,
@@ -664,10 +622,6 @@ export const AeroWorldMap =
             ).addTo(
               map,
             );
-
-          /* -----------------------------------------------
-             Contacts
-             ----------------------------------------------- */
 
           const contactLayer =
             L.geoJSON(
@@ -691,8 +645,7 @@ export const AeroWorldMap =
                           1,
 
                         fillColor:
-                          colors
-                            .critical,
+                          colors.critical,
 
                         fillOpacity:
                           1,
@@ -702,10 +655,6 @@ export const AeroWorldMap =
             ).addTo(
               map,
             );
-
-          /* -----------------------------------------------
-             Simulated aircraft
-             ----------------------------------------------- */
 
           const droneLayer =
             L.geoJSON(
@@ -723,15 +672,13 @@ export const AeroWorldMap =
                           7,
 
                         color:
-                          colors
-                            .background,
+                          colors.background,
 
                         weight:
                           2,
 
                         fillColor:
-                          colors
-                            .primary,
+                          colors.primary,
 
                         fillOpacity:
                           1,
@@ -798,6 +745,10 @@ export const AeroWorldMap =
           ];
 
           return () => {
+            window.clearTimeout(
+              attributionTimer,
+            );
+
             resizeTimers.forEach(
               (
                 timer,
@@ -821,10 +772,6 @@ export const AeroWorldMap =
         },
         [],
       );
-
-      /* =====================================================
-         Base map
-         ===================================================== */
 
       useEffect(
         () => {
@@ -886,10 +833,6 @@ export const AeroWorldMap =
         ],
       );
 
-      /* =====================================================
-         Layer visibility
-         ===================================================== */
-
       useEffect(
         () => {
           const map =
@@ -948,15 +891,10 @@ export const AeroWorldMap =
         ],
       );
 
-      /* =====================================================
-         Live aircraft
-         ===================================================== */
-
       useEffect(
         () => {
           const liveLayer =
-            liveDroneLayerRef
-              .current;
+            liveDroneLayerRef.current;
 
           if (!liveLayer) {
             return;
@@ -972,19 +910,14 @@ export const AeroWorldMap =
 
           L.marker(
             [
-              telemetry
-                .gps
-                .lat,
+              telemetry.gps.lat,
 
-              telemetry
-                .gps
-                .lng,
+              telemetry.gps.lng,
             ],
             {
               icon:
                 createLiveDroneIcon(
-                  telemetry
-                    .risk,
+                  telemetry.risk,
                 ),
 
               zIndexOffset:
@@ -1007,10 +940,6 @@ export const AeroWorldMap =
           telemetry,
         ],
       );
-
-      /* =====================================================
-         External state
-         ===================================================== */
 
       useEffect(
         () => {
@@ -1036,28 +965,21 @@ export const AeroWorldMap =
         ],
       );
 
-      /* =====================================================
-         Public Controller
-         ===================================================== */
-
       useImperativeHandle(
         ref,
         () => ({
           zoomIn() {
-            mapRef
-              .current
+            mapRef.current
               ?.zoomIn();
           },
 
           zoomOut() {
-            mapRef
-              .current
+            mapRef.current
               ?.zoomOut();
           },
 
           focusAoi() {
-            mapRef
-              .current
+            mapRef.current
               ?.flyTo(
                 [
                   23.0225,
@@ -1072,8 +994,7 @@ export const AeroWorldMap =
           },
 
           focusHome() {
-            mapRef
-              .current
+            mapRef.current
               ?.flyTo(
                 [
                   23.0225,
@@ -1088,8 +1009,7 @@ export const AeroWorldMap =
           },
 
           focusMission() {
-            mapRef
-              .current
+            mapRef.current
               ?.flyTo(
                 [
                   23.0302,
@@ -1107,17 +1027,12 @@ export const AeroWorldMap =
             if (
               telemetry?.gps
             ) {
-              mapRef
-                .current
+              mapRef.current
                 ?.flyTo(
                   [
-                    telemetry
-                      .gps
-                      .lat,
+                    telemetry.gps.lat,
 
-                    telemetry
-                      .gps
-                      .lng,
+                    telemetry.gps.lng,
                   ],
                   16,
                   {
@@ -1129,8 +1044,7 @@ export const AeroWorldMap =
               return;
             }
 
-            mapRef
-              .current
+            mapRef.current
               ?.flyTo(
                 [
                   23.0302,
@@ -1181,9 +1095,7 @@ export const AeroWorldMap =
       return (
         <div className="relative h-full min-h-0 w-full overflow-hidden bg-[#020304]">
           <div
-            ref={
-              containerRef
-            }
+            ref={containerRef}
             className="missionnexus-map absolute inset-0 h-full w-full"
           />
         </div>
