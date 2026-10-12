@@ -6,16 +6,13 @@ import {
 } from "react";
 
 import {
-  Crosshair,
+  Eye,
+  EyeOff,
   Layers3,
   LocateFixed,
-  MapPinned,
   Minus,
   Plus,
-  Route,
   Satellite,
-  ShieldCheck,
-  Target,
 } from "lucide-react";
 
 import L from "leaflet";
@@ -23,26 +20,10 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
 import type {
+  AircraftState,
   InterceptSnapshot,
   Vector2,
 } from "../../hooks/useInterceptSimulation";
-
-/* =========================================================
-   MissionNexus
-   Autonomous Intercept Real Map
-
-   Phase 1:
-   - Real satellite imagery
-   - OpenStreetMap fallback
-   - Local ENU simulation projected to geographic coordinates
-   - Leader / follower tracking
-   - Baseline trajectory
-   - ML trajectory
-   - Standoff / safety geometry
-
-   Phase 2:
-   - Replace ENU projection with ArduPilot MAVLink GPS
-   ========================================================= */
 
 type InterceptMapProps = {
   snapshot:
@@ -64,16 +45,6 @@ type FollowMode =
   | "follower"
   | "free";
 
-/* =========================================================
-   Phase-1 Demo Geographic Origin
-
-   This is only the geographic anchor for the built-in
-   simulator.
-
-   When SITL/MAVLink is integrated, this will be replaced
-   automatically by the real aircraft HOME / GPS location.
-   ========================================================= */
-
 const DEFAULT_ORIGIN = {
   lat:
     20.5937,
@@ -83,11 +54,7 @@ const DEFAULT_ORIGIN = {
 };
 
 /* =========================================================
-   Coordinate Conversion
-
-   Simulation:
-   x = East metres
-   y = North metres
+   Geographic conversion
    ========================================================= */
 
 function enuToLatLng(
@@ -98,7 +65,7 @@ function enuToLatLng(
     lat: number;
     lng: number;
   },
-): L.LatLngExpression {
+): L.LatLngTuple {
   const metersPerDegreeLatitude =
     111_320;
 
@@ -115,22 +82,17 @@ function enuToLatLng(
       latitudeRadians,
     );
 
-  const latitude =
-    origin.lat +
-    point.y /
-      metersPerDegreeLatitude;
-
-  const longitude =
-    origin.lng +
-    point.x /
-      Math.max(
-        1,
-        metersPerDegreeLongitude,
-      );
-
   return [
-    latitude,
-    longitude,
+    origin.lat +
+      point.y /
+        metersPerDegreeLatitude,
+
+    origin.lng +
+      point.x /
+        Math.max(
+          1,
+          metersPerDegreeLongitude,
+        ),
   ];
 }
 
@@ -142,7 +104,7 @@ function toLatLngArray(
     lat: number;
     lng: number;
   },
-): L.LatLngExpression[] {
+) {
   return points.map(
     (
       point,
@@ -154,8 +116,57 @@ function toLatLngArray(
   );
 }
 
+function headingVector(
+  heading:
+    number,
+): Vector2 {
+  const radians =
+    (
+      heading *
+      Math.PI
+    ) /
+    180;
+
+  return {
+    x:
+      Math.sin(
+        radians,
+      ),
+
+    y:
+      Math.cos(
+        radians,
+      ),
+  };
+}
+
+function headingEndpoint(
+  aircraft:
+    AircraftState,
+
+  distance:
+    number,
+): Vector2 {
+  const direction =
+    headingVector(
+      aircraft.heading,
+    );
+
+  return {
+    x:
+      aircraft.x +
+      direction.x *
+        distance,
+
+    y:
+      aircraft.y +
+      direction.y *
+        distance,
+  };
+}
+
 /* =========================================================
-   Aircraft Marker
+   Aircraft icon
    ========================================================= */
 
 function createAircraftIcon(
@@ -165,146 +176,72 @@ function createAircraftIcon(
 
   heading:
     number,
-
-  airspeed:
-    number,
 ) {
-  const primary =
+  const color =
     type ===
     "leader"
       ? "#F6B23C"
       : "#5AA9FF";
-
-  const callsign =
-    type ===
-    "leader"
-      ? "LEADER-01"
-      : "FOLLOWER-02";
 
   return L.divIcon({
     className:
       "",
 
     iconSize: [
-      126,
-      70,
+      36,
+      36,
     ],
 
     iconAnchor: [
-      22,
-      22,
+      18,
+      18,
     ],
 
     html: `
       <div
         style="
-          position:relative;
-          width:126px;
-          height:70px;
-          pointer-events:none;
-          font-family:Inter,system-ui,sans-serif;
+          width:36px;
+          height:36px;
+          border-radius:50%;
+          border:1px solid ${color}99;
+          background:rgba(3,4,5,0.88);
+          box-shadow:0 0 14px ${color}35;
+          display:flex;
+          align-items:center;
+          justify-content:center;
         "
       >
         <div
           style="
-            position:absolute;
-            left:0;
-            top:0;
-            width:44px;
-            height:44px;
-            border:1px solid ${primary}66;
-            background:rgba(3,4,5,0.88);
-            border-radius:50%;
-            box-shadow:0 0 22px ${primary}1f;
-            display:flex;
-            align-items:center;
-            justify-content:center;
+            position:relative;
+            width:21px;
+            height:21px;
+            transform:rotate(${heading}deg);
           "
         >
           <div
             style="
-              width:24px;
-              height:24px;
-              transform:rotate(${heading}deg);
-              transform-origin:center;
-              position:relative;
+              position:absolute;
+              left:8px;
+              top:0;
+              width:0;
+              height:0;
+              border-left:3px solid transparent;
+              border-right:3px solid transparent;
+              border-bottom:14px solid ${color};
             "
-          >
-            <div
-              style="
-                position:absolute;
-                left:10px;
-                top:0;
-                width:0;
-                height:0;
-                border-left:3px solid transparent;
-                border-right:3px solid transparent;
-                border-bottom:15px solid ${primary};
-              "
-            ></div>
-
-            <div
-              style="
-                position:absolute;
-                left:3px;
-                top:11px;
-                width:18px;
-                height:2px;
-                background:${primary};
-              "
-            ></div>
-
-            <div
-              style="
-                position:absolute;
-                left:9px;
-                top:12px;
-                width:6px;
-                height:8px;
-                background:${primary};
-                clip-path:polygon(50% 100%,0 0,100% 0);
-              "
-            ></div>
-          </div>
-        </div>
-
-        <div
-          style="
-            position:absolute;
-            left:50px;
-            top:3px;
-            min-width:74px;
-            border:1px solid ${primary}44;
-            background:rgba(3,4,5,0.90);
-            border-radius:4px;
-            padding:5px 7px;
-            box-shadow:0 8px 20px rgba(0,0,0,0.30);
-          "
-        >
-          <div
-            style="
-              color:${primary};
-              font-family:JetBrains Mono,monospace;
-              font-size:9px;
-              line-height:1.1;
-              font-weight:700;
-              white-space:nowrap;
-            "
-          >
-            ${callsign}
-          </div>
+          ></div>
 
           <div
             style="
-              margin-top:4px;
-              color:rgba(255,255,255,0.48);
-              font-family:JetBrains Mono,monospace;
-              font-size:8px;
-              white-space:nowrap;
+              position:absolute;
+              left:1px;
+              top:10px;
+              width:19px;
+              height:2px;
+              background:${color};
             "
-          >
-            ${airspeed.toFixed(1)} M/S · ${heading.toFixed(0)}°
-          </div>
+          ></div>
         </div>
       </div>
     `,
@@ -312,63 +249,22 @@ function createAircraftIcon(
 }
 
 /* =========================================================
-   Small UI Components
+   Toolbar controls
    ========================================================= */
 
-function MapToolButton({
+function ToolbarButton({
   label,
-  onClick,
   active = false,
-  children,
-}: {
-  label: string;
-
-  onClick: () => void;
-
-  active?: boolean;
-
-  children:
-    React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      aria-label={
-        label
-      }
-      title={
-        label
-      }
-      onClick={
-        onClick
-      }
-      className={[
-        "flex h-8 w-8 items-center justify-center",
-
-        "rounded-[4px] border",
-
-        "backdrop-blur",
-
-        "transition-colors duration-150",
-
-        active
-          ? "border-[rgba(246,178,60,0.35)] bg-[rgba(246,178,60,0.12)] text-[#F6B23C]"
-          : "border-white/[0.10] bg-[rgba(3,4,5,0.90)] text-white/54 hover:border-white/20 hover:text-white",
-      ].join(" ")}
-    >
-      {children}
-    </button>
-  );
-}
-
-function FollowButton({
-  label,
-  active,
   onClick,
 }: {
-  label: string;
-  active: boolean;
-  onClick: () => void;
+  label:
+    string;
+
+  active?:
+    boolean;
+
+  onClick:
+    () => void;
 }) {
   return (
     <button
@@ -377,15 +273,15 @@ function FollowButton({
         onClick
       }
       className={[
-        "h-7 rounded-[4px] border px-2.5",
+        "h-8 rounded-[4px] border px-3",
 
-        "font-mono text-[8px] font-semibold uppercase tracking-[0.04em]",
+        "font-mono text-[10px] font-semibold uppercase tracking-[0.035em]",
 
-        "transition-colors duration-150",
+        "transition-colors",
 
         active
-          ? "border-[rgba(246,178,60,0.32)] bg-[rgba(246,178,60,0.08)] text-[#F6B23C]"
-          : "border-white/[0.08] bg-[#05060d]/90 text-white/38 hover:text-white/68",
+          ? "border-[rgba(246,178,60,0.30)] bg-[rgba(246,178,60,0.07)] text-[#F6B23C]"
+          : "border-white/[0.08] bg-[#05060d] text-white/54 hover:border-white/[0.16] hover:text-white",
       ].join(" ")}
     >
       {label}
@@ -394,7 +290,7 @@ function FollowButton({
 }
 
 /* =========================================================
-   Component
+   Main
    ========================================================= */
 
 export function InterceptMap({
@@ -413,6 +309,11 @@ export function InterceptMap({
     );
 
   const satelliteLayerRef =
+    useRef<L.TileLayer | null>(
+      null,
+    );
+
+  const labelLayerRef =
     useRef<L.TileLayer | null>(
       null,
     );
@@ -442,6 +343,16 @@ export function InterceptMap({
       null,
     );
 
+  const leaderHeadingRef =
+    useRef<L.Polyline | null>(
+      null,
+    );
+
+  const followerHeadingRef =
+    useRef<L.Polyline | null>(
+      null,
+    );
+
   const baselinePathRef =
     useRef<L.Polyline | null>(
       null,
@@ -457,8 +368,13 @@ export function InterceptMap({
       null,
     );
 
-  const relationLineRef =
+  const relationshipLineRef =
     useRef<L.Polyline | null>(
+      null,
+    );
+
+  const guidanceMarkerRef =
+    useRef<L.CircleMarker | null>(
       null,
     );
 
@@ -469,11 +385,6 @@ export function InterceptMap({
 
   const safetyCircleRef =
     useRef<L.Circle | null>(
-      null,
-    );
-
-  const guidanceTargetRef =
-    useRef<L.CircleMarker | null>(
       null,
     );
 
@@ -499,8 +410,8 @@ export function InterceptMap({
     );
 
   const [
-    showBaseline,
-    setShowBaseline,
+    showTrails,
+    setShowTrails,
   ] =
     useState(
       true,
@@ -515,16 +426,20 @@ export function InterceptMap({
     );
 
   const [
+    showBaseline,
+    setShowBaseline,
+  ] =
+    useState(
+      true,
+    );
+
+  const [
     showSafety,
     setShowSafety,
   ] =
     useState(
       true,
     );
-
-  /* =======================================================
-     Geographic positions
-     ======================================================= */
 
   const positions =
     useMemo(
@@ -550,6 +465,24 @@ export function InterceptMap({
         guidance:
           enuToLatLng(
             snapshot.guidanceTarget,
+            origin,
+          ),
+
+        leaderHeading:
+          enuToLatLng(
+            headingEndpoint(
+              snapshot.leader,
+              150,
+            ),
+            origin,
+          ),
+
+        followerHeading:
+          enuToLatLng(
+            headingEndpoint(
+              snapshot.follower,
+              150,
+            ),
             origin,
           ),
 
@@ -592,7 +525,7 @@ export function InterceptMap({
     );
 
   /* =======================================================
-     Initialise Leaflet
+     Initialize
      ======================================================= */
 
   useEffect(
@@ -622,22 +555,13 @@ export function InterceptMap({
 
             maxZoom:
               20,
+
+            worldCopyJump:
+              true,
           },
         );
 
-      map.setView(
-        [
-          origin.lat,
-          origin.lng,
-        ],
-        15,
-      );
-
-      /* -----------------------------------------------
-         REAL SATELLITE IMAGERY
-         ----------------------------------------------- */
-
-      const satelliteLayer =
+      const satellite =
         L.tileLayer(
           "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
           {
@@ -645,15 +569,23 @@ export function InterceptMap({
               19,
 
             attribution:
-              "Tiles © Esri",
+              "Imagery © Esri",
           },
         );
 
-      /* -----------------------------------------------
-         Street fallback
-         ----------------------------------------------- */
+      const labels =
+        L.tileLayer(
+          "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",
+          {
+            maxZoom:
+              19,
 
-      const streetLayer =
+            attribution:
+              "Labels © Esri",
+          },
+        );
+
+      const street =
         L.tileLayer(
           "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
           {
@@ -665,19 +597,22 @@ export function InterceptMap({
           },
         );
 
-      satelliteLayer.addTo(
+      satellite.addTo(
+        map,
+      );
+
+      labels.addTo(
         map,
       );
 
       satelliteLayerRef.current =
-        satelliteLayer;
+        satellite;
+
+      labelLayerRef.current =
+        labels;
 
       streetLayerRef.current =
-        streetLayer;
-
-      /* -----------------------------------------------
-         Aircraft
-         ----------------------------------------------- */
+        street;
 
       leaderMarkerRef.current =
         L.marker(
@@ -687,15 +622,22 @@ export function InterceptMap({
               createAircraftIcon(
                 "leader",
                 snapshot.leader.heading,
-                snapshot.leader.airspeed,
               ),
 
             zIndexOffset:
               1000,
           },
-        ).addTo(
-          map,
-        );
+        )
+          .bindTooltip(
+            "LEADER-01",
+            {
+              direction:
+                "top",
+            },
+          )
+          .addTo(
+            map,
+          );
 
       followerMarkerRef.current =
         L.marker(
@@ -705,19 +647,22 @@ export function InterceptMap({
               createAircraftIcon(
                 "follower",
                 snapshot.follower.heading,
-                snapshot.follower.airspeed,
               ),
 
             zIndexOffset:
               900,
           },
-        ).addTo(
-          map,
-        );
-
-      /* -----------------------------------------------
-         Trails
-         ----------------------------------------------- */
+        )
+          .bindTooltip(
+            "FOLLOWER-02",
+            {
+              direction:
+                "top",
+            },
+          )
+          .addTo(
+            map,
+          );
 
       leaderTrailRef.current =
         L.polyline(
@@ -727,10 +672,10 @@ export function InterceptMap({
               "#F6B23C",
 
             weight:
-              2.5,
+              3,
 
             opacity:
-              0.92,
+              0.9,
           },
         ).addTo(
           map,
@@ -744,18 +689,60 @@ export function InterceptMap({
               "#5AA9FF",
 
             weight:
-              2.5,
+              3,
 
             opacity:
-              0.90,
+              0.9,
           },
         ).addTo(
           map,
         );
 
-      /* -----------------------------------------------
-         Prediction
-         ----------------------------------------------- */
+      leaderHeadingRef.current =
+        L.polyline(
+          [
+            positions.leader,
+            positions.leaderHeading,
+          ],
+          {
+            color:
+              "#F6B23C",
+
+            weight:
+              1.5,
+
+            opacity:
+              0.42,
+
+            dashArray:
+              "4 7",
+          },
+        ).addTo(
+          map,
+        );
+
+      followerHeadingRef.current =
+        L.polyline(
+          [
+            positions.follower,
+            positions.followerHeading,
+          ],
+          {
+            color:
+              "#5AA9FF",
+
+            weight:
+              1.5,
+
+            opacity:
+              0.42,
+
+            dashArray:
+              "4 7",
+          },
+        ).addTo(
+          map,
+        );
 
       baselinePathRef.current =
         L.polyline(
@@ -771,7 +758,7 @@ export function InterceptMap({
               2,
 
             opacity:
-              0.60,
+              0.62,
 
             dashArray:
               "5 8",
@@ -794,7 +781,7 @@ export function InterceptMap({
               3,
 
             opacity:
-              0.94,
+              0.96,
 
             dashArray:
               "10 6",
@@ -802,10 +789,6 @@ export function InterceptMap({
         ).addTo(
           map,
         );
-
-      /* -----------------------------------------------
-         Guidance
-         ----------------------------------------------- */
 
       guidanceLineRef.current =
         L.polyline(
@@ -821,7 +804,7 @@ export function InterceptMap({
               2,
 
             opacity:
-              0.72,
+              0.75,
 
             dashArray:
               "7 5",
@@ -830,7 +813,7 @@ export function InterceptMap({
           map,
         );
 
-      relationLineRef.current =
+      relationshipLineRef.current =
         L.polyline(
           [
             positions.follower,
@@ -853,12 +836,12 @@ export function InterceptMap({
           map,
         );
 
-      guidanceTargetRef.current =
+      guidanceMarkerRef.current =
         L.circleMarker(
           positions.guidance,
           {
             radius:
-              8,
+              7,
 
             color:
               "#5AA9FF",
@@ -872,47 +855,13 @@ export function InterceptMap({
             fillOpacity:
               0.18,
           },
-        ).addTo(
-          map,
-        );
-
-      homeMarkerRef.current =
-        L.circleMarker(
-          positions.home,
-          {
-            radius:
-              6,
-
-            color:
-              "#59D99A",
-
-            weight:
-              2,
-
-            fillColor:
-              "#59D99A",
-
-            fillOpacity:
-              0.30,
-          },
         )
           .bindTooltip(
-            "HOME",
-            {
-              permanent:
-                false,
-
-              direction:
-                "top",
-            },
+            "Guidance Target",
           )
           .addTo(
             map,
           );
-
-      /* -----------------------------------------------
-         Separation circles use REAL metre radius.
-         ----------------------------------------------- */
 
       desiredCircleRef.current =
         L.circle(
@@ -928,7 +877,7 @@ export function InterceptMap({
               1.5,
 
             opacity:
-              0.52,
+              0.55,
 
             fillOpacity:
               0,
@@ -960,7 +909,7 @@ export function InterceptMap({
               "#FF5A63",
 
             fillOpacity:
-              0.055,
+              0.05,
 
             dashArray:
               "5 6",
@@ -969,8 +918,70 @@ export function InterceptMap({
           map,
         );
 
+      homeMarkerRef.current =
+        L.circleMarker(
+          positions.home,
+          {
+            radius:
+              5,
+
+            color:
+              "#59D99A",
+
+            weight:
+              2,
+
+            fillColor:
+              "#59D99A",
+
+            fillOpacity:
+              0.4,
+          },
+        )
+          .bindTooltip(
+            "HOME",
+          )
+          .addTo(
+            map,
+          );
+
       mapRef.current =
         map;
+
+      map.setView(
+        [
+          origin.lat,
+          origin.lng,
+        ],
+        15,
+      );
+
+      window.setTimeout(
+        () => {
+          map.invalidateSize();
+
+          const bounds =
+            L.latLngBounds([
+              positions.leader,
+              positions.follower,
+              positions.guidance,
+            ]);
+
+          map.fitBounds(
+            bounds,
+            {
+              padding: [
+                80,
+                80,
+              ],
+
+              maxZoom:
+                16,
+            },
+          );
+        },
+        100,
+      );
 
       map.on(
         "dragstart",
@@ -979,13 +990,6 @@ export function InterceptMap({
             "free",
           );
         },
-      );
-
-      window.setTimeout(
-        () => {
-          map.invalidateSize();
-        },
-        50,
       );
 
       return () => {
@@ -999,7 +1003,7 @@ export function InterceptMap({
   );
 
   /* =======================================================
-     Basemap switching
+     Base map
      ======================================================= */
 
   useEffect(
@@ -1010,12 +1014,16 @@ export function InterceptMap({
       const satellite =
         satelliteLayerRef.current;
 
+      const labels =
+        labelLayerRef.current;
+
       const street =
         streetLayerRef.current;
 
       if (
         !map ||
         !satellite ||
+        !labels ||
         !street
       ) {
         return;
@@ -1044,26 +1052,48 @@ export function InterceptMap({
             map,
           );
         }
-      } else {
-        if (
-          map.hasLayer(
-            satellite,
-          )
-        ) {
-          map.removeLayer(
-            satellite,
-          );
-        }
 
         if (
           !map.hasLayer(
-            street,
+            labels,
           )
         ) {
-          street.addTo(
+          labels.addTo(
             map,
           );
         }
+
+        return;
+      }
+
+      if (
+        map.hasLayer(
+          labels,
+        )
+      ) {
+        map.removeLayer(
+          labels,
+        );
+      }
+
+      if (
+        map.hasLayer(
+          satellite,
+        )
+      ) {
+        map.removeLayer(
+          satellite,
+        );
+      }
+
+      if (
+        !map.hasLayer(
+          street,
+        )
+      ) {
+        street.addTo(
+          map,
+        );
       }
     },
     [
@@ -1072,7 +1102,7 @@ export function InterceptMap({
   );
 
   /* =======================================================
-     Real-time layer updates
+     Live updates
      ======================================================= */
 
   useEffect(
@@ -1094,7 +1124,6 @@ export function InterceptMap({
         createAircraftIcon(
           "leader",
           snapshot.leader.heading,
-          snapshot.leader.airspeed,
         ),
       );
 
@@ -1106,7 +1135,6 @@ export function InterceptMap({
         createAircraftIcon(
           "follower",
           snapshot.follower.heading,
-          snapshot.follower.airspeed,
         ),
       );
 
@@ -1118,40 +1146,38 @@ export function InterceptMap({
         positions.followerTrail,
       );
 
-      baselinePathRef.current?.setLatLngs(
-        [
-          positions.leader,
-          ...positions.baseline,
-        ],
-      );
+      leaderHeadingRef.current?.setLatLngs([
+        positions.leader,
+        positions.leaderHeading,
+      ]);
 
-      mlPathRef.current?.setLatLngs(
-        [
-          positions.leader,
-          ...positions.ml,
-        ],
-      );
+      followerHeadingRef.current?.setLatLngs([
+        positions.follower,
+        positions.followerHeading,
+      ]);
 
-      relationLineRef.current?.setLatLngs(
-        [
-          positions.follower,
-          positions.leader,
-        ],
-      );
+      baselinePathRef.current?.setLatLngs([
+        positions.leader,
+        ...positions.baseline,
+      ]);
 
-      guidanceLineRef.current?.setLatLngs(
-        [
-          positions.follower,
-          positions.guidance,
-        ],
-      );
+      mlPathRef.current?.setLatLngs([
+        positions.leader,
+        ...positions.ml,
+      ]);
 
-      guidanceTargetRef.current?.setLatLng(
+      guidanceLineRef.current?.setLatLngs([
+        positions.follower,
         positions.guidance,
-      );
+      ]);
 
-      homeMarkerRef.current?.setLatLng(
-        positions.home,
+      relationshipLineRef.current?.setLatLngs([
+        positions.follower,
+        positions.leader,
+      ]);
+
+      guidanceMarkerRef.current?.setLatLng(
+        positions.guidance,
       );
 
       desiredCircleRef.current?.setLatLng(
@@ -1201,27 +1227,40 @@ export function InterceptMap({
         "both"
       ) {
         const bounds =
-          L.latLngBounds(
-            [
-              positions.leader,
-              positions.follower,
-              positions.guidance,
-            ],
-          );
+          L.latLngBounds([
+            positions.leader,
+            positions.follower,
+            positions.guidance,
+          ]);
+
+        const visible =
+          map
+            .getBounds()
+            .pad(
+              -0.15,
+            );
 
         if (
-          bounds.isValid()
+          !visible.contains(
+            positions.leader,
+          ) ||
+          !visible.contains(
+            positions.follower,
+          )
         ) {
           map.fitBounds(
-            bounds.pad(
-              0.55,
-            ),
+            bounds,
             {
-              animate:
-                false,
+              padding: [
+                80,
+                80,
+              ],
 
               maxZoom:
                 17,
+
+              animate:
+                false,
             },
           );
         }
@@ -1230,9 +1269,7 @@ export function InterceptMap({
     [
       positions,
       snapshot.leader.heading,
-      snapshot.leader.airspeed,
       snapshot.follower.heading,
-      snapshot.follower.airspeed,
       snapshot.desiredSeparationMeters,
       snapshot.minimumSeparationMeters,
       followMode,
@@ -1245,15 +1282,22 @@ export function InterceptMap({
 
   useEffect(
     () => {
-      baselinePathRef.current?.setStyle({
+      leaderTrailRef.current?.setStyle({
         opacity:
-          showBaseline
-            ? 0.60
+          showTrails
+            ? 0.9
+            : 0,
+      });
+
+      followerTrailRef.current?.setStyle({
+        opacity:
+          showTrails
+            ? 0.9
             : 0,
       });
     },
     [
-      showBaseline,
+      showTrails,
     ],
   );
 
@@ -1262,7 +1306,7 @@ export function InterceptMap({
       mlPathRef.current?.setStyle({
         opacity:
           showMl
-            ? 0.94
+            ? 0.96
             : 0,
       });
     },
@@ -1273,10 +1317,24 @@ export function InterceptMap({
 
   useEffect(
     () => {
+      baselinePathRef.current?.setStyle({
+        opacity:
+          showBaseline
+            ? 0.62
+            : 0,
+      });
+    },
+    [
+      showBaseline,
+    ],
+  );
+
+  useEffect(
+    () => {
       desiredCircleRef.current?.setStyle({
         opacity:
           showSafety
-            ? 0.52
+            ? 0.55
             : 0,
       });
 
@@ -1288,7 +1346,7 @@ export function InterceptMap({
 
         fillOpacity:
           showSafety
-            ? 0.055
+            ? 0.05
             : 0,
       });
     },
@@ -1297,514 +1355,280 @@ export function InterceptMap({
     ],
   );
 
-  /* =======================================================
-     Map commands
-     ======================================================= */
+  function fitBoth() {
+    const map =
+      mapRef.current;
 
-  function zoomIn() {
-    mapRef.current?.zoomIn();
-  }
+    if (
+      !map
+    ) {
+      return;
+    }
 
-  function zoomOut() {
-    mapRef.current?.zoomOut();
-  }
-
-  function focusBoth() {
     setFollowMode(
       "both",
     );
-  }
 
-  function focusLeader() {
-    setFollowMode(
-      "leader",
-    );
-
-    mapRef.current?.setView(
-      positions.leader,
-      Math.max(
-        mapRef.current.getZoom(),
-        16,
-      ),
+    map.fitBounds(
+      L.latLngBounds([
+        positions.leader,
+        positions.follower,
+        positions.guidance,
+      ]),
       {
-        animate:
-          true,
+        padding: [
+          80,
+          80,
+        ],
+
+        maxZoom:
+          17,
       },
     );
   }
-
-  function focusFollower() {
-    setFollowMode(
-      "follower",
-    );
-
-    mapRef.current?.setView(
-      positions.follower,
-      Math.max(
-        mapRef.current.getZoom(),
-        16,
-      ),
-      {
-        animate:
-          true,
-      },
-    );
-  }
-
-  const improvement =
-    snapshot.performance
-      .improvementPercent;
-
-  const evidenceReady =
-    snapshot.performance
-      .validationSamples >=
-    3;
-
-  const mlWinning =
-    evidenceReady &&
-    improvement !==
-      null &&
-    improvement >
-      0;
 
   return (
-    <div className="relative h-full min-h-[520px] overflow-hidden bg-[#020304] xl:min-h-0">
+    <div className="grid h-full min-h-[520px] grid-rows-[auto_minmax(0,1fr)] overflow-hidden bg-[#020304] xl:min-h-0">
       {/* ===================================================
-          REAL LEAFLET MAP
+          MAP TOOLBAR — OUTSIDE MAP
+          =================================================== */}
+
+      <div className="flex min-h-[52px] flex-wrap items-center justify-between gap-2 border-b border-white/[0.08] bg-[#07090d] px-3 py-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="mr-2">
+            <div className="text-[12px] font-medium text-white/80">
+              Map Controls
+            </div>
+
+            <div className="mt-0.5 font-mono text-[9px] uppercase text-white/30">
+              Basemap · tracking · intelligence layers
+            </div>
+          </div>
+
+          <ToolbarButton
+            label="Satellite"
+            active={
+              baseMap ===
+              "satellite"
+            }
+            onClick={() =>
+              setBaseMap(
+                "satellite",
+              )
+            }
+          />
+
+          <ToolbarButton
+            label="Street"
+            active={
+              baseMap ===
+              "street"
+            }
+            onClick={() =>
+              setBaseMap(
+                "street",
+              )
+            }
+          />
+
+          <span className="mx-1 h-6 w-px bg-white/[0.08]" />
+
+          <ToolbarButton
+            label="Both"
+            active={
+              followMode ===
+              "both"
+            }
+            onClick={
+              fitBoth
+            }
+          />
+
+          <ToolbarButton
+            label="Leader"
+            active={
+              followMode ===
+              "leader"
+            }
+            onClick={() =>
+              setFollowMode(
+                "leader",
+              )
+            }
+          />
+
+          <ToolbarButton
+            label="Follower"
+            active={
+              followMode ===
+              "follower"
+            }
+            onClick={() =>
+              setFollowMode(
+                "follower",
+              )
+            }
+          />
+
+          <ToolbarButton
+            label="Free"
+            active={
+              followMode ===
+              "free"
+            }
+            onClick={() =>
+              setFollowMode(
+                "free",
+              )
+            }
+          />
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <ToolbarButton
+            label={
+              showTrails
+                ? "Trails On"
+                : "Trails Off"
+            }
+            active={
+              showTrails
+            }
+            onClick={() =>
+              setShowTrails(
+                (
+                  value,
+                ) =>
+                  !value,
+              )
+            }
+          />
+
+          <ToolbarButton
+            label="ML Path"
+            active={
+              showMl
+            }
+            onClick={() =>
+              setShowMl(
+                (
+                  value,
+                ) =>
+                  !value,
+              )
+            }
+          />
+
+          <ToolbarButton
+            label="Baseline"
+            active={
+              showBaseline
+            }
+            onClick={() =>
+              setShowBaseline(
+                (
+                  value,
+                ) =>
+                  !value,
+              )
+            }
+          />
+
+          <ToolbarButton
+            label="Safety"
+            active={
+              showSafety
+            }
+            onClick={() =>
+              setShowSafety(
+                (
+                  value,
+                ) =>
+                  !value,
+              )
+            }
+          />
+
+          <button
+            type="button"
+            title="Zoom out"
+            onClick={() =>
+              mapRef.current?.zoomOut()
+            }
+            className="flex h-8 w-8 items-center justify-center rounded-[4px] border border-white/[0.08] bg-[#05060d] text-white/54 hover:text-white"
+          >
+            <Minus
+              size={14}
+            />
+          </button>
+
+          <button
+            type="button"
+            title="Zoom in"
+            onClick={() =>
+              mapRef.current?.zoomIn()
+            }
+            className="flex h-8 w-8 items-center justify-center rounded-[4px] border border-white/[0.08] bg-[#05060d] text-white/54 hover:text-white"
+          >
+            <Plus
+              size={14}
+            />
+          </button>
+
+          <button
+            type="button"
+            title="Fit both aircraft"
+            onClick={
+              fitBoth
+            }
+            className="flex h-8 w-8 items-center justify-center rounded-[4px] border border-white/[0.08] bg-[#05060d] text-white/54 hover:text-white"
+          >
+            <LocateFixed
+              size={14}
+            />
+          </button>
+
+          <div className="flex h-8 items-center gap-2 rounded-[4px] border border-white/[0.07] bg-[#05060d] px-2.5 font-mono text-[9px] uppercase text-white/36">
+            {baseMap ===
+            "satellite" ? (
+              <Satellite
+                size={11}
+              />
+            ) : (
+              <Layers3
+                size={11}
+              />
+            )}
+
+            {baseMap}
+          </div>
+
+          <div className="flex h-8 items-center gap-2 rounded-[4px] border border-white/[0.07] bg-[#05060d] px-2.5 font-mono text-[9px] uppercase text-white/36">
+            {showMl ? (
+              <Eye
+                size={11}
+              />
+            ) : (
+              <EyeOff
+                size={11}
+              />
+            )}
+
+            Intelligence
+          </div>
+        </div>
+      </div>
+
+      {/* ===================================================
+          CLEAN MAP
           =================================================== */}
 
       <div
         ref={
           containerRef
         }
-        className="absolute inset-0 z-0 h-full w-full"
+        className="h-full min-h-0 w-full bg-[#020304]"
       />
-
-      {/* Dark tactical grading */}
-
-      <div className="pointer-events-none absolute inset-0 z-[400] bg-[linear-gradient(180deg,rgba(1,3,6,0.06),rgba(1,3,6,0.12))]" />
-
-      <div className="pointer-events-none absolute inset-0 z-[401] shadow-[inset_0_0_90px_rgba(0,0,0,0.45)]" />
-
-      {/* ===================================================
-          Top-left
-          =================================================== */}
-
-      <div className="absolute left-3 top-3 z-[700] min-w-[225px] overflow-hidden rounded-[5px] border border-white/[0.10] bg-[rgba(3,4,5,0.90)] shadow-[0_12px_30px_rgba(0,0,0,0.32)] backdrop-blur">
-        <div className="border-b border-white/[0.07] px-3 py-2.5">
-          <div className="flex items-center gap-2">
-            <MapPinned
-              size={13}
-              className="text-[#F6B23C]"
-            />
-
-            <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.05em] text-[#F6B23C]">
-              Live Intercept Map
-            </span>
-          </div>
-
-          <div className="mt-1 text-[9px] text-white/36">
-            Real satellite basemap · Phase-1 georeferenced simulation
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2">
-          <div className="border-r border-white/[0.07] px-3 py-2">
-            <div className="font-mono text-[8px] uppercase text-white/28">
-              Mission State
-            </div>
-
-            <div className="mt-1 font-mono text-[10px] font-semibold text-[#5AA9FF]">
-              {
-                snapshot.mode
-              }
-            </div>
-          </div>
-
-          <div className="px-3 py-2">
-            <div className="font-mono text-[8px] uppercase text-white/28">
-              Predictor
-            </div>
-
-            <div className="mt-1 font-mono text-[10px] font-semibold text-[#59D99A]">
-              {snapshot.predictorMode ===
-              "ml"
-                ? "ML ACTIVE"
-                : "BASELINE"}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ===================================================
-          Top middle tracking
-          =================================================== */}
-
-      <div className="absolute left-1/2 top-3 z-[700] hidden -translate-x-1/2 items-center gap-1.5 rounded-[5px] border border-white/[0.09] bg-[rgba(3,4,5,0.90)] p-1.5 shadow-[0_10px_25px_rgba(0,0,0,0.25)] backdrop-blur lg:flex">
-        <FollowButton
-          label="Both"
-          active={
-            followMode ===
-            "both"
-          }
-          onClick={
-            focusBoth
-          }
-        />
-
-        <FollowButton
-          label="Leader"
-          active={
-            followMode ===
-            "leader"
-          }
-          onClick={
-            focusLeader
-          }
-        />
-
-        <FollowButton
-          label="Follower"
-          active={
-            followMode ===
-            "follower"
-          }
-          onClick={
-            focusFollower
-          }
-        />
-
-        <FollowButton
-          label="Free"
-          active={
-            followMode ===
-            "free"
-          }
-          onClick={() =>
-            setFollowMode(
-              "free",
-            )
-          }
-        />
-      </div>
-
-      {/* ===================================================
-          Right controls
-          =================================================== */}
-
-      <div className="absolute right-3 top-3 z-[700] flex flex-col gap-1.5">
-        <MapToolButton
-          label="Satellite imagery"
-          active={
-            baseMap ===
-            "satellite"
-          }
-          onClick={() =>
-            setBaseMap(
-              "satellite",
-            )
-          }
-        >
-          <Satellite
-            size={14}
-          />
-        </MapToolButton>
-
-        <MapToolButton
-          label="Street map"
-          active={
-            baseMap ===
-            "street"
-          }
-          onClick={() =>
-            setBaseMap(
-              "street",
-            )
-          }
-        >
-          <Layers3
-            size={14}
-          />
-        </MapToolButton>
-
-        <MapToolButton
-          label="Zoom in"
-          onClick={
-            zoomIn
-          }
-        >
-          <Plus
-            size={14}
-          />
-        </MapToolButton>
-
-        <MapToolButton
-          label="Zoom out"
-          onClick={
-            zoomOut
-          }
-        >
-          <Minus
-            size={14}
-          />
-        </MapToolButton>
-
-        <MapToolButton
-          label="Track both aircraft"
-          active={
-            followMode ===
-            "both"
-          }
-          onClick={
-            focusBoth
-          }
-        >
-          <LocateFixed
-            size={14}
-          />
-        </MapToolButton>
-      </div>
-
-      {/* ===================================================
-          Layer controls
-          =================================================== */}
-
-      <div className="absolute left-3 top-[142px] z-[700] hidden w-[155px] overflow-hidden rounded-[5px] border border-white/[0.09] bg-[rgba(3,4,5,0.88)] backdrop-blur lg:block">
-        <div className="flex items-center gap-2 border-b border-white/[0.07] px-3 py-2 font-mono text-[8px] font-semibold uppercase tracking-[0.05em] text-white/38">
-          <Route
-            size={10}
-          />
-
-          Intelligence Layers
-        </div>
-
-        <button
-          type="button"
-          onClick={() =>
-            setShowMl(
-              (
-                value,
-              ) =>
-                !value,
-            )
-          }
-          className="flex w-full items-center justify-between border-b border-white/[0.05] px-3 py-2 text-left"
-        >
-          <span className="text-[9px] text-white/48">
-            ML Prediction
-          </span>
-
-          <span
-            className={[
-              "h-2 w-2 rounded-full",
-
-              showMl
-                ? "bg-[#59D99A]"
-                : "bg-white/15",
-            ].join(" ")}
-          />
-        </button>
-
-        <button
-          type="button"
-          onClick={() =>
-            setShowBaseline(
-              (
-                value,
-              ) =>
-                !value,
-            )
-          }
-          className="flex w-full items-center justify-between border-b border-white/[0.05] px-3 py-2 text-left"
-        >
-          <span className="text-[9px] text-white/48">
-            Baseline
-          </span>
-
-          <span
-            className={[
-              "h-2 w-2 rounded-full",
-
-              showBaseline
-                ? "bg-white/60"
-                : "bg-white/15",
-            ].join(" ")}
-          />
-        </button>
-
-        <button
-          type="button"
-          onClick={() =>
-            setShowSafety(
-              (
-                value,
-              ) =>
-                !value,
-            )
-          }
-          className="flex w-full items-center justify-between px-3 py-2 text-left"
-        >
-          <span className="text-[9px] text-white/48">
-            Safety Rings
-          </span>
-
-          <span
-            className={[
-              "h-2 w-2 rounded-full",
-
-              showSafety
-                ? "bg-[#FF5A63]"
-                : "bg-white/15",
-            ].join(" ")}
-          />
-        </button>
-      </div>
-
-      {/* ===================================================
-          AI proof
-          =================================================== */}
-
-      <div className="absolute bottom-[72px] right-3 z-[700] min-w-[165px] rounded-[5px] border border-white/[0.09] bg-[rgba(3,4,5,0.90)] px-3 py-2.5 text-right backdrop-blur">
-        <div className="flex items-center justify-end gap-2 font-mono text-[8px] uppercase text-white/28">
-          <Target
-            size={10}
-          />
-
-          Prediction Evidence
-        </div>
-
-        <div
-          className={[
-            "mt-1 font-mono text-[11px] font-semibold",
-
-            !evidenceReady
-              ? "text-[#F6B23C]"
-              : mlWinning
-                ? "text-[#59D99A]"
-                : "text-[#FF5A63]",
-          ].join(" ")}
-        >
-          {!evidenceReady
-            ? "MODEL WARMING"
-            : mlWinning
-              ? `ML +${improvement?.toFixed(
-                  1,
-                )}%`
-              : "BASELINE LEADING"}
-        </div>
-
-        <div className="mt-1 font-mono text-[8px] text-white/28">
-          {
-            snapshot.performance.validationSamples
-          }{" "}
-          validated predictions
-        </div>
-      </div>
-
-      {/* ===================================================
-          Bottom operational strip
-          =================================================== */}
-
-      <div className="absolute bottom-3 left-1/2 z-[700] grid w-[min(780px,calc(100%-24px))] -translate-x-1/2 grid-cols-2 overflow-hidden rounded-[5px] border border-white/[0.10] bg-[rgba(3,4,5,0.92)] shadow-[0_12px_30px_rgba(0,0,0,0.34)] backdrop-blur sm:grid-cols-4">
-        <div className="border-r border-white/[0.07] px-3 py-2.5">
-          <div className="font-mono text-[8px] uppercase tracking-[0.04em] text-white/28">
-            Separation
-          </div>
-
-          <div
-            className={[
-              "mt-1 font-mono text-[12px] font-semibold",
-
-              snapshot.separationSafe
-                ? "text-[#59D99A]"
-                : "text-[#FF5A63]",
-            ].join(" ")}
-          >
-            {snapshot.distanceMeters.toFixed(
-              0,
-            )}{" "}
-            m
-          </div>
-        </div>
-
-        <div className="border-r border-white/[0.07] px-3 py-2.5">
-          <div className="font-mono text-[8px] uppercase tracking-[0.04em] text-white/28">
-            Closing Rate
-          </div>
-
-          <div className="mt-1 font-mono text-[12px] font-semibold text-[#5AA9FF]">
-            {snapshot.closingRateMps.toFixed(
-              1,
-            )}{" "}
-            m/s
-          </div>
-        </div>
-
-        <div className="border-r border-white/[0.07] px-3 py-2.5">
-          <div className="font-mono text-[8px] uppercase tracking-[0.04em] text-white/28">
-            AI Confidence
-          </div>
-
-          <div className="mt-1 font-mono text-[12px] font-semibold text-[#59D99A]">
-            {snapshot.ai.ready
-              ? `${Math.round(
-                  snapshot.ai.confidence *
-                    100,
-                )}%`
-              : "WARMING"}
-          </div>
-        </div>
-
-        <div className="px-3 py-2.5">
-          <div className="font-mono text-[8px] uppercase tracking-[0.04em] text-white/28">
-            Safety Gate
-          </div>
-
-          <div
-            className={[
-              "mt-1 flex items-center gap-1.5 font-mono text-[12px] font-semibold",
-
-              snapshot.separationSafe
-                ? "text-[#59D99A]"
-                : "text-[#FF5A63]",
-            ].join(" ")}
-          >
-            <ShieldCheck
-              size={12}
-            />
-
-            {snapshot.separationSafe
-              ? "PASS"
-              : "RECOVERY"}
-          </div>
-        </div>
-      </div>
-
-      {/* ===================================================
-          Map mode label
-          =================================================== */}
-
-      <div className="absolute bottom-[72px] left-3 z-[700] rounded-[5px] border border-white/[0.09] bg-[rgba(3,4,5,0.88)] px-3 py-2 backdrop-blur">
-        <div className="flex items-center gap-2">
-          <Crosshair
-            size={10}
-            className="text-[#F6B23C]"
-          />
-
-          <span className="font-mono text-[8px] uppercase text-white/32">
-            {
-              baseMap ===
-              "satellite"
-                ? "Satellite Imagery"
-                : "Street Basemap"
-            }
-          </span>
-        </div>
-
-        <div className="mt-1 font-mono text-[8px] text-white/24">
-          Phase-1 simulated positions · real geographic map
-        </div>
-      </div>
     </div>
   );
 }
