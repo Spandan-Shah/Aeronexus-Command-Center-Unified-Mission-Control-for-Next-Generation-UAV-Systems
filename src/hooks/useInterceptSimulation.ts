@@ -49,6 +49,12 @@ export type PredictionPerformance = {
   baselineErrorMeters:
     number | null;
 
+  ctrvErrorMeters:
+    number | null;
+
+  learnedErrorMeters:
+    number | null;
+
   mlErrorMeters:
     number | null;
 
@@ -63,6 +69,9 @@ export type SpeedControlState = {
   leaderCommandedAirspeed:
     number;
 
+  followerCommandedAirspeed:
+    number;
+
   followerMaxAirspeed:
     number;
 
@@ -71,6 +80,12 @@ export type SpeedControlState = {
 
   airspeedDelta:
     number;
+};
+
+export type PredictorWeights = {
+  cv: number;
+  ctrv: number;
+  learned: number;
 };
 
 export type InterceptSnapshot = {
@@ -98,6 +113,9 @@ export type InterceptSnapshot = {
     Vector2[];
 
   baselinePath:
+    Vector2[];
+
+  ctrvPath:
     Vector2[];
 
   mlPath:
@@ -130,8 +148,19 @@ export type InterceptSnapshot = {
   separationSafe:
     boolean;
 
+  predictedClosestSeparationMeters:
+    number;
+
+  anticipatorySafetyGate:
+    boolean;
+
   ai: {
     model: string;
+
+    selectedPredictor:
+      "CV"
+      | "CTRV"
+      | "ADAPTIVE";
 
     confidence:
       number;
@@ -147,6 +176,9 @@ export type InterceptSnapshot = {
 
     trainingSamples:
       number;
+
+    weights:
+      PredictorWeights;
   };
 
   performance:
@@ -160,10 +192,10 @@ export type InterceptSnapshot = {
 };
 
 /* =========================================================
-   Internal ML structures
+   Internal Types
    ========================================================= */
 
-type LearningModel = {
+type ResidualModel = {
   weightsX:
     number[];
 
@@ -177,6 +209,20 @@ type LearningModel = {
     number;
 };
 
+type PredictorErrorHistory = {
+  cv:
+    number[];
+
+  ctrv:
+    number[];
+
+  learned:
+    number[];
+
+  adaptive:
+    number[];
+};
+
 type PendingPrediction = {
   dueAt:
     number;
@@ -187,10 +233,16 @@ type PendingPrediction = {
   features:
     number[];
 
-  baseline:
+  cv:
     Vector2;
 
-  ml:
+  ctrv:
+    Vector2;
+
+  learned:
+    Vector2;
+
+  adaptive:
     Vector2;
 };
 
@@ -228,6 +280,9 @@ type InternalSimulation = {
   leaderCommandedAirspeed:
     number;
 
+  followerCommandedAirspeed:
+    number;
+
   followerMaxAirspeed:
     number;
 
@@ -243,6 +298,12 @@ type InternalSimulation = {
   baselinePath:
     Vector2[];
 
+  ctrvPath:
+    Vector2[];
+
+  learnedPath:
+    Vector2[];
+
   mlPath:
     Vector2[];
 
@@ -252,19 +313,16 @@ type InternalSimulation = {
   pendingPredictions:
     PendingPrediction[];
 
-  baselineErrors:
-    number[];
+  errors:
+    PredictorErrorHistory;
 
-  mlErrors:
-    number[];
-
-  mlModel:
-    LearningModel;
+  residualModel:
+    ResidualModel;
 
   lastTrailSample:
     number;
 
-  lastEvaluationCreated:
+  lastPredictionSample:
     number;
 
   gamepad:
@@ -278,17 +336,32 @@ type InternalSimulation = {
 const PREDICTION_HORIZON_SECONDS =
   3;
 
+const PREDICTION_INTERVAL_MS =
+  700;
+
+const TRAIL_INTERVAL_MS =
+  160;
+
 const TRAIL_LIMIT =
-  140;
+  150;
 
 const ERROR_HISTORY_LIMIT =
-  30;
+  36;
 
-const MODEL_SCALE =
-  50;
+const RESIDUAL_SCALE_METERS =
+  60;
+
+const PREDICTION_HORIZONS = [
+  0.75,
+  1.5,
+  2.25,
+  3,
+  3.75,
+  4.5,
+];
 
 /* =========================================================
-   Math
+   General Math
    ========================================================= */
 
 function clamp(
@@ -458,13 +531,10 @@ function average(
 }
 
 function dot(
-  weights:
-    number[],
-
-  features:
-    number[],
+  weights: number[],
+  features: number[],
 ) {
-  let value =
+  let result =
     0;
 
   for (
@@ -475,10 +545,13 @@ function dot(
     index +=
       1
   ) {
-    value +=
-      weights[
-        index
-      ] *
+    result +=
+      (
+        weights[
+          index
+        ] ??
+        0
+      ) *
       (
         features[
           index
@@ -487,7 +560,39 @@ function dot(
       );
   }
 
-  return value;
+  return result;
+}
+
+function weightedPoint(
+  cv:
+    Vector2,
+
+  ctrv:
+    Vector2,
+
+  learned:
+    Vector2,
+
+  weights:
+    PredictorWeights,
+): Vector2 {
+  return {
+    x:
+      cv.x *
+        weights.cv +
+      ctrv.x *
+        weights.ctrv +
+      learned.x *
+        weights.learned,
+
+    y:
+      cv.y *
+        weights.cv +
+      ctrv.y *
+        weights.ctrv +
+      learned.y *
+        weights.learned,
+  };
 }
 
 /* =========================================================
@@ -550,11 +655,98 @@ function calculateClosingRate(
   );
 }
 
+function predictClosestApproach(
+  leader:
+    AircraftState,
+
+  follower:
+    AircraftState,
+
+  horizonSeconds =
+    5,
+) {
+  const leaderVelocity =
+    velocityVector(
+      leader,
+    );
+
+  const followerVelocity =
+    velocityVector(
+      follower,
+    );
+
+  const relativePosition = {
+    x:
+      leader.x -
+      follower.x,
+
+    y:
+      leader.y -
+      follower.y,
+  };
+
+  const relativeVelocity = {
+    x:
+      leaderVelocity.x -
+      followerVelocity.x,
+
+    y:
+      leaderVelocity.y -
+      followerVelocity.y,
+  };
+
+  const velocitySquared =
+    relativeVelocity.x *
+      relativeVelocity.x +
+    relativeVelocity.y *
+      relativeVelocity.y;
+
+  if (
+    velocitySquared <
+    0.0001
+  ) {
+    return distanceBetween(
+      leader,
+      follower,
+    );
+  }
+
+  const timeToClosest =
+    clamp(
+      -(
+        relativePosition.x *
+          relativeVelocity.x +
+        relativePosition.y *
+          relativeVelocity.y
+      ) /
+        velocitySquared,
+      0,
+      horizonSeconds,
+    );
+
+  const futureRelative = {
+    x:
+      relativePosition.x +
+      relativeVelocity.x *
+        timeToClosest,
+
+    y:
+      relativePosition.y +
+      relativeVelocity.y *
+        timeToClosest,
+  };
+
+  return Math.hypot(
+    futureRelative.x,
+    futureRelative.y,
+  );
+}
+
 /* =========================================================
-   Baseline Predictor
+   Predictor 1: Constant Velocity
    ========================================================= */
 
-function baselinePrediction(
+function constantVelocityPrediction(
   leader:
     AircraftState,
 
@@ -580,41 +772,98 @@ function baselinePrediction(
 }
 
 /* =========================================================
-   Online ML Predictor
+   Predictor 2: CTRV
+   Constant Turn Rate + Velocity
 
-   This is an online supervised regression model.
-
-   Inputs:
-   - current velocity
-   - heading
-   - turn rate
-   - speed
-   - prediction horizon
-
-   Targets:
-   - actual future x displacement
-   - actual future y displacement
-
-   The model starts equivalent to constant velocity and
-   learns turn corrections using SGD as predictions mature.
+   Heading convention:
+   0° north, 90° east.
    ========================================================= */
 
-function createLearningModel():
-  LearningModel {
-  return {
-    /*
-     * Feature indices:
-     * 0 bias
-     * 1 vx * horizon
-     * 2 vy * horizon
-     * 3 turn curvature
-     * 4 curvature projected east
-     * 5 curvature projected north
-     */
+function ctrvPrediction(
+  leader:
+    AircraftState,
 
+  secondsAhead:
+    number,
+): Vector2 {
+  const heading =
+    toRadians(
+      leader.heading,
+    );
+
+  const turnRate =
+    toRadians(
+      leader.turnRate,
+    );
+
+  if (
+    Math.abs(
+      turnRate,
+    ) <
+    0.0008
+  ) {
+    return constantVelocityPrediction(
+      leader,
+      secondsAhead,
+    );
+  }
+
+  const futureHeading =
+    heading +
+    turnRate *
+      secondsAhead;
+
+  const x =
+    leader.x +
+    (
+      leader.airspeed /
+      turnRate
+    ) *
+      (
+        Math.cos(
+          heading,
+        ) -
+        Math.cos(
+          futureHeading,
+        )
+      );
+
+  const y =
+    leader.y +
+    (
+      leader.airspeed /
+      turnRate
+    ) *
+      (
+        Math.sin(
+          futureHeading,
+        ) -
+        Math.sin(
+          heading,
+        )
+      );
+
+  return {
+    x,
+    y,
+  };
+}
+
+/* =========================================================
+   Predictor 3: Online Residual Learner
+
+   Learns the residual error remaining after CTRV.
+   This means physics handles most motion and ML only learns
+   corrections rather than trying to learn flight from zero.
+   ========================================================= */
+
+function createResidualModel():
+  ResidualModel {
+  return {
     weightsX: [
       0,
-      1,
+      0,
+      0,
       0,
       0,
       0,
@@ -624,7 +873,8 @@ function createLearningModel():
     weightsY: [
       0,
       0,
-      1,
+      0,
+      0,
       0,
       0,
       0,
@@ -634,75 +884,67 @@ function createLearningModel():
       0,
 
     learningRate:
-      0.025,
+      0.012,
   };
 }
 
-function buildFeatures(
+function buildResidualFeatures(
   leader:
     AircraftState,
 
   horizonSeconds:
     number,
 ) {
-  const velocity =
-    velocityVector(
-      leader,
-    );
-
-  const headingRadians =
+  const heading =
     toRadians(
       leader.heading,
     );
 
-  const turnRateRadians =
-    toRadians(
-      leader.turnRate,
-    );
-
-  /*
-   * Arc curvature magnitude.
-   * h² gives turns more influence farther into the future.
-   */
-  const curvature =
-    (
-      leader.airspeed *
-      turnRateRadians *
-      horizonSeconds *
-      horizonSeconds
-    ) /
-    MODEL_SCALE;
-
   return [
     1,
 
-    (
-      velocity.x *
-      horizonSeconds
-    ) /
-      MODEL_SCALE,
+    clamp(
+      leader.turnRate /
+        10,
+      -1.5,
+      1.5,
+    ),
 
-    (
-      velocity.y *
-      horizonSeconds
-    ) /
-      MODEL_SCALE,
+    clamp(
+      leader.bank /
+        40,
+      -1.5,
+      1.5,
+    ),
 
-    curvature,
+    clamp(
+      (
+        leader.airspeed -
+        22
+      ) /
+        12,
+      -1.5,
+      1.5,
+    ),
 
-    curvature *
-      Math.cos(
-        headingRadians,
-      ),
+    Math.sin(
+      heading,
+    ),
 
-    curvature *
-      Math.sin(
-        headingRadians,
-      ),
+    Math.cos(
+      heading,
+    ),
+
+    clamp(
+      horizonSeconds /
+        4.5,
+      0,
+      1.5,
+    ),
   ];
 }
 
-function mlPrediction(
+function learnedPrediction(
   leader:
     AircraftState,
 
@@ -710,64 +952,79 @@ function mlPrediction(
     number,
 
   model:
-    LearningModel,
+    ResidualModel,
 ): Vector2 {
-  const features =
-    buildFeatures(
+  const physicsPrediction =
+    ctrvPrediction(
       leader,
       horizonSeconds,
     );
 
-  const dx =
+  const features =
+    buildResidualFeatures(
+      leader,
+      horizonSeconds,
+    );
+
+  const correctionX =
     dot(
       model.weightsX,
       features,
     ) *
-    MODEL_SCALE;
+    RESIDUAL_SCALE_METERS;
 
-  const dy =
+  const correctionY =
     dot(
       model.weightsY,
       features,
     ) *
-    MODEL_SCALE;
+    RESIDUAL_SCALE_METERS;
 
   return {
     x:
-      leader.x +
-      dx,
+      physicsPrediction.x +
+      correctionX,
 
     y:
-      leader.y +
-      dy,
+      physicsPrediction.y +
+      correctionY,
   };
 }
 
-function trainModel(
+function trainResidualModel(
   model:
-    LearningModel,
+    ResidualModel,
 
   features:
     number[],
 
-  targetDisplacement:
+  ctrvPredictionPoint:
+    Vector2,
+
+  actualPosition:
     Vector2,
 ) {
-  const targetX =
-    targetDisplacement.x /
-    MODEL_SCALE;
+  const targetResidualX =
+    (
+      actualPosition.x -
+      ctrvPredictionPoint.x
+    ) /
+    RESIDUAL_SCALE_METERS;
 
-  const targetY =
-    targetDisplacement.y /
-    MODEL_SCALE;
+  const targetResidualY =
+    (
+      actualPosition.y -
+      ctrvPredictionPoint.y
+    ) /
+    RESIDUAL_SCALE_METERS;
 
-  const predictionX =
+  const predictedResidualX =
     dot(
       model.weightsX,
       features,
     );
 
-  const predictionY =
+  const predictedResidualY =
     dot(
       model.weightsY,
       features,
@@ -775,18 +1032,18 @@ function trainModel(
 
   const errorX =
     clamp(
-      targetX -
-        predictionX,
-      -2.5,
-      2.5,
+      targetResidualX -
+        predictedResidualX,
+      -1.5,
+      1.5,
     );
 
   const errorY =
     clamp(
-      targetY -
-        predictionY,
-      -2.5,
-      2.5,
+      targetResidualY -
+        predictedResidualY,
+      -1.5,
+      1.5,
     );
 
   features.forEach(
@@ -797,8 +1054,8 @@ function trainModel(
       const feature =
         clamp(
           rawFeature,
-          -3,
-          3,
+          -1.5,
+          1.5,
         );
 
       model.weightsX[
@@ -822,8 +1079,8 @@ function trainModel(
           model.weightsX[
             index
           ],
-          -5,
-          5,
+          -1.5,
+          1.5,
         );
 
       model.weightsY[
@@ -833,14 +1090,149 @@ function trainModel(
           model.weightsY[
             index
           ],
-          -5,
-          5,
+          -1.5,
+          1.5,
         );
     },
   );
 
   model.sampleCount +=
     1;
+}
+
+/* =========================================================
+   Adaptive Ensemble
+   ========================================================= */
+
+function calculatePredictorWeights(
+  errors:
+    PredictorErrorHistory,
+): PredictorWeights {
+  const cvError =
+    average(
+      errors.cv,
+    );
+
+  const ctrvError =
+    average(
+      errors.ctrv,
+    );
+
+  const learnedError =
+    average(
+      errors.learned,
+    );
+
+  /*
+   * Initial weighting before enough validation:
+   * favor CTRV because this mission specifically needs
+   * improved turn prediction.
+   */
+  if (
+    cvError ===
+      null ||
+    ctrvError ===
+      null ||
+    learnedError ===
+      null
+  ) {
+    return {
+      cv:
+        0.15,
+
+      ctrv:
+        0.5,
+
+      learned:
+        0.35,
+    };
+  }
+
+  /*
+   * Inverse-error weighting.
+   * A poor model automatically loses authority.
+   */
+  const inverseCv =
+    1 /
+    Math.max(
+      2,
+      cvError,
+    );
+
+  const inverseCtrv =
+    1 /
+    Math.max(
+      2,
+      ctrvError,
+    );
+
+  const inverseLearned =
+    1 /
+    Math.max(
+      2,
+      learnedError,
+    );
+
+  const total =
+    inverseCv +
+    inverseCtrv +
+    inverseLearned;
+
+  return {
+    cv:
+      inverseCv /
+      total,
+
+    ctrv:
+      inverseCtrv /
+      total,
+
+    learned:
+      inverseLearned /
+      total,
+  };
+}
+
+function adaptivePrediction(
+  leader:
+    AircraftState,
+
+  horizonSeconds:
+    number,
+
+  model:
+    ResidualModel,
+
+  errors:
+    PredictorErrorHistory,
+): Vector2 {
+  const cv =
+    constantVelocityPrediction(
+      leader,
+      horizonSeconds,
+    );
+
+  const ctrv =
+    ctrvPrediction(
+      leader,
+      horizonSeconds,
+    );
+
+  const learned =
+    learnedPrediction(
+      leader,
+      horizonSeconds,
+      model,
+    );
+
+  return weightedPoint(
+    cv,
+    ctrv,
+    learned,
+    calculatePredictorWeights(
+      errors,
+    ),
+  );
 }
 
 /* =========================================================
@@ -876,13 +1268,13 @@ function createInitialSimulation():
         "LEADER-01",
 
       x:
-        240,
+        220,
 
       y:
-        120,
+        100,
 
       heading:
-        45,
+        38,
 
       airspeed:
         22,
@@ -908,19 +1300,19 @@ function createInitialSimulation():
         "FOLLOWER-02",
 
       x:
-        -430,
+        -460,
 
       y:
-        -260,
+        -290,
 
       heading:
-        42,
+        40,
 
       airspeed:
         21,
 
       altitude:
-        112,
+        114,
 
       turnRate:
         0,
@@ -934,10 +1326,10 @@ function createInitialSimulation():
 
     home: {
       x:
-        -430,
+        -460,
 
       y:
-        -260,
+        -290,
     },
 
     desiredSeparationMeters:
@@ -949,8 +1341,11 @@ function createInitialSimulation():
     leaderCommandedAirspeed:
       22,
 
+    followerCommandedAirspeed:
+      21,
+
     followerMaxAirspeed:
-      30,
+      32,
 
     adaptiveSpeedSync:
       true,
@@ -962,6 +1357,12 @@ function createInitialSimulation():
       [],
 
     baselinePath:
+      [],
+
+    ctrvPath:
+      [],
+
+    learnedPath:
       [],
 
     mlPath:
@@ -978,19 +1379,27 @@ function createInitialSimulation():
     pendingPredictions:
       [],
 
-    baselineErrors:
-      [],
+    errors: {
+      cv:
+        [],
 
-    mlErrors:
-      [],
+      ctrv:
+        [],
 
-    mlModel:
-      createLearningModel(),
+      learned:
+        [],
+
+      adaptive:
+        [],
+    },
+
+    residualModel:
+      createResidualModel(),
 
     lastTrailSample:
       now,
 
-    lastEvaluationCreated:
+    lastPredictionSample:
       now,
 
     gamepad: {
@@ -1010,7 +1419,7 @@ function createInitialSimulation():
 }
 
 /* =========================================================
-   Browser Controller
+   Browser Gamepad
    ========================================================= */
 
 function getConnectedGamepad():
@@ -1047,171 +1456,6 @@ function getConnectedGamepad():
   }
 
   return null;
-}
-
-/* =========================================================
-   Prediction Update
-   ========================================================= */
-
-function updatePredictions(
-  simulation:
-    InternalSimulation,
-
-  now:
-    number,
-) {
-  const horizons = [
-    0.75,
-    1.5,
-    2.25,
-    3,
-    3.75,
-    4.5,
-  ];
-
-  simulation.baselinePath =
-    horizons.map(
-      (
-        horizon,
-      ) =>
-        baselinePrediction(
-          simulation.leader,
-          horizon,
-        ),
-    );
-
-  simulation.mlPath =
-    horizons.map(
-      (
-        horizon,
-      ) =>
-        mlPrediction(
-          simulation.leader,
-          horizon,
-          simulation.mlModel,
-        ),
-    );
-
-  const remaining:
-    PendingPrediction[] =
-    [];
-
-  simulation.pendingPredictions.forEach(
-    (
-      prediction,
-    ) => {
-      if (
-        prediction.dueAt >
-        now
-      ) {
-        remaining.push(
-          prediction,
-        );
-
-        return;
-      }
-
-      const actualPosition = {
-        x:
-          simulation.leader.x,
-
-        y:
-          simulation.leader.y,
-      };
-
-      const baselineError =
-        distanceBetween(
-          actualPosition,
-          prediction.baseline,
-        );
-
-      const mlError =
-        distanceBetween(
-          actualPosition,
-          prediction.ml,
-        );
-
-      simulation.baselineErrors.push(
-        baselineError,
-      );
-
-      simulation.mlErrors.push(
-        mlError,
-      );
-
-      trainModel(
-        simulation.mlModel,
-        prediction.features,
-        {
-          x:
-            actualPosition.x -
-            prediction.origin.x,
-
-          y:
-            actualPosition.y -
-            prediction.origin.y,
-        },
-      );
-    },
-  );
-
-  simulation.pendingPredictions =
-    remaining;
-
-  simulation.baselineErrors =
-    simulation.baselineErrors.slice(
-      -ERROR_HISTORY_LIMIT,
-    );
-
-  simulation.mlErrors =
-    simulation.mlErrors.slice(
-      -ERROR_HISTORY_LIMIT,
-    );
-
-  if (
-    now -
-      simulation.lastEvaluationCreated >
-    700
-  ) {
-    simulation.lastEvaluationCreated =
-      now;
-
-    simulation.pendingPredictions.push(
-      {
-        dueAt:
-          now +
-          PREDICTION_HORIZON_SECONDS *
-            1000,
-
-        origin: {
-          x:
-            simulation.leader.x,
-
-          y:
-            simulation.leader.y,
-        },
-
-        features:
-          buildFeatures(
-            simulation.leader,
-            PREDICTION_HORIZON_SECONDS,
-          ),
-
-        baseline:
-          baselinePrediction(
-            simulation.leader,
-            PREDICTION_HORIZON_SECONDS,
-          ),
-
-        ml:
-          mlPrediction(
-            simulation.leader,
-            PREDICTION_HORIZON_SECONDS,
-            simulation.mlModel,
-          ),
-      },
-    );
-  }
 }
 
 /* =========================================================
@@ -1279,7 +1523,7 @@ function updateLeader(
     targetAirspeed =
       simulation.leaderCommandedAirspeed +
       speedAxis *
-        6;
+        7;
   } else {
     simulation.gamepad = {
       connected:
@@ -1301,20 +1545,24 @@ function updateLeader(
     const time =
       simulation.simTimeSeconds;
 
+    /*
+     * Intentional changing-turn profile:
+     * useful for comparing CV against turn-aware prediction.
+     */
     simulation.leader.turnRate =
       clamp(
         Math.sin(
           time /
-            4.4,
+            4.8,
         ) *
-          6.6 +
+          6.5 +
           Math.sin(
             time /
-              1.7,
+              1.85,
           ) *
-            2.3,
-        -9.5,
-        9.5,
+            2.1,
+        -9,
+        9,
       );
   }
 
@@ -1334,7 +1582,7 @@ function updateLeader(
     Math.min(
       1,
       deltaSeconds *
-        1.8,
+        1.6,
     );
 
   simulation.leader.heading =
@@ -1370,6 +1618,270 @@ function updateLeader(
 }
 
 /* =========================================================
+   Prediction Engine
+   ========================================================= */
+
+function updatePredictionPaths(
+  simulation:
+    InternalSimulation,
+) {
+  simulation.baselinePath =
+    PREDICTION_HORIZONS.map(
+      (
+        horizon,
+      ) =>
+        constantVelocityPrediction(
+          simulation.leader,
+          horizon,
+        ),
+    );
+
+  simulation.ctrvPath =
+    PREDICTION_HORIZONS.map(
+      (
+        horizon,
+      ) =>
+        ctrvPrediction(
+          simulation.leader,
+          horizon,
+        ),
+    );
+
+  simulation.learnedPath =
+    PREDICTION_HORIZONS.map(
+      (
+        horizon,
+      ) =>
+        learnedPrediction(
+          simulation.leader,
+          horizon,
+          simulation.residualModel,
+        ),
+    );
+
+  simulation.mlPath =
+    PREDICTION_HORIZONS.map(
+      (
+        horizon,
+      ) =>
+        adaptivePrediction(
+          simulation.leader,
+          horizon,
+          simulation.residualModel,
+          simulation.errors,
+        ),
+    );
+}
+
+function trimErrors(
+  values:
+    number[],
+) {
+  return values.slice(
+    -ERROR_HISTORY_LIMIT,
+  );
+}
+
+function evaluatePredictions(
+  simulation:
+    InternalSimulation,
+
+  now:
+    number,
+) {
+  const remaining:
+    PendingPrediction[] =
+    [];
+
+  simulation.pendingPredictions.forEach(
+    (
+      pending,
+    ) => {
+      if (
+        pending.dueAt >
+        now
+      ) {
+        remaining.push(
+          pending,
+        );
+
+        return;
+      }
+
+      const actualPosition = {
+        x:
+          simulation.leader.x,
+
+        y:
+          simulation.leader.y,
+      };
+
+      simulation.errors.cv.push(
+        distanceBetween(
+          actualPosition,
+          pending.cv,
+        ),
+      );
+
+      simulation.errors.ctrv.push(
+        distanceBetween(
+          actualPosition,
+          pending.ctrv,
+        ),
+      );
+
+      simulation.errors.learned.push(
+        distanceBetween(
+          actualPosition,
+          pending.learned,
+        ),
+      );
+
+      simulation.errors.adaptive.push(
+        distanceBetween(
+          actualPosition,
+          pending.adaptive,
+        ),
+      );
+
+      trainResidualModel(
+        simulation.residualModel,
+        pending.features,
+        pending.ctrv,
+        actualPosition,
+      );
+    },
+  );
+
+  simulation.pendingPredictions =
+    remaining;
+
+  simulation.errors.cv =
+    trimErrors(
+      simulation.errors.cv,
+    );
+
+  simulation.errors.ctrv =
+    trimErrors(
+      simulation.errors.ctrv,
+    );
+
+  simulation.errors.learned =
+    trimErrors(
+      simulation.errors.learned,
+    );
+
+  simulation.errors.adaptive =
+    trimErrors(
+      simulation.errors.adaptive,
+    );
+}
+
+function queuePredictionEvaluation(
+  simulation:
+    InternalSimulation,
+
+  now:
+    number,
+) {
+  if (
+    now -
+      simulation.lastPredictionSample <
+    PREDICTION_INTERVAL_MS
+  ) {
+    return;
+  }
+
+  simulation.lastPredictionSample =
+    now;
+
+  const weights =
+    calculatePredictorWeights(
+      simulation.errors,
+    );
+
+  const cv =
+    constantVelocityPrediction(
+      simulation.leader,
+      PREDICTION_HORIZON_SECONDS,
+    );
+
+  const ctrv =
+    ctrvPrediction(
+      simulation.leader,
+      PREDICTION_HORIZON_SECONDS,
+    );
+
+  const learned =
+    learnedPrediction(
+      simulation.leader,
+      PREDICTION_HORIZON_SECONDS,
+      simulation.residualModel,
+    );
+
+  const adaptive =
+    weightedPoint(
+      cv,
+      ctrv,
+      learned,
+      weights,
+    );
+
+  simulation.pendingPredictions.push(
+    {
+      dueAt:
+        now +
+        PREDICTION_HORIZON_SECONDS *
+          1000,
+
+      origin: {
+        x:
+          simulation.leader.x,
+
+        y:
+          simulation.leader.y,
+      },
+
+      features:
+        buildResidualFeatures(
+          simulation.leader,
+          PREDICTION_HORIZON_SECONDS,
+        ),
+
+      cv,
+
+      ctrv,
+
+      learned,
+
+      adaptive,
+    },
+  );
+}
+
+function updatePredictionEngine(
+  simulation:
+    InternalSimulation,
+
+  now:
+    number,
+) {
+  evaluatePredictions(
+    simulation,
+    now,
+  );
+
+  updatePredictionPaths(
+    simulation,
+  );
+
+  queuePredictionEvaluation(
+    simulation,
+    now,
+  );
+}
+
+/* =========================================================
    Guidance
    ========================================================= */
 
@@ -1389,7 +1901,7 @@ function calculateGuidanceTarget(
     ] ??
     simulation.leader;
 
-  let futureHeading =
+  let predictedHeading =
     simulation.leader
       .heading;
 
@@ -1397,7 +1909,7 @@ function calculateGuidanceTarget(
     selectedPath.length >=
     2
   ) {
-    futureHeading =
+    predictedHeading =
       bearingBetween(
         selectedPath[
           selectedPath.length -
@@ -1421,7 +1933,7 @@ function calculateGuidanceTarget(
       "TRACK"
   ) {
     desiredDistance +=
-      35;
+      40;
   }
 
   if (
@@ -1438,26 +1950,26 @@ function calculateGuidanceTarget(
       );
   }
 
-  const futureVector =
+  const direction =
     headingVector(
-      futureHeading,
+      predictedHeading,
     );
 
   return {
     x:
       predictedPosition.x -
-      futureVector.x *
+      direction.x *
         desiredDistance,
 
     y:
       predictedPosition.y -
-      futureVector.y *
+      direction.y *
         desiredDistance,
   };
 }
 
 /* =========================================================
-   Follower Dynamics + Speed Controller
+   Follower Dynamics
    ========================================================= */
 
 function updateFollower(
@@ -1485,6 +1997,17 @@ function updateFollower(
       follower,
     );
 
+  const closestApproach =
+    predictClosestApproach(
+      leader,
+      follower,
+    );
+
+  const safetyGateActive =
+    closestApproach <
+    simulation.minimumSeparationMeters +
+      12;
+
   let target: Vector2 = {
     x:
       follower.x,
@@ -1496,7 +2019,7 @@ function updateFollower(
   let targetSpeed =
     leader.airspeed;
 
-  let maxTurnRate =
+  let maximumTurnRate =
     9.5;
 
   if (
@@ -1506,13 +2029,17 @@ function updateFollower(
     follower.mode =
       "STANDBY";
 
+    /*
+     * Fixed-wing standby behaves as a gentle loiter rather
+     * than magically stopping in the air.
+     */
     follower.turnRate =
-      0;
+      4;
 
     targetSpeed =
       Math.min(
-        leader.airspeed,
-        19,
+        simulation.followerMaxAirspeed,
+        18,
       );
   } else if (
     simulation.mode ===
@@ -1522,12 +2049,12 @@ function updateFollower(
       "LOITER";
 
     follower.turnRate =
-      5.2;
+      5;
 
     targetSpeed =
       Math.min(
-        20,
         simulation.followerMaxAirspeed,
+        20,
       );
   } else if (
     simulation.mode ===
@@ -1542,7 +2069,7 @@ function updateFollower(
         follower,
       );
 
-    const awayVector =
+    const awayDirection =
       headingVector(
         awayHeading,
       );
@@ -1550,12 +2077,12 @@ function updateFollower(
     target = {
       x:
         follower.x +
-        awayVector.x *
+        awayDirection.x *
           450,
 
       y:
         follower.y +
-        awayVector.y *
+        awayDirection.y *
           450,
     };
 
@@ -1565,7 +2092,7 @@ function updateFollower(
         25,
       );
 
-    maxTurnRate =
+    maximumTurnRate =
       11;
   } else if (
     simulation.mode ===
@@ -1584,7 +2111,7 @@ function updateFollower(
         22,
       );
 
-    maxTurnRate =
+    maximumTurnRate =
       10;
   } else {
     follower.mode =
@@ -1602,31 +2129,64 @@ function updateFollower(
       separation -
       simulation.desiredSeparationMeters;
 
-    /*
-     * Adaptive speed controller.
-     *
-     * Distance error asks for more/less speed.
-     * Closing-rate damping prevents overshoot.
-     */
+    const desiredHeading =
+      bearingBetween(
+        follower,
+        target,
+      );
+
+    const headingError =
+      Math.abs(
+        normalizeSignedAngle(
+          desiredHeading -
+          follower.heading,
+        ),
+      );
+
+    const turnDemand =
+      clamp(
+        headingError /
+          90,
+        0,
+        1,
+      );
+
     if (
       simulation.adaptiveSpeedSync
     ) {
+      /*
+       * Catch-up speed is based on:
+       * - separation error
+       * - current closing rate
+       * - expected turn demand
+       *
+       * This avoids maximum-speed overshoot during turns.
+       */
       const distanceCorrection =
-        separationError *
-        0.032;
+        clamp(
+          separationError *
+            0.028,
+          -4,
+          8,
+        );
 
-      const closingCorrection =
-        closingRate *
-        0.55;
+      const closingDamping =
+        clamp(
+          closingRate *
+            0.48,
+          -3,
+          4,
+        );
+
+      const turnPenalty =
+        turnDemand *
+        2.8;
 
       targetSpeed =
         leader.airspeed +
-        clamp(
-          distanceCorrection -
-            closingCorrection,
-          -4.5,
-          8.5,
-        );
+        distanceCorrection -
+        closingDamping -
+        turnPenalty;
     } else {
       targetSpeed =
         leader.airspeed +
@@ -1640,11 +2200,13 @@ function updateFollower(
   }
 
   /*
-   * Hard protected-distance recovery.
+   * Anticipatory safety gate.
+   *
+   * It reacts before the follower has already violated the
+   * protected radius.
    */
   if (
-    separation <
-      simulation.minimumSeparationMeters &&
+    safetyGateActive &&
     simulation.mode !==
       "ABORT" &&
     simulation.mode !==
@@ -1656,7 +2218,7 @@ function updateFollower(
         follower,
       );
 
-    const awayVector =
+    const awayDirection =
       headingVector(
         awayHeading,
       );
@@ -1664,23 +2226,23 @@ function updateFollower(
     target = {
       x:
         follower.x +
-        awayVector.x *
-          320,
+        awayDirection.x *
+          340,
 
       y:
         follower.y +
-        awayVector.y *
-          320,
+        awayDirection.y *
+          340,
     };
 
     targetSpeed =
       Math.max(
-        15,
+        14,
         leader.airspeed -
-          5,
+          4.5,
       );
 
-    maxTurnRate =
+    maximumTurnRate =
       12;
   }
 
@@ -1709,8 +2271,8 @@ function updateFollower(
       clamp(
         headingError *
           0.18,
-        -maxTurnRate,
-        maxTurnRate,
+        -maximumTurnRate,
+        maximumTurnRate,
       );
   }
 
@@ -1724,7 +2286,7 @@ function updateFollower(
   follower.bank =
     clamp(
       follower.turnRate *
-        3.25,
+        3.2,
       -40,
       40,
     );
@@ -1736,6 +2298,9 @@ function updateFollower(
       simulation.followerMaxAirspeed,
     );
 
+  simulation.followerCommandedAirspeed =
+    targetSpeed;
+
   follower.airspeed +=
     (
       targetSpeed -
@@ -1744,7 +2309,7 @@ function updateFollower(
     Math.min(
       1,
       deltaSeconds *
-        1.7,
+        1.65,
     );
 
   follower.altitude +=
@@ -1756,22 +2321,22 @@ function updateFollower(
     ) *
     deltaSeconds;
 
-  const velocity =
+  const followerVelocity =
     velocityVector(
       follower,
     );
 
   follower.x +=
-    velocity.x *
+    followerVelocity.x *
     deltaSeconds;
 
   follower.y +=
-    velocity.y *
+    followerVelocity.y *
     deltaSeconds;
 }
 
 /* =========================================================
-   State Machine
+   Mission State
    ========================================================= */
 
 function setInternalMode(
@@ -1798,7 +2363,7 @@ function updateAutomaticModeTransitions(
   now:
     number,
 ) {
-  const elapsed =
+  const elapsedSeconds =
     (
       now -
       simulation.modeSince
@@ -1808,7 +2373,7 @@ function updateAutomaticModeTransitions(
   if (
     simulation.mode ===
       "ACQUIRE" &&
-    elapsed >
+    elapsedSeconds >
       1.2
   ) {
     setInternalMode(
@@ -1821,7 +2386,7 @@ function updateAutomaticModeTransitions(
   if (
     simulation.mode ===
       "PREDICT" &&
-    elapsed >
+    elapsedSeconds >
       1
   ) {
     setInternalMode(
@@ -1869,7 +2434,7 @@ function sampleTrails(
   if (
     now -
       simulation.lastTrailSample <
-    150
+    TRAIL_INTERVAL_MS
   ) {
     return;
   }
@@ -1924,6 +2489,17 @@ function createSnapshot(
       simulation.follower,
     );
 
+  const predictedClosestSeparationMeters =
+    predictClosestApproach(
+      simulation.leader,
+      simulation.follower,
+    );
+
+  const anticipatorySafetyGate =
+    predictedClosestSeparationMeters <
+    simulation.minimumSeparationMeters +
+      12;
+
   const remainingDistance =
     Math.max(
       0,
@@ -1940,54 +2516,84 @@ function createSnapshot(
 
   const baselineError =
     average(
-      simulation.baselineErrors,
+      simulation.errors.cv,
     );
 
-  const mlError =
+  const ctrvError =
     average(
-      simulation.mlErrors,
+      simulation.errors.ctrv,
+    );
+
+  const learnedError =
+    average(
+      simulation.errors.learned,
+    );
+
+  const adaptiveError =
+    average(
+      simulation.errors.adaptive,
     );
 
   const improvementPercent =
     baselineError !==
         null &&
-      mlError !==
+      adaptiveError !==
         null &&
       baselineError >
         0
       ? (
           (
             baselineError -
-            mlError
+            adaptiveError
           ) /
           baselineError
         ) *
         100
       : null;
 
-  const trainingSamples =
-    simulation.mlModel
-      .sampleCount;
+  const weights =
+    calculatePredictorWeights(
+      simulation.errors,
+    );
 
-  const residualMeters =
-    mlError ??
-    0;
+  const largestWeight =
+    Math.max(
+      weights.cv,
+      weights.ctrv,
+      weights.learned,
+    );
+
+  const selectedPredictor:
+    "CV" |
+    "CTRV" |
+    "ADAPTIVE" =
+    largestWeight ===
+    weights.cv
+      ? "CV"
+      : largestWeight ===
+          weights.ctrv
+        ? "CTRV"
+        : "ADAPTIVE";
+
+  const validationSamples =
+    simulation.errors.adaptive
+      .length;
 
   const sampleConfidence =
     clamp(
-      trainingSamples /
+      validationSamples /
         18,
       0,
       1,
     );
 
-  const errorConfidence =
-    mlError ===
+  const qualityConfidence =
+    adaptiveError ===
     null
-      ? 0.35
+      ? 0.4
       : clamp(
           1 -
-            mlError /
+            adaptiveError /
               100,
           0.25,
           1,
@@ -1995,12 +2601,12 @@ function createSnapshot(
 
   const confidence =
     clamp(
-      0.3 +
+      0.4 +
         sampleConfidence *
-          0.35 +
-        errorConfidence *
-          0.35,
-      0.3,
+          0.3 +
+        qualityConfidence *
+          0.3,
+      0.4,
       0.97,
     );
 
@@ -2037,6 +2643,10 @@ function createSnapshot(
       ...simulation.baselinePath,
     ],
 
+    ctrvPath: [
+      ...simulation.ctrvPath,
+    ],
+
     mlPath: [
       ...simulation.mlPath,
     ],
@@ -2071,43 +2681,60 @@ function createSnapshot(
       distanceMeters >=
       simulation.minimumSeparationMeters,
 
+    predictedClosestSeparationMeters,
+
+    anticipatorySafetyGate,
+
     ai: {
       model:
-        "Online SGD Trajectory Regressor",
+        "Adaptive CV / CTRV / Residual Ensemble",
+
+      selectedPredictor,
 
       confidence,
 
       predictionHorizonSeconds:
         PREDICTION_HORIZON_SECONDS,
 
-      residualMeters,
+      residualMeters:
+        adaptiveError ??
+        0,
 
       ready:
-        trainingSamples >=
+        validationSamples >=
         5,
 
-      trainingSamples,
+      trainingSamples:
+        simulation.residualModel
+          .sampleCount,
+
+      weights,
     },
 
     performance: {
       baselineErrorMeters:
         baselineError,
 
+      ctrvErrorMeters:
+        ctrvError,
+
+      learnedErrorMeters:
+        learnedError,
+
       mlErrorMeters:
-        mlError,
+        adaptiveError,
 
       improvementPercent,
 
-      validationSamples:
-        Math.min(
-          simulation.baselineErrors.length,
-          simulation.mlErrors.length,
-        ),
+      validationSamples,
     },
 
     speedControl: {
       leaderCommandedAirspeed:
         simulation.leaderCommandedAirspeed,
+
+      followerCommandedAirspeed:
+        simulation.followerCommandedAirspeed,
 
       followerMaxAirspeed:
         simulation.followerMaxAirspeed,
@@ -2116,8 +2743,10 @@ function createSnapshot(
         simulation.adaptiveSpeedSync,
 
       airspeedDelta:
-        simulation.follower.airspeed -
-        simulation.leader.airspeed,
+        simulation.follower
+          .airspeed -
+        simulation.leader
+          .airspeed,
     },
 
     gamepad: {
@@ -2206,7 +2835,7 @@ export function useInterceptSimulation() {
             deltaSeconds,
           );
 
-          updatePredictions(
+          updatePredictionEngine(
             simulation,
             now,
           );
@@ -2282,9 +2911,7 @@ export function useInterceptSimulation() {
     useCallback(
       () => {
         simulationRef.current.running =
-          !simulationRef
-            .current
-            .running;
+          !simulationRef.current.running;
 
         lastFrameRef.current =
           performance.now();
