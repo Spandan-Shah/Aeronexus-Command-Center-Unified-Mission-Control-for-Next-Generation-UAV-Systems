@@ -6,7 +6,6 @@ import {
 } from "react";
 
 import {
-  Crosshair,
   Layers3,
   LocateFixed,
   Minus,
@@ -22,7 +21,8 @@ import L, {
 import "leaflet/dist/leaflet.css";
 
 import type {
-  AircraftState,
+  DefenseSector,
+  InterceptorState,
   InterceptSnapshot,
   Vector2,
 } from "../../hooks/useInterceptSimulation";
@@ -41,19 +41,19 @@ type InterceptMapProps = {
   };
 };
 
-type InterceptBaseMap =
+type BaseMapMode =
   | "satellite"
   | "osm"
   | "hot";
 
 type FollowMode =
-  | "both"
-  | "leader"
-  | "follower"
+  | "network"
+  | "intruder"
+  | "assigned"
   | "free";
 
 /* =========================================================
-   MissionNexus Map Configuration
+   Map Configuration
    ========================================================= */
 
 const DEFAULT_ORIGIN = {
@@ -65,32 +65,43 @@ const DEFAULT_ORIGIN = {
 };
 
 const colors = {
-  primary:
-    "#F6B23C",
+  intruder:
+    "#FF375F",
 
-  info:
-    "#5AA9FF",
+  interceptor:
+    "#00D9FF",
+
+  cv:
+    "#FFFFFF",
+
+  ctrv:
+    "#D77DFF",
+
+  adaptive:
+    "#A7FF4F",
+
+  guidance:
+    "#FFD166",
+
+  safety:
+    "#FF4D9D",
+
+  shadow:
+    "#FFB84D",
 
   nominal:
     "#59D99A",
 
-  critical:
-    "#FF5A63",
-
   background:
     "#030405",
-
-  white:
-    "#FFFFFF",
 };
 
 const baseMaps:
   Record<
-    InterceptBaseMap,
+    BaseMapMode,
     {
       url: string;
       attribution: string;
-      maxZoom: number;
     }
   > = {
   satellite: {
@@ -99,9 +110,6 @@ const baseMaps:
 
     attribution:
       "Imagery © Esri",
-
-    maxZoom:
-      19,
   },
 
   osm: {
@@ -110,9 +118,6 @@ const baseMaps:
 
     attribution:
       "© OpenStreetMap contributors",
-
-    maxZoom:
-      19,
   },
 
   hot: {
@@ -121,14 +126,11 @@ const baseMaps:
 
     attribution:
       "© OpenStreetMap contributors · HOT",
-
-    maxZoom:
-      19,
   },
 };
 
 /* =========================================================
-   Geometry
+   Geographic Conversion
    ========================================================= */
 
 function enuToLatLng(
@@ -190,98 +192,62 @@ function toLatLngArray(
   );
 }
 
-function headingVector(
-  heading:
-    number,
-): Vector2 {
-  const radians =
-    (
-      heading *
-      Math.PI
-    ) /
-    180;
-
-  return {
-    x:
-      Math.sin(
-        radians,
-      ),
-
-    y:
-      Math.cos(
-        radians,
-      ),
-  };
-}
-
-function headingEndpoint(
-  aircraft:
-    AircraftState,
-
-  distanceMeters:
-    number,
-): Vector2 {
-  const direction =
-    headingVector(
-      aircraft.heading,
-    );
-
-  return {
-    x:
-      aircraft.x +
-      direction.x *
-        distanceMeters,
-
-    y:
-      aircraft.y +
-      direction.y *
-        distanceMeters,
-  };
-}
-
 /* =========================================================
-   Aircraft Icon
+   Aircraft Marker
    ========================================================= */
 
 function createAircraftIcon(
-  type:
-    | "leader"
-    | "follower",
+  kind:
+    | "intruder"
+    | "interceptor",
 
   heading:
     number,
+
+  label:
+    string,
+
+  accent:
+    string,
+
+  assigned =
+    false,
 ) {
-  const color =
-    type ===
-    "leader"
-      ? colors.primary
-      : colors.info;
+  const markerSize =
+    kind ===
+    "intruder"
+      ? 46
+      : 42;
+
+  const ringColor =
+    kind ===
+    "intruder"
+      ? colors.intruder
+      : accent;
 
   return L.divIcon({
     className:
-      "missionnexus-intercept-aircraft",
+      "",
 
     iconSize: [
-      42,
-      42,
+      markerSize,
+      markerSize,
     ],
 
     iconAnchor: [
-      21,
-      21,
-    ],
+      markerSize /
+        2,
 
-    popupAnchor: [
-      0,
-      -22,
+      markerSize /
+        2,
     ],
 
     html: `
       <div
         style="
           position:relative;
-          width:42px;
-          height:42px;
+          width:${markerSize}px;
+          height:${markerSize}px;
           display:flex;
           align-items:center;
           justify-content:center;
@@ -291,21 +257,22 @@ function createAircraftIcon(
         <div
           style="
             position:absolute;
-            inset:2px;
+            inset:1px;
             border-radius:999px;
-            border:1px solid ${color}88;
-            background:${color}12;
-            box-shadow:0 0 18px ${color}55;
+            border:${assigned ? 2 : 1}px solid ${ringColor};
+            background:rgba(3,4,5,0.94);
+            box-shadow:
+              0 0 0 ${assigned ? 5 : 3}px ${ringColor}18,
+              0 0 ${assigned ? 24 : 16}px ${ringColor}aa;
           "
         ></div>
 
         <div
           style="
             position:relative;
-            width:24px;
-            height:24px;
+            width:25px;
+            height:25px;
             transform:rotate(${heading}deg);
-            transform-origin:center;
           "
         >
           <div
@@ -315,35 +282,42 @@ function createAircraftIcon(
               top:0;
               width:0;
               height:0;
-              border-left:3px solid transparent;
-              border-right:3px solid transparent;
-              border-bottom:16px solid ${color};
+              border-left:3.5px solid transparent;
+              border-right:3.5px solid transparent;
+              border-bottom:17px solid ${ringColor};
             "
           ></div>
 
           <div
             style="
               position:absolute;
-              left:1px;
+              left:0;
               top:11px;
-              width:22px;
-              height:2px;
+              width:25px;
+              height:3px;
               border-radius:999px;
-              background:${color};
+              background:${ringColor};
             "
           ></div>
+        </div>
 
-          <div
-            style="
-              position:absolute;
-              left:8px;
-              top:12px;
-              width:8px;
-              height:8px;
-              background:${color};
-              clip-path:polygon(50% 100%,0 0,100% 0);
-            "
-          ></div>
+        <div
+          style="
+            position:absolute;
+            left:50%;
+            top:${markerSize + 3}px;
+            transform:translateX(-50%);
+            white-space:nowrap;
+            padding:2px 5px;
+            border-radius:3px;
+            background:rgba(3,4,5,0.90);
+            border:1px solid ${ringColor}66;
+            color:${ringColor};
+            font:700 10px 'JetBrains Mono',monospace;
+            box-shadow:0 3px 8px rgba(0,0,0,0.65);
+          "
+        >
+          ${label}
         </div>
       </div>
     `,
@@ -351,7 +325,55 @@ function createAircraftIcon(
 }
 
 /* =========================================================
-   UI Button
+   Station Marker
+   ========================================================= */
+
+function createStationIcon(
+  sector:
+    DefenseSector,
+) {
+  return L.divIcon({
+    className:
+      "",
+
+    iconSize: [
+      30,
+      30,
+    ],
+
+    iconAnchor: [
+      15,
+      15,
+    ],
+
+    html: `
+      <div
+        style="
+          width:30px;
+          height:30px;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          border-radius:5px;
+          border:2px solid ${sector.active ? "#FF375F" : sector.color};
+          background:rgba(3,4,5,0.94);
+          box-shadow:0 0 14px ${
+            sector.active
+              ? "#FF375F"
+              : sector.color
+          }66;
+          color:${sector.active ? "#FF375F" : sector.color};
+          font:700 10px 'JetBrains Mono',monospace;
+        "
+      >
+        D${sector.interceptorId}
+      </div>
+    `,
+  });
+}
+
+/* =========================================================
+   Compact Control Button
    ========================================================= */
 
 function MapButton({
@@ -375,15 +397,15 @@ function MapButton({
         onClick
       }
       className={[
-        "h-[34px] rounded-[4px] border px-3",
+        "h-8 rounded-[4px] border px-2.5",
 
-        "font-mono text-[14px] font-medium",
+        "font-mono text-[13px] font-medium",
 
-        "transition-colors duration-150",
+        "transition-colors",
 
         active
-          ? "border-[rgba(246,178,60,0.30)] bg-[rgba(246,178,60,0.06)] text-[#F6B23C]"
-          : "border-white/[0.08] bg-[#030405] text-white/58 hover:border-white/[0.16] hover:bg-white/[0.025] hover:text-white",
+          ? "border-[rgba(90,169,255,0.38)] bg-[rgba(90,169,255,0.08)] text-[#8FC7FF]"
+          : "border-white/[0.08] bg-[#030405] text-white/58 hover:border-white/[0.16] hover:text-white",
       ].join(" ")}
     >
       {label}
@@ -418,41 +440,49 @@ export function InterceptMap({
       null
     >(null);
 
-  const leaderMarkerRef =
+  const intruderMarkerRef =
     useRef<
       L.Marker |
       null
     >(null);
 
-  const followerMarkerRef =
+  const interceptorMarkerRefs =
     useRef<
-      L.Marker |
-      null
-    >(null);
+      Record<
+        number,
+        L.Marker
+      >
+    >({});
 
-  const leaderTrailRef =
+  const stationMarkerRefs =
+    useRef<
+      Record<
+        string,
+        L.Marker
+      >
+    >({});
+
+  const sectorCircleRefs =
+    useRef<
+      Record<
+        string,
+        L.Circle
+      >
+    >({});
+
+  const intruderTrailRef =
     useRef<
       L.Polyline |
       null
     >(null);
 
-  const followerTrailRef =
+  const interceptorTrailRefs =
     useRef<
-      L.Polyline |
-      null
-    >(null);
-
-  const leaderHeadingRef =
-    useRef<
-      L.Polyline |
-      null
-    >(null);
-
-  const followerHeadingRef =
-    useRef<
-      L.Polyline |
-      null
-    >(null);
+      Record<
+        number,
+        L.Polyline
+      >
+    >({});
 
   const baselinePathRef =
     useRef<
@@ -478,13 +508,7 @@ export function InterceptMap({
       null
     >(null);
 
-  const relationshipLineRef =
-    useRef<
-      L.Polyline |
-      null
-    >(null);
-
-  const guidanceMarkerRef =
+  const guidanceTargetRef =
     useRef<
       L.CircleMarker |
       null
@@ -496,15 +520,9 @@ export function InterceptMap({
       null
     >(null);
 
-  const protectedSeparationRef =
+  const safetySeparationRef =
     useRef<
       L.Circle |
-      null
-    >(null);
-
-  const homeMarkerRef =
-    useRef<
-      L.CircleMarker |
       null
     >(null);
 
@@ -512,7 +530,7 @@ export function InterceptMap({
     baseMap,
     setBaseMap,
   ] =
-    useState<InterceptBaseMap>(
+    useState<BaseMapMode>(
       "satellite",
     );
 
@@ -521,7 +539,23 @@ export function InterceptMap({
     setFollowMode,
   ] =
     useState<FollowMode>(
-      "both",
+      "network",
+    );
+
+  const [
+    showZones,
+    setShowZones,
+  ] =
+    useState(
+      true,
+    );
+
+  const [
+    showStations,
+    setShowStations,
+  ] =
+    useState(
+      true,
     );
 
   const [
@@ -533,8 +567,8 @@ export function InterceptMap({
     );
 
   const [
-    showBaseline,
-    setShowBaseline,
+    showCv,
+    setShowCv,
   ] =
     useState(
       true,
@@ -566,96 +600,143 @@ export function InterceptMap({
 
   const positions =
     useMemo(
-      () => ({
-        leader:
-          enuToLatLng(
-            snapshot.leader,
-            origin,
-          ),
+      () => {
+        const interceptors =
+          Object.fromEntries(
+            snapshot.interceptors.map(
+              (
+                interceptor,
+              ) => [
+                interceptor.id,
 
-        follower:
-          enuToLatLng(
-            snapshot.follower,
-            origin,
-          ),
-
-        home:
-          enuToLatLng(
-            snapshot.home,
-            origin,
-          ),
-
-        guidance:
-          enuToLatLng(
-            snapshot.guidanceTarget,
-            origin,
-          ),
-
-        leaderHeading:
-          enuToLatLng(
-            headingEndpoint(
-              snapshot.leader,
-              170,
+                enuToLatLng(
+                  interceptor,
+                  origin,
+                ),
+              ],
             ),
-            origin,
-          ),
+          ) as Record<
+            number,
+            L.LatLngTuple
+          >;
 
-        followerHeading:
-          enuToLatLng(
-            headingEndpoint(
-              snapshot.follower,
-              170,
+        const stations =
+          Object.fromEntries(
+            snapshot.sectors.map(
+              (
+                sector,
+              ) => [
+                sector.id,
+
+                enuToLatLng(
+                  sector.station,
+                  origin,
+                ),
+              ],
             ),
-            origin,
-          ),
+          ) as Record<
+            string,
+            L.LatLngTuple
+          >;
 
-        leaderTrail:
-          toLatLngArray(
-            snapshot.leaderTrail,
-            origin,
-          ),
+        const centers =
+          Object.fromEntries(
+            snapshot.sectors.map(
+              (
+                sector,
+              ) => [
+                sector.id,
 
-        followerTrail:
-          toLatLngArray(
-            snapshot.followerTrail,
-            origin,
-          ),
+                enuToLatLng(
+                  sector.center,
+                  origin,
+                ),
+              ],
+            ),
+          ) as Record<
+            string,
+            L.LatLngTuple
+          >;
 
-        baseline:
-          toLatLngArray(
-            snapshot.baselinePath,
-            origin,
-          ),
+        return {
+          intruder:
+            enuToLatLng(
+              snapshot.intruder,
+              origin,
+            ),
 
-        ctrv:
-          toLatLngArray(
-            snapshot.ctrvPath,
-            origin,
-          ),
+          interceptors,
 
-        adaptive:
-          toLatLngArray(
-            snapshot.mlPath,
-            origin,
-          ),
-      }),
+          stations,
+
+          centers,
+
+          intruderTrail:
+            toLatLngArray(
+              snapshot.intruderTrail,
+              origin,
+            ),
+
+          interceptorTrails:
+            Object.fromEntries(
+              Object.entries(
+                snapshot.interceptorTrails,
+              ).map(
+                (
+                  [
+                    key,
+                    trail,
+                  ],
+                ) => [
+                  Number(
+                    key,
+                  ),
+
+                  toLatLngArray(
+                    trail,
+                    origin,
+                  ),
+                ],
+              ),
+            ) as Record<
+              number,
+              L.LatLngTuple[]
+            >,
+
+          baseline:
+            toLatLngArray(
+              snapshot.baselinePath,
+              origin,
+            ),
+
+          ctrv:
+            toLatLngArray(
+              snapshot.ctrvPath,
+              origin,
+            ),
+
+          adaptive:
+            toLatLngArray(
+              snapshot.mlPath,
+              origin,
+            ),
+
+          guidance:
+            enuToLatLng(
+              snapshot.guidanceTarget,
+              origin,
+            ),
+        };
+      },
       [
-        snapshot.leader,
-        snapshot.follower,
-        snapshot.home,
-        snapshot.guidanceTarget,
-        snapshot.leaderTrail,
-        snapshot.followerTrail,
-        snapshot.baselinePath,
-        snapshot.ctrvPath,
-        snapshot.mlPath,
+        snapshot,
         origin.lat,
         origin.lng,
       ],
     );
 
   /* =======================================================
-     Initialize Map
+     Initialize
      ======================================================= */
 
   useEffect(
@@ -677,7 +758,7 @@ export function InterceptMap({
             ],
 
             zoom:
-              15,
+              14,
 
             minZoom:
               3,
@@ -691,25 +772,24 @@ export function InterceptMap({
             attributionControl:
               true,
 
-            worldCopyJump:
-              false,
-
             preferCanvas:
               true,
+
+            worldCopyJump:
+              false,
           },
         );
 
       mapRef.current =
         map;
 
-      const initialTileLayer =
+      baseTileRef.current =
         L.tileLayer(
           baseMaps.satellite
             .url,
           {
             maxZoom:
-              baseMaps.satellite
-                .maxZoom,
+              19,
 
             attribution:
               baseMaps.satellite
@@ -719,12 +799,8 @@ export function InterceptMap({
           map,
         );
 
-      baseTileRef.current =
-        initialTileLayer;
-
       /* ===============================================
-         MissionNexus attribution styling
-         Mirrors existing AeroWorldMap.
+         Attribution
          =============================================== */
 
       const styleAttribution =
@@ -753,13 +829,10 @@ export function InterceptMap({
             "4px 7px";
 
           element.style.background =
-            "rgba(5, 6, 13, 0.84)";
+            "rgba(5,6,13,0.86)";
 
           element.style.color =
-            "rgba(255,255,255,0.74)";
-
-          element.style.borderRadius =
-            "4px 0 0 0";
+            "rgba(255,255,255,0.76)";
 
           element
             .querySelectorAll(
@@ -790,169 +863,265 @@ export function InterceptMap({
         );
 
       /* ===============================================
-         Aircraft
+         Intruder
          =============================================== */
 
-      leaderMarkerRef.current =
+      intruderMarkerRef.current =
         L.marker(
-          positions.leader,
+          positions.intruder,
           {
             icon:
               createAircraftIcon(
-                "leader",
-                snapshot.leader.heading,
+                "intruder",
+                snapshot.intruder
+                  .heading,
+                "INTRUDER",
+                colors.intruder,
               ),
 
             zIndexOffset:
-              1200,
+              2000,
           },
-        )
-          .bindTooltip(
-            "LEADER-01",
-            {
-              direction:
-                "top",
-            },
-          )
-          .addTo(
-            map,
-          );
+        ).addTo(
+          map,
+        );
 
-      followerMarkerRef.current =
-        L.marker(
-          positions.follower,
-          {
-            icon:
-              createAircraftIcon(
-                "follower",
-                snapshot.follower.heading,
-              ),
+      /* ===============================================
+         Interceptors
+         =============================================== */
 
-            zIndexOffset:
-              1100,
-          },
-        )
-          .bindTooltip(
-            "FOLLOWER-02",
-            {
-              direction:
-                "top",
-            },
-          )
-          .addTo(
-            map,
-          );
+      snapshot.interceptors.forEach(
+        (
+          interceptor,
+        ) => {
+          const sector =
+            snapshot.sectors.find(
+              (
+                item,
+              ) =>
+                item.interceptorId ===
+                interceptor.id,
+            );
+
+          const accent =
+            sector?.color ??
+            colors.interceptor;
+
+          interceptorMarkerRefs.current[
+            interceptor.id
+          ] =
+            L.marker(
+              positions.interceptors[
+                interceptor.id
+              ],
+              {
+                icon:
+                  createAircraftIcon(
+                    "interceptor",
+                    interceptor.heading,
+                    `INT-${interceptor.id}`,
+                    accent,
+                    interceptor.assigned,
+                  ),
+
+                zIndexOffset:
+                  interceptor.assigned
+                    ? 1900
+                    : 1200,
+              },
+            ).addTo(
+              map,
+            );
+        },
+      );
+
+      /* ===============================================
+         Defence Sectors + Stations
+         =============================================== */
+
+      snapshot.sectors.forEach(
+        (
+          sector,
+        ) => {
+          sectorCircleRefs.current[
+            sector.id
+          ] =
+            L.circle(
+              positions.centers[
+                sector.id
+              ],
+              {
+                radius:
+                  sector.radiusMeters,
+
+                color:
+                  sector.active
+                    ? colors.intruder
+                    : sector.color,
+
+                weight:
+                  sector.active
+                    ? 3
+                    : 2,
+
+                opacity:
+                  sector.active
+                    ? 1
+                    : 0.82,
+
+                fillColor:
+                  sector.active
+                    ? colors.intruder
+                    : sector.color,
+
+                fillOpacity:
+                  sector.active
+                    ? 0.12
+                    : 0.045,
+
+                dashArray:
+                  sector.active
+                    ? "10 5"
+                    : "6 7",
+
+                className:
+                  "mn-zone-path",
+              },
+            )
+              .bindTooltip(
+                `DEFENCE ${sector.label}`,
+                {
+                  direction:
+                    "center",
+
+                  permanent:
+                    false,
+                },
+              )
+              .addTo(
+                map,
+              );
+
+          stationMarkerRefs.current[
+            sector.id
+          ] =
+            L.marker(
+              positions.stations[
+                sector.id
+              ],
+              {
+                icon:
+                  createStationIcon(
+                    sector,
+                  ),
+
+                zIndexOffset:
+                  1000,
+              },
+            )
+              .bindTooltip(
+                `Station ${sector.interceptorId} · ${sector.label}`,
+              )
+              .addTo(
+                map,
+              );
+        },
+      );
 
       /* ===============================================
          Trails
          =============================================== */
 
-      leaderTrailRef.current =
+      intruderTrailRef.current =
         L.polyline(
-          positions.leaderTrail,
+          positions.intruderTrail,
           {
             color:
-              colors.primary,
+              colors.intruder,
 
             weight:
-              3,
+              4,
 
             opacity:
-              0.9,
+              0.98,
+
+            className:
+              "mn-glow-path",
           },
         ).addTo(
           map,
         );
 
-      followerTrailRef.current =
-        L.polyline(
-          positions.followerTrail,
-          {
-            color:
-              colors.info,
+      snapshot.interceptors.forEach(
+        (
+          interceptor,
+        ) => {
+          const sector =
+            snapshot.sectors.find(
+              (
+                item,
+              ) =>
+                item.interceptorId ===
+                interceptor.id,
+            );
 
-            weight:
-              3,
+          interceptorTrailRefs.current[
+            interceptor.id
+          ] =
+            L.polyline(
+              positions.interceptorTrails[
+                interceptor.id
+              ] ??
+                [],
+              {
+                color:
+                  sector?.color ??
+                  colors.interceptor,
 
-            opacity:
-              0.9,
-          },
-        ).addTo(
-          map,
-        );
+                weight:
+                  interceptor.assigned
+                    ? 4
+                    : 2.5,
+
+                opacity:
+                  interceptor.assigned
+                    ? 1
+                    : 0.6,
+
+                className:
+                  "mn-glow-path",
+              },
+            ).addTo(
+              map,
+            );
+        },
+      );
 
       /* ===============================================
-         Heading vectors
-         =============================================== */
-
-      leaderHeadingRef.current =
-        L.polyline(
-          [
-            positions.leader,
-            positions.leaderHeading,
-          ],
-          {
-            color:
-              colors.primary,
-
-            weight:
-              1.5,
-
-            opacity:
-              0.38,
-
-            dashArray:
-              "4 7",
-          },
-        ).addTo(
-          map,
-        );
-
-      followerHeadingRef.current =
-        L.polyline(
-          [
-            positions.follower,
-            positions.followerHeading,
-          ],
-          {
-            color:
-              colors.info,
-
-            weight:
-              1.5,
-
-            opacity:
-              0.38,
-
-            dashArray:
-              "4 7",
-          },
-        ).addTo(
-          map,
-        );
-
-      /* ===============================================
-         Predictors
+         Prediction
          =============================================== */
 
       baselinePathRef.current =
         L.polyline(
           [
-            positions.leader,
+            positions.intruder,
             ...positions.baseline,
           ],
           {
             color:
-              colors.white,
+              colors.cv,
 
             weight:
-              2,
+              3,
 
             opacity:
-              0.62,
+              0.92,
 
             dashArray:
               "5 8",
+
+            className:
+              "mn-glow-path",
           },
         ).addTo(
           map,
@@ -961,21 +1130,24 @@ export function InterceptMap({
       ctrvPathRef.current =
         L.polyline(
           [
-            positions.leader,
+            positions.intruder,
             ...positions.ctrv,
           ],
           {
             color:
-              colors.primary,
+              colors.ctrv,
 
             weight:
-              2.5,
+              3.5,
 
             opacity:
-              0.82,
+              0.96,
 
             dashArray:
-              "7 6",
+              "10 7",
+
+            className:
+              "mn-glow-path",
           },
         ).addTo(
           map,
@@ -984,185 +1156,166 @@ export function InterceptMap({
       adaptivePathRef.current =
         L.polyline(
           [
-            positions.leader,
+            positions.intruder,
             ...positions.adaptive,
           ],
           {
             color:
-              colors.nominal,
+              colors.adaptive,
 
             weight:
-              3.2,
+              5,
 
             opacity:
-              0.96,
+              1,
+
+            className:
+              "mn-strong-glow-path",
           },
         ).addTo(
           map,
         );
 
       /* ===============================================
-         Relationship + Guidance
+         Guidance
          =============================================== */
 
-      relationshipLineRef.current =
-        L.polyline(
-          [
-            positions.follower,
-            positions.leader,
-          ],
-          {
-            color:
-              colors.white,
-
-            weight:
-              1,
-
-            opacity:
-              0.2,
-
-            dashArray:
-              "3 8",
-          },
-        ).addTo(
-          map,
+      const assigned =
+        snapshot.interceptors.find(
+          (
+            interceptor,
+          ) =>
+            interceptor.id ===
+            snapshot.assignedInterceptorId,
         );
+
+      const assignedLatLng =
+        assigned
+          ? positions.interceptors[
+              assigned.id
+            ]
+          : positions.intruder;
 
       guidanceLineRef.current =
         L.polyline(
           [
-            positions.follower,
+            assignedLatLng,
             positions.guidance,
           ],
           {
             color:
-              colors.info,
+              colors.guidance,
 
             weight:
-              2,
+              4,
 
             opacity:
-              0.72,
+              1,
 
             dashArray:
               "7 5",
+
+            className:
+              "mn-strong-glow-path",
           },
         ).addTo(
           map,
         );
 
-      guidanceMarkerRef.current =
+      guidanceTargetRef.current =
         L.circleMarker(
           positions.guidance,
           {
             radius:
-              7,
+              9,
 
             color:
-              colors.info,
+              colors.guidance,
 
             weight:
-              2,
+              3,
 
             fillColor:
-              colors.info,
+              colors.background,
 
             fillOpacity:
-              0.22,
+              0.85,
+
+            className:
+              "mn-strong-glow-path",
           },
         )
           .bindTooltip(
-            "Guidance target",
+            "AI RENDEZVOUS TARGET",
           )
           .addTo(
             map,
           );
 
       /* ===============================================
-         Safety Geometry
+         Separation Geometry
          =============================================== */
 
       desiredSeparationRef.current =
         L.circle(
-          positions.leader,
+          positions.intruder,
           {
             radius:
               snapshot.desiredSeparationMeters,
 
             color:
-              colors.primary,
+              colors.shadow,
 
             weight:
-              1.5,
+              2.5,
 
             opacity:
-              0.52,
+              0.95,
 
             fillOpacity:
               0,
 
             dashArray:
-              "8 8",
+              "9 7",
+
+            className:
+              "mn-glow-path",
           },
         ).addTo(
           map,
         );
 
-      protectedSeparationRef.current =
+      safetySeparationRef.current =
         L.circle(
-          positions.leader,
+          positions.intruder,
           {
             radius:
               snapshot.minimumSeparationMeters,
 
             color:
-              colors.critical,
+              colors.safety,
 
             weight:
-              1.7,
+              3,
 
             opacity:
-              0.76,
+              1,
 
             fillColor:
-              colors.critical,
+              colors.safety,
 
             fillOpacity:
-              0.055,
+              0.09,
 
             dashArray:
-              "5 6",
+              "4 5",
+
+            className:
+              "mn-strong-glow-path",
           },
         ).addTo(
           map,
         );
-
-      homeMarkerRef.current =
-        L.circleMarker(
-          positions.home,
-          {
-            radius:
-              6,
-
-            color:
-              colors.background,
-
-            weight:
-              2,
-
-            fillColor:
-              colors.nominal,
-
-            fillOpacity:
-              1,
-          },
-        )
-          .bindTooltip(
-            "HOME",
-          )
-          .addTo(
-            map,
-          );
 
       map.on(
         "dragstart",
@@ -1195,32 +1348,32 @@ export function InterceptMap({
 
       window.setTimeout(
         () => {
-          const bounds =
-            L.latLngBounds([
-              positions.leader,
-              positions.follower,
-              positions.guidance,
-            ]);
+          const points = [
+            positions.intruder,
 
-          if (
-            bounds.isValid()
-          ) {
-            map.fitBounds(
-              bounds,
-              {
-                padding: [
-                  90,
-                  90,
-                ],
+            ...Object.values(
+              positions.interceptors,
+            ),
 
-                maxZoom:
-                  16,
+            ...Object.values(
+              positions.stations,
+            ),
+          ];
 
-                animate:
-                  false,
-              },
-            );
-          }
+          map.fitBounds(
+            L.latLngBounds(
+              points,
+            ),
+            {
+              padding: [
+                70,
+                70,
+              ],
+
+              maxZoom:
+                14,
+            },
+          );
         },
         120,
       );
@@ -1246,6 +1399,18 @@ export function InterceptMap({
 
         baseTileRef.current =
           null;
+
+        interceptorMarkerRefs.current =
+          {};
+
+        stationMarkerRefs.current =
+          {};
+
+        sectorCircleRefs.current =
+          {};
+
+        interceptorTrailRefs.current =
+          {};
       };
     },
     [],
@@ -1283,8 +1448,11 @@ export function InterceptMap({
         L.tileLayer(
           config.url,
           {
+            minZoom:
+              3,
+
             maxZoom:
-              config.maxZoom,
+              19,
 
             attribution:
               config.attribution,
@@ -1320,92 +1488,296 @@ export function InterceptMap({
         return;
       }
 
-      leaderMarkerRef.current
+      intruderMarkerRef.current
         ?.setLatLng(
-          positions.leader,
+          positions.intruder,
         );
 
-      leaderMarkerRef.current
+      intruderMarkerRef.current
         ?.setIcon(
           createAircraftIcon(
-            "leader",
-            snapshot.leader.heading,
+            "intruder",
+            snapshot.intruder
+              .heading,
+            "INTRUDER",
+            colors.intruder,
           ),
         );
 
-      followerMarkerRef.current
-        ?.setLatLng(
-          positions.follower,
-        );
+      snapshot.interceptors.forEach(
+        (
+          interceptor,
+        ) => {
+          const sector =
+            snapshot.sectors.find(
+              (
+                item,
+              ) =>
+                item.interceptorId ===
+                interceptor.id,
+            );
 
-      followerMarkerRef.current
-        ?.setIcon(
-          createAircraftIcon(
-            "follower",
-            snapshot.follower.heading,
-          ),
-        );
+          const marker =
+            interceptorMarkerRefs.current[
+              interceptor.id
+            ];
 
-      leaderTrailRef.current
+          marker?.setLatLng(
+            positions.interceptors[
+              interceptor.id
+            ],
+          );
+
+          marker?.setIcon(
+            createAircraftIcon(
+              "interceptor",
+              interceptor.heading,
+              `INT-${interceptor.id}`,
+              sector?.color ??
+                colors.interceptor,
+              interceptor.assigned,
+            ),
+          );
+
+          marker?.setZIndexOffset(
+            interceptor.assigned
+              ? 1900
+              : 1200,
+          );
+
+          interceptorTrailRefs.current[
+            interceptor.id
+          ]?.setLatLngs(
+            positions.interceptorTrails[
+              interceptor.id
+            ] ??
+              [],
+          );
+
+          interceptorTrailRefs.current[
+            interceptor.id
+          ]?.setStyle({
+            weight:
+              interceptor.assigned
+                ? 4
+                : 2.5,
+
+            opacity:
+              showTrails
+                ? interceptor.assigned
+                  ? 1
+                  : 0.62
+                : 0,
+          });
+        },
+      );
+
+      snapshot.sectors.forEach(
+        (
+          sector,
+        ) => {
+          const circle =
+            sectorCircleRefs.current[
+              sector.id
+            ];
+
+          circle?.setLatLng(
+            positions.centers[
+              sector.id
+            ],
+          );
+
+          circle?.setStyle({
+            color:
+              sector.active
+                ? colors.intruder
+                : sector.color,
+
+            weight:
+              sector.active
+                ? 3
+                : 2,
+
+            opacity:
+              showZones
+                ? sector.active
+                  ? 1
+                  : 0.82
+                : 0,
+
+            fillColor:
+              sector.active
+                ? colors.intruder
+                : sector.color,
+
+            fillOpacity:
+              showZones
+                ? sector.active
+                  ? 0.12
+                  : 0.045
+                : 0,
+
+            dashArray:
+              sector.active
+                ? "10 5"
+                : "6 7",
+          });
+
+          const stationMarker =
+            stationMarkerRefs.current[
+              sector.id
+            ];
+
+          stationMarker?.setLatLng(
+            positions.stations[
+              sector.id
+            ],
+          );
+
+          stationMarker?.setIcon(
+            createStationIcon(
+              sector,
+            ),
+          );
+
+          if (
+            stationMarker
+          ) {
+            if (
+              showStations &&
+              !map.hasLayer(
+                stationMarker,
+              )
+            ) {
+              stationMarker.addTo(
+                map,
+              );
+            }
+
+            if (
+              !showStations &&
+              map.hasLayer(
+                stationMarker,
+              )
+            ) {
+              map.removeLayer(
+                stationMarker,
+              );
+            }
+          }
+        },
+      );
+
+      intruderTrailRef.current
         ?.setLatLngs(
-          positions.leaderTrail,
+          positions.intruderTrail,
         );
 
-      followerTrailRef.current
-        ?.setLatLngs(
-          positions.followerTrail,
-        );
-
-      leaderHeadingRef.current
-        ?.setLatLngs([
-          positions.leader,
-          positions.leaderHeading,
-        ]);
-
-      followerHeadingRef.current
-        ?.setLatLngs([
-          positions.follower,
-          positions.followerHeading,
-        ]);
+      intruderTrailRef.current
+        ?.setStyle({
+          opacity:
+            showTrails
+              ? 0.98
+              : 0,
+        });
 
       baselinePathRef.current
         ?.setLatLngs([
-          positions.leader,
+          positions.intruder,
           ...positions.baseline,
         ]);
 
+      baselinePathRef.current
+        ?.setStyle({
+          opacity:
+            showCv
+              ? 0.92
+              : 0,
+        });
+
       ctrvPathRef.current
         ?.setLatLngs([
-          positions.leader,
+          positions.intruder,
           ...positions.ctrv,
         ]);
 
+      ctrvPathRef.current
+        ?.setStyle({
+          opacity:
+            showCtrv
+              ? 0.96
+              : 0,
+        });
+
       adaptivePathRef.current
         ?.setLatLngs([
-          positions.leader,
+          positions.intruder,
           ...positions.adaptive,
         ]);
 
-      relationshipLineRef.current
-        ?.setLatLngs([
-          positions.follower,
-          positions.leader,
-        ]);
+      adaptivePathRef.current
+        ?.setStyle({
+          opacity:
+            showAdaptive
+              ? 1
+              : 0,
+        });
 
-      guidanceLineRef.current
-        ?.setLatLngs([
-          positions.follower,
-          positions.guidance,
-        ]);
+      const assigned =
+        snapshot.interceptors.find(
+          (
+            interceptor,
+          ) =>
+            interceptor.id ===
+            snapshot.assignedInterceptorId,
+        );
 
-      guidanceMarkerRef.current
+      if (
+        assigned
+      ) {
+        guidanceLineRef.current
+          ?.setLatLngs([
+            positions.interceptors[
+              assigned.id
+            ],
+
+            positions.guidance,
+          ]);
+
+        guidanceLineRef.current
+          ?.setStyle({
+            opacity:
+              1,
+          });
+      } else {
+        guidanceLineRef.current
+          ?.setStyle({
+            opacity:
+              0,
+          });
+      }
+
+      guidanceTargetRef.current
         ?.setLatLng(
           positions.guidance,
         );
 
+      guidanceTargetRef.current
+        ?.setStyle({
+          opacity:
+            assigned
+              ? 1
+              : 0,
+
+          fillOpacity:
+            assigned
+              ? 0.85
+              : 0,
+        });
+
       desiredSeparationRef.current
         ?.setLatLng(
-          positions.leader,
+          positions.intruder,
         );
 
       desiredSeparationRef.current
@@ -1413,27 +1785,43 @@ export function InterceptMap({
           snapshot.desiredSeparationMeters,
         );
 
-      protectedSeparationRef.current
+      desiredSeparationRef.current
+        ?.setStyle({
+          opacity:
+            showSafety
+              ? 0.95
+              : 0,
+        });
+
+      safetySeparationRef.current
         ?.setLatLng(
-          positions.leader,
+          positions.intruder,
         );
 
-      protectedSeparationRef.current
+      safetySeparationRef.current
         ?.setRadius(
           snapshot.minimumSeparationMeters,
         );
 
-      homeMarkerRef.current
-        ?.setLatLng(
-          positions.home,
-        );
+      safetySeparationRef.current
+        ?.setStyle({
+          opacity:
+            showSafety
+              ? 1
+              : 0,
+
+          fillOpacity:
+            showSafety
+              ? 0.09
+              : 0,
+        });
 
       if (
         followMode ===
-        "leader"
+        "intruder"
       ) {
         map.panTo(
-          positions.leader,
+          positions.intruder,
           {
             animate:
               false,
@@ -1445,10 +1833,13 @@ export function InterceptMap({
 
       if (
         followMode ===
-        "follower"
+          "assigned" &&
+        assigned
       ) {
         map.panTo(
-          positions.follower,
+          positions.interceptors[
+            assigned.id
+          ],
           {
             animate:
               false,
@@ -1460,8 +1851,16 @@ export function InterceptMap({
 
       if (
         followMode ===
-        "both"
+        "network"
       ) {
+        const points = [
+          positions.intruder,
+
+          ...Object.values(
+            positions.interceptors,
+          ),
+        ];
+
         const visibleBounds =
           map
             .getBounds()
@@ -1469,31 +1868,31 @@ export function InterceptMap({
               -0.12,
             );
 
+        const allVisible =
+          points.every(
+            (
+              point,
+            ) =>
+              visibleBounds.contains(
+                point,
+              ),
+          );
+
         if (
-          !visibleBounds.contains(
-            positions.leader,
-          ) ||
-          !visibleBounds.contains(
-            positions.follower,
-          ) ||
-          !visibleBounds.contains(
-            positions.guidance,
-          )
+          !allVisible
         ) {
           map.fitBounds(
-            L.latLngBounds([
-              positions.leader,
-              positions.follower,
-              positions.guidance,
-            ]),
+            L.latLngBounds(
+              points,
+            ),
             {
               padding: [
-                90,
-                90,
+                60,
+                60,
               ],
 
               maxZoom:
-                17,
+                15,
 
               animate:
                 false,
@@ -1504,135 +1903,23 @@ export function InterceptMap({
     },
     [
       positions,
-      snapshot.leader.heading,
-      snapshot.follower.heading,
-      snapshot.desiredSeparationMeters,
-      snapshot.minimumSeparationMeters,
+      snapshot,
       followMode,
-    ],
-  );
-
-  /* =======================================================
-     Visibility
-     ======================================================= */
-
-  useEffect(
-    () => {
-      leaderTrailRef.current
-        ?.setStyle({
-          opacity:
-            showTrails
-              ? 0.9
-              : 0,
-        });
-
-      followerTrailRef.current
-        ?.setStyle({
-          opacity:
-            showTrails
-              ? 0.9
-              : 0,
-        });
-
-      leaderHeadingRef.current
-        ?.setStyle({
-          opacity:
-            showTrails
-              ? 0.38
-              : 0,
-        });
-
-      followerHeadingRef.current
-        ?.setStyle({
-          opacity:
-            showTrails
-              ? 0.38
-              : 0,
-        });
-    },
-    [
+      showZones,
+      showStations,
       showTrails,
-    ],
-  );
-
-  useEffect(
-    () => {
-      baselinePathRef.current
-        ?.setStyle({
-          opacity:
-            showBaseline
-              ? 0.62
-              : 0,
-        });
-    },
-    [
-      showBaseline,
-    ],
-  );
-
-  useEffect(
-    () => {
-      ctrvPathRef.current
-        ?.setStyle({
-          opacity:
-            showCtrv
-              ? 0.82
-              : 0,
-        });
-    },
-    [
+      showCv,
       showCtrv,
-    ],
-  );
-
-  useEffect(
-    () => {
-      adaptivePathRef.current
-        ?.setStyle({
-          opacity:
-            showAdaptive
-              ? 0.96
-              : 0,
-        });
-    },
-    [
       showAdaptive,
-    ],
-  );
-
-  useEffect(
-    () => {
-      desiredSeparationRef.current
-        ?.setStyle({
-          opacity:
-            showSafety
-              ? 0.52
-              : 0,
-        });
-
-      protectedSeparationRef.current
-        ?.setStyle({
-          opacity:
-            showSafety
-              ? 0.76
-              : 0,
-
-          fillOpacity:
-            showSafety
-              ? 0.055
-              : 0,
-        });
-    },
-    [
       showSafety,
     ],
   );
 
   /* =======================================================
-     Camera
+     Camera Commands
      ======================================================= */
 
-  function focusBoth() {
+  function focusNetwork() {
     const map =
       mapRef.current;
 
@@ -1643,31 +1930,38 @@ export function InterceptMap({
     }
 
     setFollowMode(
-      "both",
+      "network",
     );
 
+    const points = [
+      positions.intruder,
+
+      ...Object.values(
+        positions.interceptors,
+      ),
+
+      ...Object.values(
+        positions.stations,
+      ),
+    ];
+
     map.fitBounds(
-      L.latLngBounds([
-        positions.leader,
-        positions.follower,
-        positions.guidance,
-      ]),
+      L.latLngBounds(
+        points,
+      ),
       {
         padding: [
-          90,
-          90,
+          60,
+          60,
         ],
 
         maxZoom:
-          17,
-
-        animate:
-          true,
+          14,
       },
     );
   }
 
-  function focusLeader() {
+  function focusIntruder() {
     const map =
       mapRef.current;
 
@@ -1678,15 +1972,12 @@ export function InterceptMap({
     }
 
     setFollowMode(
-      "leader",
+      "intruder",
     );
 
     map.flyTo(
-      positions.leader,
-      Math.max(
-        map.getZoom(),
-        16,
-      ),
+      positions.intruder,
+      16,
       {
         duration:
           0.8,
@@ -1694,26 +1985,35 @@ export function InterceptMap({
     );
   }
 
-  function focusFollower() {
+  function focusAssigned() {
     const map =
       mapRef.current;
 
+    const assigned =
+      snapshot.interceptors.find(
+        (
+          interceptor,
+        ) =>
+          interceptor.id ===
+          snapshot.assignedInterceptorId,
+      );
+
     if (
-      !map
+      !map ||
+      !assigned
     ) {
       return;
     }
 
     setFollowMode(
-      "follower",
+      "assigned",
     );
 
     map.flyTo(
-      positions.follower,
-      Math.max(
-        map.getZoom(),
-        16,
-      ),
+      positions.interceptors[
+        assigned.id
+      ],
+      16,
       {
         duration:
           0.8,
@@ -1745,39 +2045,58 @@ export function InterceptMap({
     );
   }
 
+  const activeSector =
+    snapshot.sectors.find(
+      (
+        sector,
+      ) =>
+        sector.active,
+    );
+
+  const assignedInterceptor =
+    snapshot.interceptors.find(
+      (
+        interceptor,
+      ) =>
+        interceptor.id ===
+        snapshot.assignedInterceptorId,
+    );
+
   return (
-    <div
-      className={[
-        "grid h-full min-h-[560px]",
-
-        "grid-rows-[58px_minmax(0,1fr)_52px]",
-
-        "overflow-hidden bg-[#020304]",
-
-        "xl:min-h-0",
-      ].join(" ")}
-    >
+    <div className="grid h-full min-h-[560px] grid-rows-[48px_minmax(0,1fr)_44px] overflow-hidden bg-[#020304] xl:min-h-0">
       {/* ===============================================
-          MAP COMMAND BAR
+          Compact external command bar
           =============================================== */}
 
       <div className="flex min-w-0 items-center justify-between gap-3 border-b border-white/[0.08] bg-[#06080b] px-3">
-        <div className="flex min-w-0 items-center gap-2">
-          <Crosshair
-            size={15}
-            strokeWidth={1.6}
-            className="shrink-0 text-[#5AA9FF]"
-          />
-
-          <div className="min-w-0">
-            <div className="truncate text-[16px] font-semibold text-white/86">
-              Intercept Map
-            </div>
-
-            <div className="truncate text-[14px] text-white/40">
-              Real basemap · aircraft tracks · predictive guidance
-            </div>
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="truncate text-[14px] font-medium text-white/70">
+            Defence Network
           </div>
+
+          <div
+            className={[
+              "hidden font-mono text-[13px] font-semibold md:block",
+
+              activeSector
+                ? "text-[#FF596D]"
+                : "text-[#59D99A]",
+            ].join(" ")}
+          >
+            {activeSector
+              ? `${activeSector.label} INTRUSION`
+              : "ALL SECTORS CLEAR"}
+          </div>
+
+          {assignedInterceptor ? (
+            <div className="hidden font-mono text-[13px] text-[#00D9FF] lg:block">
+              INT-
+              {
+                assignedInterceptor.id
+              }{" "}
+              ASSIGNED
+            </div>
+          ) : null}
         </div>
 
         <div className="flex shrink-0 items-center gap-1.5">
@@ -1794,49 +2113,56 @@ export function InterceptMap({
             }
           />
 
-          <MapButton
-            label="Map"
-            active={
-              baseMap !==
-              "satellite"
-            }
+          <button
+            type="button"
+            title="Cycle basemap"
             onClick={
               cycleBaseMap
             }
-          />
-
-          <span className="mx-1 h-6 w-px bg-white/[0.08]" />
-
-          <MapButton
-            label="Both"
-            active={
-              followMode ===
-              "both"
-            }
-            onClick={
-              focusBoth
-            }
-          />
-
-          <MapButton
-            label="Leader"
-            active={
-              followMode ===
-              "leader"
-            }
-            onClick={
-              focusLeader
-            }
-          />
+            className="flex h-8 w-8 items-center justify-center rounded-[4px] border border-white/[0.08] bg-[#030405] text-white/56 hover:text-white"
+          >
+            {baseMap ===
+            "satellite" ? (
+              <Satellite
+                size={14}
+              />
+            ) : (
+              <Layers3
+                size={14}
+              />
+            )}
+          </button>
 
           <MapButton
-            label="Follower"
+            label="Network"
             active={
               followMode ===
-              "follower"
+              "network"
             }
             onClick={
-              focusFollower
+              focusNetwork
+            }
+          />
+
+          <MapButton
+            label="Target"
+            active={
+              followMode ===
+              "intruder"
+            }
+            onClick={
+              focusIntruder
+            }
+          />
+
+          <MapButton
+            label="Interceptor"
+            active={
+              followMode ===
+              "assigned"
+            }
+            onClick={
+              focusAssigned
             }
           />
 
@@ -1847,10 +2173,10 @@ export function InterceptMap({
               mapRef.current
                 ?.zoomOut()
             }
-            className="flex h-[34px] w-[34px] items-center justify-center rounded-[4px] border border-white/[0.08] bg-[#030405] text-white/56 hover:text-white"
+            className="flex h-8 w-8 items-center justify-center rounded-[4px] border border-white/[0.08] bg-[#030405] text-white/56 hover:text-white"
           >
             <Minus
-              size={15}
+              size={14}
             />
           </button>
 
@@ -1861,33 +2187,64 @@ export function InterceptMap({
               mapRef.current
                 ?.zoomIn()
             }
-            className="flex h-[34px] w-[34px] items-center justify-center rounded-[4px] border border-white/[0.08] bg-[#030405] text-white/56 hover:text-white"
+            className="flex h-8 w-8 items-center justify-center rounded-[4px] border border-white/[0.08] bg-[#030405] text-white/56 hover:text-white"
           >
             <Plus
-              size={15}
+              size={14}
             />
           </button>
 
           <button
             type="button"
-            title="Fit leader and follower"
+            title="Fit defence network"
             onClick={
-              focusBoth
+              focusNetwork
             }
-            className="flex h-[34px] w-[34px] items-center justify-center rounded-[4px] border border-white/[0.08] bg-[#030405] text-white/56 hover:text-white"
+            className="flex h-8 w-8 items-center justify-center rounded-[4px] border border-white/[0.08] bg-[#030405] text-white/56 hover:text-white"
           >
             <LocateFixed
-              size={15}
+              size={14}
             />
           </button>
         </div>
       </div>
 
       {/* ===============================================
-          CLEAN MAP CANVAS
+          Clean map
           =============================================== */}
 
-      <div className="relative min-h-0">
+      <div className="intercept-map relative min-h-0">
+        <style>
+          {`
+            .intercept-map .mn-glow-path {
+              filter:
+                drop-shadow(0 0 2px rgba(0,0,0,1))
+                drop-shadow(0 0 3px rgba(0,0,0,0.9));
+            }
+
+            .intercept-map .mn-strong-glow-path {
+              filter:
+                drop-shadow(0 0 2px rgba(0,0,0,1))
+                drop-shadow(0 0 5px rgba(0,0,0,0.95));
+            }
+
+            .intercept-map .mn-zone-path {
+              filter:
+                drop-shadow(0 0 2px rgba(0,0,0,0.9));
+            }
+
+            .intercept-map .leaflet-tooltip {
+              border: 1px solid rgba(255,255,255,0.14);
+              border-radius: 4px;
+              background: rgba(3,4,5,0.92);
+              color: rgba(255,255,255,0.86);
+              box-shadow: 0 5px 14px rgba(0,0,0,0.42);
+              font-family: "JetBrains Mono", monospace;
+              font-size: 12px;
+            }
+          `}
+        </style>
+
         <div
           ref={
             containerRef
@@ -1897,14 +2254,40 @@ export function InterceptMap({
       </div>
 
       {/* ===============================================
-          MAP LAYER BAR
+          Layer strip
           =============================================== */}
 
       <div className="flex min-w-0 items-center justify-between gap-3 border-t border-white/[0.08] bg-[#06080b] px-3">
-        <div className="flex min-w-0 items-center gap-2">
-          <span className="shrink-0 text-[14px] font-medium text-white/54">
-            Layers
-          </span>
+        <div className="flex items-center gap-1.5">
+          <MapButton
+            label="Zones"
+            active={
+              showZones
+            }
+            onClick={() =>
+              setShowZones(
+                (
+                  value,
+                ) =>
+                  !value,
+              )
+            }
+          />
+
+          <MapButton
+            label="Stations"
+            active={
+              showStations
+            }
+            onClick={() =>
+              setShowStations(
+                (
+                  value,
+                ) =>
+                  !value,
+              )
+            }
+          />
 
           <MapButton
             label="Trails"
@@ -1914,9 +2297,9 @@ export function InterceptMap({
             onClick={() =>
               setShowTrails(
                 (
-                  current,
+                  value,
                 ) =>
-                  !current,
+                  !value,
               )
             }
           />
@@ -1924,14 +2307,14 @@ export function InterceptMap({
           <MapButton
             label="CV"
             active={
-              showBaseline
+              showCv
             }
             onClick={() =>
-              setShowBaseline(
+              setShowCv(
                 (
-                  current,
+                  value,
                 ) =>
-                  !current,
+                  !value,
               )
             }
           />
@@ -1944,24 +2327,24 @@ export function InterceptMap({
             onClick={() =>
               setShowCtrv(
                 (
-                  current,
+                  value,
                 ) =>
-                  !current,
+                  !value,
               )
             }
           />
 
           <MapButton
-            label="Adaptive"
+            label="AI"
             active={
               showAdaptive
             }
             onClick={() =>
               setShowAdaptive(
                 (
-                  current,
+                  value,
                 ) =>
-                  !current,
+                  !value,
               )
             }
           />
@@ -1974,48 +2357,38 @@ export function InterceptMap({
             onClick={() =>
               setShowSafety(
                 (
-                  current,
+                  value,
                 ) =>
-                  !current,
+                  !value,
               )
             }
           />
         </div>
 
-        <div className="flex shrink-0 items-center gap-4 font-mono text-[14px]">
-          <span className="text-[#F6B23C]">
-            ● Leader
+        <div className="hidden items-center gap-4 font-mono text-[12px] xl:flex">
+          <span className="text-[#FF375F]">
+            ● Intruder
           </span>
 
-          <span className="text-[#5AA9FF]">
-            ● Follower
+          <span className="text-[#00D9FF]">
+            ● Interceptor
           </span>
 
-          <span className="text-[#59D99A]">
-            ● Adaptive
+          <span className="text-white">
+            ┅ CV
           </span>
 
-          <span className="hidden text-white/48 2xl:inline">
-            Basemap:{" "}
-            <span className="text-white/72">
-              {
-                baseMap
-              }
-            </span>
+          <span className="text-[#D77DFF]">
+            ┅ CTRV
           </span>
 
-          {baseMap ===
-          "satellite" ? (
-            <Satellite
-              size={14}
-              className="text-[#F6B23C]"
-            />
-          ) : (
-            <Layers3
-              size={14}
-              className="text-[#5AA9FF]"
-            />
-          )}
+          <span className="text-[#A7FF4F]">
+            ━ AI
+          </span>
+
+          <span className="text-[#FFD166]">
+            ┅ Guidance
+          </span>
         </div>
       </div>
     </div>
