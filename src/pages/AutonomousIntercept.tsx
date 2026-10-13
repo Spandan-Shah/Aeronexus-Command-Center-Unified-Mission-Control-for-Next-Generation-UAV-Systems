@@ -35,6 +35,10 @@ import type {
   PredictorMode,
 } from "../hooks/useInterceptSimulation";
 
+/* =========================================================
+   Types
+   ========================================================= */
+
 type MetricTone =
   | "nominal"
   | "caution"
@@ -76,6 +80,10 @@ const toneClass:
   muted:
     "text-white/42",
 };
+
+/* =========================================================
+   Formatting
+   ========================================================= */
 
 function formatDistance(
   meters:
@@ -135,6 +143,20 @@ function formatError(
   )} m`;
 }
 
+function formatPercent(
+  value:
+    number,
+) {
+  return `${Math.round(
+    value *
+      100,
+  )}%`;
+}
+
+/* =========================================================
+   Metric Cell
+   ========================================================= */
+
 function MetricCell({
   metric,
 }: {
@@ -147,13 +169,13 @@ function MetricCell({
   return (
     <div className="flex min-w-0 items-center justify-between gap-3 border-r border-white/[0.07] px-4 last:border-r-0">
       <div className="min-w-0">
-        <div className="font-mono text-[10px] font-semibold uppercase tracking-[0.06em] text-white/40">
+        <div className="truncate text-[14px] font-medium text-white/44">
           {metric.label}
         </div>
 
         <div
           className={[
-            "mt-1.5 truncate font-mono text-[16px] font-semibold leading-none",
+            "mt-1 truncate font-mono text-[14px] font-semibold",
 
             toneClass[
               metric.tone
@@ -165,7 +187,7 @@ function MetricCell({
       </div>
 
       <Icon
-        size={17}
+        size={18}
         strokeWidth={1.6}
         className={[
           "shrink-0",
@@ -178,6 +200,10 @@ function MetricCell({
     </div>
   );
 }
+
+/* =========================================================
+   State Row
+   ========================================================= */
 
 function StateRow({
   label,
@@ -195,14 +221,14 @@ function StateRow({
     string;
 }) {
   return (
-    <div className="flex min-h-[34px] items-center justify-between gap-4 border-b border-white/[0.055] last:border-b-0">
-      <span className="text-[11px] text-white/44">
+    <div className="flex min-h-[38px] items-center justify-between gap-4 border-b border-white/[0.055] last:border-b-0">
+      <span className="text-[14px] text-white/46">
         {label}
       </span>
 
       <span
         className={[
-          "max-w-[64%] truncate text-right font-mono text-[11px] font-medium",
+          "max-w-[64%] truncate text-right font-mono text-[14px] font-medium",
 
           valueClass,
         ].join(" ")}
@@ -212,6 +238,10 @@ function StateRow({
     </div>
   );
 }
+
+/* =========================================================
+   Command Button
+   ========================================================= */
 
 function CommandButton({
   label,
@@ -242,7 +272,7 @@ function CommandButton({
       : tone ===
           "primary"
         ? "border-[rgba(246,178,60,0.30)] bg-[rgba(246,178,60,0.07)] text-[#F6B23C] hover:bg-[rgba(246,178,60,0.12)]"
-        : "border-white/[0.09] bg-[#05060d] text-white/64 hover:border-white/[0.18] hover:text-white";
+        : "border-white/[0.09] bg-[#05060d] text-white/68 hover:border-white/[0.18] hover:text-white";
 
   return (
     <button
@@ -251,9 +281,11 @@ function CommandButton({
         onClick
       }
       className={[
-        "flex h-10 items-center justify-center gap-2 rounded-[5px] border px-3",
+        "flex h-[44px] items-center justify-center gap-2",
 
-        "font-mono text-[10px] font-semibold uppercase tracking-[0.035em]",
+        "rounded-[5px] border px-3",
+
+        "font-mono text-[14px] font-medium",
 
         "transition-colors",
 
@@ -261,13 +293,17 @@ function CommandButton({
       ].join(" ")}
     >
       <Icon
-        size={13}
+        size={15}
       />
 
       {label}
     </button>
   );
 }
+
+/* =========================================================
+   Predictor Button
+   ========================================================= */
 
 function PredictorButton({
   label,
@@ -294,7 +330,7 @@ function PredictorButton({
         onClick
       }
       className={[
-        "min-h-[64px] rounded-[5px] border p-3 text-left transition-colors",
+        "min-h-[82px] rounded-[5px] border p-3 text-left transition-colors",
 
         active
           ? "border-[rgba(246,178,60,0.32)] bg-[rgba(246,178,60,0.06)]"
@@ -303,22 +339,26 @@ function PredictorButton({
     >
       <div
         className={[
-          "font-mono text-[10px] font-semibold uppercase",
+          "font-mono text-[14px] font-semibold",
 
           active
             ? "text-[#F6B23C]"
-            : "text-white/60",
+            : "text-white/66",
         ].join(" ")}
       >
         {label}
       </div>
 
-      <div className="mt-1.5 text-[10px] leading-[1.45] text-white/36">
+      <div className="mt-1.5 text-[14px] leading-[1.45] text-white/40">
         {description}
       </div>
     </button>
   );
 }
+
+/* =========================================================
+   Range Control
+   ========================================================= */
 
 function RangeControl({
   label,
@@ -356,11 +396,11 @@ function RangeControl({
   return (
     <div className="rounded-[5px] border border-white/[0.07] bg-[#05060d] p-3">
       <div className="flex items-center justify-between gap-3">
-        <span className="text-[11px] font-medium text-white/58">
+        <span className="text-[14px] font-medium text-white/62">
           {label}
         </span>
 
-        <span className="font-mono text-[13px] font-semibold text-[#F6B23C]">
+        <span className="font-mono text-[14px] font-semibold text-[#F6B23C]">
           {value.toFixed(
             step <
             1
@@ -394,8 +434,48 @@ function RangeControl({
             ),
           )
         }
-        className="mt-3 w-full accent-[#F6B23C]"
+        className="mt-4 w-full accent-[#F6B23C]"
       />
+    </div>
+  );
+}
+
+/* =========================================================
+   Predictor Evidence
+   ========================================================= */
+
+function PredictorEvidence({
+  label,
+  value,
+  tone =
+    "muted",
+}: {
+  label:
+    string;
+
+  value:
+    string;
+
+  tone?:
+    MetricTone;
+}) {
+  return (
+    <div className="rounded-[5px] border border-white/[0.07] bg-[#05060d] p-3">
+      <div className="text-[14px] text-white/42">
+        {label}
+      </div>
+
+      <div
+        className={[
+          "mt-2 font-mono text-[16px] font-semibold",
+
+          toneClass[
+            tone
+          ],
+        ].join(" ")}
+      >
+        {value}
+      </div>
     </div>
   );
 }
@@ -425,9 +505,9 @@ export function AutonomousIntercept() {
   const evidenceReady =
     snapshot.performance
       .validationSamples >=
-    3;
+    5;
 
-  const mlWinning =
+  const adaptiveWinning =
     evidenceReady &&
     improvement !==
       null &&
@@ -532,7 +612,7 @@ export function AutonomousIntercept() {
 
       {
         label:
-          "ML Confidence",
+          "AI Confidence",
 
         value:
           snapshot.ai
@@ -562,33 +642,61 @@ export function AutonomousIntercept() {
 
   return (
     <div className="bg-[#05060d] text-white">
-      <section className="xl:h-[calc(100vh-70px)] xl:overflow-hidden">
-        <div className="mx-auto grid w-full max-w-[1600px] gap-2 px-4 pb-3 pt-2 sm:px-6 lg:px-8 xl:h-full xl:grid-rows-[50px_70px_minmax(0,1fr)] xl:px-10 2xl:px-14">
-          {/* Header */}
+      {/* ===================================================
+          PRIMARY VIEWPORT
+          =================================================== */}
 
-          <header className="flex items-center justify-between gap-4 border-b border-white/[0.08]">
+      <section className="xl:h-[calc(100vh-70px)] xl:overflow-hidden">
+        <div
+          className={[
+            "mx-auto w-full max-w-[1600px]",
+
+            "px-4 pb-3 pt-2",
+
+            "sm:px-6",
+
+            "lg:px-8",
+
+            "xl:grid xl:h-full",
+
+            "xl:grid-rows-[58px_82px_minmax(0,1fr)]",
+
+            "xl:gap-2",
+
+            "xl:px-10",
+
+            "2xl:px-14",
+          ].join(" ")}
+        >
+          {/* ===============================================
+              Header
+              =============================================== */}
+
+          <header className="flex min-w-0 items-center justify-between gap-4 border-b border-white/[0.08]">
             <div className="min-w-0">
               <h1 className="text-[18px] font-semibold tracking-[-0.02em] text-white">
                 Autonomous Intercept
               </h1>
 
-              <p className="mt-0.5 hidden text-[12px] text-white/44 sm:block">
-                Fixed-wing leader–follower prediction, adaptive airspeed control and non-contact shadowing
+              <p className="mt-1 hidden truncate text-[14px] text-white/46 sm:block">
+                Predictive leader–follower guidance · adaptive airspeed control · non-contact rendezvous and shadow
               </p>
             </div>
 
-            <div className="flex items-center gap-2">
-              <div className="rounded-[4px] border border-[rgba(89,217,154,0.22)] bg-[rgba(89,217,154,0.04)] px-3 py-2 font-mono text-[10px] font-semibold uppercase text-[#59D99A]">
+            <div className="flex shrink-0 items-center gap-2">
+              <div className="rounded-[4px] border border-[rgba(89,217,154,0.22)] bg-[rgba(89,217,154,0.04)] px-3 py-2 font-mono text-[14px] font-medium text-[#59D99A]">
                 ● Simulation Active
               </div>
 
-              <div className="hidden rounded-[4px] border border-[rgba(90,169,255,0.22)] bg-[rgba(90,169,255,0.04)] px-3 py-2 font-mono text-[10px] font-semibold uppercase text-[#5AA9FF] md:block">
+              <div className="hidden rounded-[4px] border border-[rgba(90,169,255,0.22)] bg-[rgba(90,169,255,0.04)] px-3 py-2 font-mono text-[14px] font-medium text-[#5AA9FF] lg:block">
                 Human-in-loop
               </div>
             </div>
           </header>
 
-          {/* Metrics */}
+          {/* ===============================================
+              Metrics
+              =============================================== */}
 
           <section className="grid grid-cols-2 overflow-hidden rounded-[6px] border border-white/[0.08] bg-[#07090d] md:grid-cols-3 xl:grid-cols-6">
             {metrics.map(
@@ -607,26 +715,43 @@ export function AutonomousIntercept() {
             )}
           </section>
 
-          {/* Main workspace */}
+          {/* ===============================================
+              Workspace
+              =============================================== */}
 
-          <section className="grid min-h-[800px] overflow-hidden rounded-[6px] border border-white/[0.09] bg-[#020304] xl:min-h-0 xl:grid-cols-[minmax(0,1fr)_440px] 2xl:grid-cols-[minmax(0,1fr)_460px]">
-            {/* Left map */}
+          <section
+            className={[
+              "mt-3 grid min-h-[850px] overflow-hidden",
 
-            <div className="grid min-h-0 grid-rows-[44px_minmax(0,1fr)]">
-              <div className="flex items-center justify-between gap-3 border-b border-white/[0.08] bg-[#06080b] px-4">
-                <div className="flex items-center gap-2">
+              "rounded-[6px] border border-white/[0.09]",
+
+              "bg-[#020304]",
+
+              "xl:mt-0 xl:min-h-0",
+
+              "xl:grid-cols-[minmax(0,1fr)_470px]",
+            ].join(" ")}
+          >
+            {/* =============================================
+                MAP
+                ============================================= */}
+
+            <div className="grid min-h-0 grid-rows-[42px_minmax(0,1fr)]">
+              <div className="flex min-w-0 items-center justify-between border-b border-white/[0.08] bg-[#06080b] px-3">
+                <div className="flex min-w-0 items-center gap-2">
                   <MapPinned
-                    size={14}
-                    className="text-[#F6B23C]"
+                    size={15}
+                    strokeWidth={1.6}
+                    className="shrink-0 text-[#5AA9FF]"
                   />
 
-                  <span className="text-[13px] font-medium text-white/84">
+                  <span className="truncate text-[16px] font-semibold text-white/86">
                     Geospatial Intercept Workspace
                   </span>
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <span className="font-mono text-[10px] text-white/36">
+                  <span className="font-mono text-[14px] text-white/42">
                     T+
                     {
                       snapshot.simTimeSeconds.toFixed(
@@ -641,15 +766,15 @@ export function AutonomousIntercept() {
                     onClick={
                       actions.toggleRunning
                     }
-                    className="flex h-8 items-center gap-2 rounded-[4px] border border-white/[0.08] bg-[#05060d] px-3 font-mono text-[9px] font-semibold uppercase text-white/60 hover:text-white"
+                    className="flex h-[34px] items-center gap-2 rounded-[4px] border border-white/[0.08] bg-[#030405] px-3 font-mono text-[14px] text-white/60 hover:text-white"
                   >
                     {snapshot.running ? (
                       <Pause
-                        size={11}
+                        size={14}
                       />
                     ) : (
                       <Play
-                        size={11}
+                        size={14}
                       />
                     )}
 
@@ -663,10 +788,10 @@ export function AutonomousIntercept() {
                     onClick={
                       actions.reset
                     }
-                    className="flex h-8 items-center gap-2 rounded-[4px] border border-white/[0.08] bg-[#05060d] px-3 font-mono text-[9px] font-semibold uppercase text-white/60 hover:text-white"
+                    className="flex h-[34px] items-center gap-2 rounded-[4px] border border-white/[0.08] bg-[#030405] px-3 font-mono text-[14px] text-white/60 hover:text-white"
                   >
                     <RotateCcw
-                      size={11}
+                      size={14}
                     />
 
                     Reset
@@ -674,31 +799,46 @@ export function AutonomousIntercept() {
                 </div>
               </div>
 
-              <InterceptMap
-                snapshot={
-                  snapshot
-                }
-              />
+              <div className="relative min-h-0">
+                <InterceptMap
+                  snapshot={
+                    snapshot
+                  }
+                />
+              </div>
             </div>
 
-            {/* Right rail */}
+            {/* =============================================
+                RIGHT INSPECTOR
+                ============================================= */}
 
             <aside className="min-h-0 overflow-y-auto border-t border-white/[0.08] bg-[#07090d] xl:border-l xl:border-t-0">
               {/* Mission state */}
 
-              <section className="border-b border-white/[0.08] px-4 py-3">
+              <section className="border-b border-white/[0.08] px-4 py-4">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.06em] text-[#F6B23C]">
+                    <div className="text-[16px] font-semibold text-[#F6B23C]">
                       Intercept State
                     </div>
 
-                    <div className="mt-1 text-[11px] text-white/38">
+                    <div className="mt-1 text-[14px] text-white/42">
                       Autonomous mission state machine
                     </div>
                   </div>
 
-                  <span className="rounded-[4px] border border-[rgba(90,169,255,0.24)] bg-[rgba(90,169,255,0.04)] px-2.5 py-1.5 font-mono text-[10px] font-semibold text-[#5AA9FF]">
+                  <span
+                    className={[
+                      "rounded-[4px] border px-3 py-1.5",
+
+                      "font-mono text-[14px] font-semibold",
+
+                      snapshot.mode ===
+                      "ABORT"
+                        ? "border-[rgba(255,90,99,0.28)] bg-[rgba(255,90,99,0.04)] text-[#FF5A63]"
+                        : "border-[rgba(90,169,255,0.24)] bg-[rgba(90,169,255,0.04)] text-[#5AA9FF]",
+                    ].join(" ")}
+                  >
                     {
                       snapshot.mode
                     }
@@ -708,15 +848,15 @@ export function AutonomousIntercept() {
 
               {/* Aircraft */}
 
-              <section className="grid border-b border-white/[0.08] md:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-                <div className="border-b border-white/[0.08] px-4 py-3 md:border-b-0 md:border-r xl:border-b xl:border-r-0 2xl:border-b-0 2xl:border-r">
-                  <div className="mb-2 flex items-center gap-2">
+              <section className="grid border-b border-white/[0.08] 2xl:grid-cols-2">
+                <div className="border-b border-white/[0.08] px-4 py-4 2xl:border-b-0 2xl:border-r">
+                  <div className="mb-3 flex items-center gap-2">
                     <Plane
-                      size={14}
+                      size={17}
                       className="text-[#F6B23C]"
                     />
 
-                    <span className="text-[12px] font-semibold text-white/78">
+                    <span className="text-[16px] font-semibold text-white/82">
                       Leader · SYSID 1
                     </span>
                   </div>
@@ -741,16 +881,23 @@ export function AutonomousIntercept() {
                       1,
                     )}°/s`}
                   />
+
+                  <StateRow
+                    label="Bank"
+                    value={`${snapshot.leader.bank.toFixed(
+                      1,
+                    )}°`}
+                  />
                 </div>
 
-                <div className="px-4 py-3">
-                  <div className="mb-2 flex items-center gap-2">
+                <div className="px-4 py-4">
+                  <div className="mb-3 flex items-center gap-2">
                     <Plane
-                      size={14}
+                      size={17}
                       className="text-[#5AA9FF]"
                     />
 
-                    <span className="text-[12px] font-semibold text-white/78">
+                    <span className="text-[16px] font-semibold text-white/82">
                       Follower · SYSID 2
                     </span>
                   </div>
@@ -760,6 +907,14 @@ export function AutonomousIntercept() {
                     value={`${snapshot.follower.airspeed.toFixed(
                       1,
                     )} m/s`}
+                  />
+
+                  <StateRow
+                    label="Target Speed"
+                    value={`${snapshot.speedControl.followerCommandedAirspeed.toFixed(
+                      1,
+                    )} m/s`}
+                    valueClass="text-[#5AA9FF]"
                   />
 
                   <StateRow
@@ -774,37 +929,33 @@ export function AutonomousIntercept() {
                     value={`${snapshot.speedControl.airspeedDelta.toFixed(
                       1,
                     )} m/s`}
-                    valueClass="text-[#5AA9FF]"
                   />
                 </div>
               </section>
 
-              {/* Speed control */}
+              {/* Airspeed Control */}
 
               <section className="border-b border-white/[0.08] px-4 py-4">
                 <div className="mb-3 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <SlidersHorizontal
-                      size={14}
+                      size={17}
                       className="text-[#F6B23C]"
                     />
 
-                    <span className="text-[13px] font-semibold text-white/80">
+                    <span className="text-[16px] font-semibold text-white/82">
                       Airspeed Control
                     </span>
                   </div>
 
-                  <span className="font-mono text-[10px] text-[#59D99A]">
-                    {
-                      snapshot.speedControl
-                        .adaptiveSync
-                        ? "ADAPTIVE"
-                        : "BASIC"
-                    }
+                  <span className="font-mono text-[14px] text-[#59D99A]">
+                    {snapshot.speedControl.adaptiveSync
+                      ? "ADAPTIVE"
+                      : "BASIC"}
                   </span>
                 </div>
 
-                <div className="grid gap-2">
+                <div className="grid gap-3">
                   <RangeControl
                     label="Leader Target Airspeed"
                     value={
@@ -812,15 +963,9 @@ export function AutonomousIntercept() {
                         .leaderCommandedAirspeed
                     }
                     suffix="m/s"
-                    min={
-                      14
-                    }
-                    max={
-                      34
-                    }
-                    step={
-                      0.5
-                    }
+                    min={14}
+                    max={34}
+                    step={0.5}
                     onChange={
                       actions.setLeaderCommandedAirspeed
                     }
@@ -833,17 +978,25 @@ export function AutonomousIntercept() {
                         .followerMaxAirspeed
                     }
                     suffix="m/s"
-                    min={
-                      18
-                    }
-                    max={
-                      38
-                    }
-                    step={
-                      0.5
-                    }
+                    min={18}
+                    max={38}
+                    step={0.5}
                     onChange={
                       actions.setFollowerMaxAirspeed
+                    }
+                  />
+
+                  <RangeControl
+                    label="Desired Shadow Distance"
+                    value={
+                      snapshot.desiredSeparationMeters
+                    }
+                    suffix="m"
+                    min={110}
+                    max={300}
+                    step={10}
+                    onChange={
+                      actions.setDesiredSeparation
                     }
                   />
                 </div>
@@ -857,68 +1010,67 @@ export function AutonomousIntercept() {
                     )
                   }
                   className={[
-                    "mt-2 flex min-h-10 w-full items-center justify-between rounded-[5px] border px-3",
+                    "mt-3 flex min-h-[62px] w-full items-center justify-between",
 
-                    snapshot.speedControl
-                      .adaptiveSync
+                    "rounded-[5px] border px-3",
+
+                    snapshot.speedControl.adaptiveSync
                       ? "border-[rgba(89,217,154,0.22)] bg-[rgba(89,217,154,0.035)]"
                       : "border-white/[0.08] bg-[#05060d]",
                   ].join(" ")}
                 >
                   <div className="text-left">
-                    <div className="text-[11px] font-medium text-white/66">
+                    <div className="text-[14px] font-medium text-white/68">
                       Adaptive Speed Synchronization
                     </div>
 
-                    <div className="mt-0.5 text-[10px] text-white/32">
-                      Distance error + closing-rate damping
+                    <div className="mt-1 text-[14px] text-white/38">
+                      Separation · closing rate · predicted turn demand
                     </div>
                   </div>
 
                   <span
                     className={[
-                      "font-mono text-[10px] font-semibold",
+                      "font-mono text-[14px] font-semibold",
 
-                      snapshot.speedControl
-                        .adaptiveSync
+                      snapshot.speedControl.adaptiveSync
                         ? "text-[#59D99A]"
-                        : "text-white/30",
+                        : "text-white/34",
                     ].join(" ")}
                   >
-                    {snapshot.speedControl
-                      .adaptiveSync
+                    {snapshot.speedControl.adaptiveSync
                       ? "ON"
                       : "OFF"}
                   </span>
                 </button>
               </section>
 
-              {/* ML */}
+              {/* AI */}
 
               <section className="border-b border-white/[0.08] px-4 py-4">
-                <div className="mb-3 flex items-center justify-between">
+                <div className="mb-3 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2">
                     <BrainCircuit
-                      size={15}
+                      size={17}
                       className="text-[#59D99A]"
                     />
 
-                    <span className="text-[13px] font-semibold text-white/80">
-                      Machine Learning
+                    <span className="text-[16px] font-semibold text-white/82">
+                      Predictive AI
                     </span>
                   </div>
 
-                  <span className="font-mono text-[10px] text-[#59D99A]">
+                  <span className="font-mono text-[14px] font-semibold text-[#59D99A]">
                     {snapshot.ai.ready
                       ? `${confidence}% CONF`
                       : "TRAINING"}
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-3">
                   <PredictorButton
-                    label="Baseline"
-                    description="Constant-velocity future projection"
+                    label="CV Baseline"
+                    description="Straight-line constant velocity prediction"
                     active={
                       snapshot.predictorMode ===
                       "baseline"
@@ -931,8 +1083,8 @@ export function AutonomousIntercept() {
                   />
 
                   <PredictorButton
-                    label="Online ML"
-                    description="SGD model learning from future-position error"
+                    label="Adaptive AI"
+                    description="CV + CTRV + online residual ensemble"
                     active={
                       snapshot.predictorMode ===
                       "ml"
@@ -955,6 +1107,14 @@ export function AutonomousIntercept() {
                   />
 
                   <StateRow
+                    label="Selected Model"
+                    value={
+                      snapshot.ai.selectedPredictor
+                    }
+                    valueClass="text-[#F6B23C]"
+                  />
+
+                  <StateRow
                     label="Training Samples"
                     value={`${snapshot.ai.trainingSamples}`}
                   />
@@ -965,35 +1125,106 @@ export function AutonomousIntercept() {
                   />
 
                   <StateRow
-                    label="Mean ML Error"
+                    label="CV Weight"
                     value={
-                      formatError(
-                        snapshot.performance
-                          .mlErrorMeters,
+                      formatPercent(
+                        snapshot.ai.weights.cv,
                       )
                     }
                   />
 
                   <StateRow
-                    label="Baseline Error"
+                    label="CTRV Weight"
                     value={
-                      formatError(
-                        snapshot.performance
-                          .baselineErrorMeters,
+                      formatPercent(
+                        snapshot.ai.weights.ctrv,
+                      )
+                    }
+                  />
+
+                  <StateRow
+                    label="Learned Weight"
+                    value={
+                      formatPercent(
+                        snapshot.ai.weights.learned,
                       )
                     }
                   />
                 </div>
               </section>
 
-              {/* Mission commands */}
+              {/* Safety */}
 
               <section className="border-b border-white/[0.08] px-4 py-4">
-                <div className="mb-3 text-[13px] font-semibold text-white/80">
+                <div className="mb-3 flex items-center gap-2">
+                  <ShieldCheck
+                    size={17}
+                    className={
+                      snapshot.anticipatorySafetyGate
+                        ? "text-[#FF5A63]"
+                        : "text-[#59D99A]"
+                    }
+                  />
+
+                  <span className="text-[16px] font-semibold text-white/82">
+                    Safety Gate
+                  </span>
+                </div>
+
+                <StateRow
+                  label="Current Separation"
+                  value={
+                    formatDistance(
+                      snapshot.distanceMeters,
+                    )
+                  }
+                  valueClass={
+                    snapshot.separationSafe
+                      ? "text-[#59D99A]"
+                      : "text-[#FF5A63]"
+                  }
+                />
+
+                <StateRow
+                  label="Protected Radius"
+                  value={`${snapshot.minimumSeparationMeters} m`}
+                />
+
+                <StateRow
+                  label="Predicted Closest"
+                  value={`${snapshot.predictedClosestSeparationMeters.toFixed(
+                    0,
+                  )} m`}
+                  valueClass={
+                    snapshot.anticipatorySafetyGate
+                      ? "text-[#FF5A63]"
+                      : "text-[#59D99A]"
+                  }
+                />
+
+                <StateRow
+                  label="Gate State"
+                  value={
+                    snapshot.anticipatorySafetyGate
+                      ? "RECOVERY ACTIVE"
+                      : "CLEAR"
+                  }
+                  valueClass={
+                    snapshot.anticipatorySafetyGate
+                      ? "text-[#FF5A63]"
+                      : "text-[#59D99A]"
+                  }
+                />
+              </section>
+
+              {/* Commands */}
+
+              <section className="border-b border-white/[0.08] px-4 py-4">
+                <div className="mb-3 text-[16px] font-semibold text-white/82">
                   Mission Commands
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-3">
                   <CommandButton
                     label="Track"
                     icon={
@@ -1058,41 +1289,45 @@ export function AutonomousIntercept() {
                 </div>
               </section>
 
-              {/* Radio */}
+              {/* RadioMaster */}
 
               <section className="px-4 py-4">
-                <div className="flex items-start gap-3 rounded-[5px] border border-white/[0.08] bg-[#05060d] p-3">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[4px] border border-white/[0.08] text-white/42">
+                <div className="mb-3 text-[16px] font-semibold text-white/82">
+                  RadioMaster Control
+                </div>
+
+                <div className="flex items-start gap-3 rounded-[5px] border border-white/[0.08] bg-[#05060d] p-4">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[4px] border border-white/[0.08] text-white/46">
                     <Usb
-                      size={15}
+                      size={17}
                     />
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-[12px] font-semibold text-white/72">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-[14px] font-semibold text-white/74">
                         RadioMaster USB
                       </span>
 
                       <span
                         className={[
-                          "font-mono text-[10px] font-semibold uppercase",
+                          "font-mono text-[14px] font-semibold",
 
                           snapshot.gamepad.connected
                             ? "text-[#59D99A]"
-                            : "text-white/32",
+                            : "text-white/36",
                         ].join(" ")}
                       >
                         {snapshot.gamepad.connected
-                          ? "Connected"
-                          : "Not detected"}
+                          ? "CONNECTED"
+                          : "NOT DETECTED"}
                       </span>
                     </div>
 
-                    <div className="mt-1 text-[10px] text-white/34">
+                    <div className="mt-2 text-[14px] leading-[1.45] text-white/38">
                       {snapshot.gamepad.connected
                         ? snapshot.gamepad.id
-                        : "Browser Gamepad API ready for leader control"}
+                        : "Browser Gamepad API ready for manual leader control."}
                     </div>
                   </div>
                 </div>
@@ -1102,91 +1337,108 @@ export function AutonomousIntercept() {
         </div>
       </section>
 
-      {/* Secondary evidence */}
+      {/* ===================================================
+          EVIDENCE
+          =================================================== */}
 
       <section className="border-t border-white/[0.08] bg-[#05060d]">
-        <div className="mx-auto grid w-full max-w-[1600px] gap-4 px-4 py-5 sm:px-6 lg:px-8 xl:grid-cols-2 xl:px-10 2xl:px-14">
+        <div className="mx-auto grid w-full max-w-[1600px] gap-4 px-4 py-5 sm:px-6 lg:px-8 xl:grid-cols-[1.3fr_0.7fr] xl:px-10 2xl:px-14">
+          {/* Prediction Evidence */}
+
           <section className="overflow-hidden rounded-[6px] border border-white/[0.08] bg-[#07090d]">
-            <div className="border-b border-white/[0.07] px-4 py-3">
-              <div className="font-mono text-[10px] font-semibold uppercase tracking-[0.07em] text-[#F6B23C]">
+            <div className="border-b border-white/[0.07] px-4 py-4">
+              <div className="text-[16px] font-semibold text-[#F6B23C]">
                 Prediction Evidence
               </div>
 
-              <div className="mt-1 text-[15px] font-semibold text-white/84">
-                Measured Baseline vs Online ML
+              <div className="mt-1 text-[14px] text-white/54">
+                Constant velocity vs turn-aware and adaptive prediction
               </div>
             </div>
 
-            <div className="grid gap-3 p-4 md:grid-cols-3">
-              <div className="rounded-[5px] border border-white/[0.07] bg-[#05060d] p-3">
-                <div className="text-[10px] uppercase text-white/36">
-                  Baseline Error
-                </div>
-
-                <div className="mt-2 font-mono text-[18px] font-semibold text-white/68">
-                  {formatError(
+            <div className="grid gap-3 p-4 md:grid-cols-4">
+              <PredictorEvidence
+                label="CV Error"
+                value={
+                  formatError(
                     snapshot.performance
                       .baselineErrorMeters,
-                  )}
-                </div>
-              </div>
+                  )
+                }
+              />
 
-              <div className="rounded-[5px] border border-[rgba(89,217,154,0.20)] bg-[rgba(89,217,154,0.03)] p-3">
-                <div className="text-[10px] uppercase text-white/36">
-                  ML Error
-                </div>
+              <PredictorEvidence
+                label="CTRV Error"
+                value={
+                  formatError(
+                    snapshot.performance
+                      .ctrvErrorMeters,
+                  )
+                }
+                tone="caution"
+              />
 
-                <div className="mt-2 font-mono text-[18px] font-semibold text-[#59D99A]">
-                  {formatError(
+              <PredictorEvidence
+                label="Adaptive Error"
+                value={
+                  formatError(
                     snapshot.performance
                       .mlErrorMeters,
-                  )}
-                </div>
-              </div>
+                  )
+                }
+                tone="nominal"
+              />
 
-              <div className="rounded-[5px] border border-[rgba(246,178,60,0.20)] bg-[rgba(246,178,60,0.03)] p-3">
-                <div className="text-[10px] uppercase text-white/36">
-                  Improvement
-                </div>
-
-                <div
-                  className={[
-                    "mt-2 font-mono text-[18px] font-semibold",
-
-                    !evidenceReady
-                      ? "text-[#F6B23C]"
-                      : mlWinning
-                        ? "text-[#59D99A]"
-                        : "text-[#FF5A63]",
-                  ].join(" ")}
-                >
-                  {!evidenceReady
+              <PredictorEvidence
+                label="vs CV"
+                value={
+                  !evidenceReady ||
+                  improvement ===
+                    null
                     ? "TRAINING"
-                    : `${improvement !== null &&
-                      improvement >= 0
+                    : `${improvement >=
+                        0
                         ? "+"
-                        : ""}${improvement?.toFixed(
+                        : ""}${improvement.toFixed(
                         1,
-                      )}%`}
-                </div>
+                      )}%`
+                }
+                tone={
+                  !evidenceReady
+                    ? "caution"
+                    : adaptiveWinning
+                      ? "nominal"
+                      : "critical"
+                }
+              />
+            </div>
+
+            <div className="px-4 pb-4">
+              <div className="rounded-[5px] border border-white/[0.07] bg-[#05060d] p-4 text-[14px] leading-[1.6] text-white/42">
+                MissionNexus validates every predictor against the leader's
+                actual future position. Adaptive weighting automatically reduces
+                authority for predictors with larger rolling error, so the
+                learned component is not trusted merely because it is labelled AI.
               </div>
             </div>
           </section>
 
+          {/* Architecture */}
+
           <section className="overflow-hidden rounded-[6px] border border-white/[0.08] bg-[#07090d]">
-            <div className="flex items-center justify-between border-b border-white/[0.07] px-4 py-3">
+            <div className="flex items-center justify-between border-b border-white/[0.07] px-4 py-4">
               <div>
-                <div className="font-mono text-[10px] font-semibold uppercase tracking-[0.07em] text-[#F6B23C]">
+                <div className="text-[16px] font-semibold text-[#F6B23C]">
                   System Status
                 </div>
 
-                <div className="mt-1 text-[15px] font-semibold text-white/84">
-                  Phase-1 Intercept Architecture
+                <div className="mt-1 text-[14px] text-white/54">
+                  Phase-1 predictive guidance architecture
                 </div>
               </div>
 
               <Cpu
-                size={17}
+                size={18}
                 className="text-[#5AA9FF]"
               />
             </div>
@@ -1205,16 +1457,20 @@ export function AutonomousIntercept() {
               />
 
               <StateRow
-                label="ML Training"
-                value={`${snapshot.ai.trainingSamples} online samples`}
+                label="Prediction"
+                value="CV + CTRV + residual"
                 valueClass="text-[#59D99A]"
+              />
+
+              <StateRow
+                label="Validated Samples"
+                value={`${snapshot.performance.validationSamples}`}
               />
 
               <StateRow
                 label="Adaptive Speed"
                 value={
-                  snapshot.speedControl
-                    .adaptiveSync
+                  snapshot.speedControl.adaptiveSync
                     ? "ENABLED"
                     : "DISABLED"
                 }
@@ -1222,12 +1478,13 @@ export function AutonomousIntercept() {
               />
 
               <StateRow
-                label="Safety Radius"
-                value={`${snapshot.minimumSeparationMeters} m`}
+                label="Safety"
+                value="Anticipatory separation gate"
+                valueClass="text-[#59D99A]"
               />
 
               <StateRow
-                label="Next"
+                label="Next Integration"
                 value="ArduPlane SITL + MAVLink"
                 valueClass="text-[#F6B23C]"
               />
