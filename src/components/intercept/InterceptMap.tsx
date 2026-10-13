@@ -3,12 +3,10 @@ import {
   useMemo,
   useRef,
   useState,
-  type ReactNode,
 } from "react";
 
 import {
-  Eye,
-  EyeOff,
+  Crosshair,
   Layers3,
   LocateFixed,
   Minus,
@@ -16,7 +14,10 @@ import {
   Satellite,
 } from "lucide-react";
 
-import L from "leaflet";
+import L, {
+  type Map as LeafletMap,
+  type TileLayer,
+} from "leaflet";
 
 import "leaflet/dist/leaflet.css";
 
@@ -27,29 +28,12 @@ import type {
 } from "../../hooks/useInterceptSimulation";
 
 /* =========================================================
-   MissionNexus
-   Autonomous Intercept Map
-
-   Phase 1
-   - Real satellite basemap
-   - Street-map fallback
-   - Local ENU simulation -> geographic coordinates
-   - Leader / follower aircraft
-   - Flight trails
-   - Heading vectors
-   - Baseline prediction
-   - Online ML prediction
-   - Guidance target
-   - Desired shadow radius
-   - Protected safety radius
-
-   IMPORTANT:
-   Controls and operational information stay OUTSIDE the
-   Leaflet map so the imagery remains clean.
+   Types
    ========================================================= */
 
 type InterceptMapProps = {
-  snapshot: InterceptSnapshot;
+  snapshot:
+    InterceptSnapshot;
 
   origin?: {
     lat: number;
@@ -57,9 +41,10 @@ type InterceptMapProps = {
   };
 };
 
-type BaseMapMode =
+type InterceptBaseMap =
   | "satellite"
-  | "street";
+  | "osm"
+  | "hot";
 
 type FollowMode =
   | "both"
@@ -68,26 +53,88 @@ type FollowMode =
   | "free";
 
 /* =========================================================
-   Phase-1 geographic anchor
-
-   This is only the origin used to place the ENU simulation
-   on the geographic map.
-
-   Phase 2:
-   this projection will be replaced with real MAVLink GPS.
+   MissionNexus Map Configuration
    ========================================================= */
 
 const DEFAULT_ORIGIN = {
-  lat: 20.5937,
-  lng: 78.9629,
+  lat:
+    23.0225,
+
+  lng:
+    72.5714,
+};
+
+const colors = {
+  primary:
+    "#F6B23C",
+
+  info:
+    "#5AA9FF",
+
+  nominal:
+    "#59D99A",
+
+  critical:
+    "#FF5A63",
+
+  background:
+    "#030405",
+
+  white:
+    "#FFFFFF",
+};
+
+const baseMaps:
+  Record<
+    InterceptBaseMap,
+    {
+      url: string;
+      attribution: string;
+      maxZoom: number;
+    }
+  > = {
+  satellite: {
+    url:
+      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+
+    attribution:
+      "Imagery © Esri",
+
+    maxZoom:
+      19,
+  },
+
+  osm: {
+    url:
+      "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+
+    attribution:
+      "© OpenStreetMap contributors",
+
+    maxZoom:
+      19,
+  },
+
+  hot: {
+    url:
+      "https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png",
+
+    attribution:
+      "© OpenStreetMap contributors · HOT",
+
+    maxZoom:
+      19,
+  },
 };
 
 /* =========================================================
-   Geographic Conversion
+   Geometry
    ========================================================= */
 
 function enuToLatLng(
-  point: Vector2,
+  point:
+    Vector2,
+
   origin: {
     lat: number;
     lng: number;
@@ -109,27 +156,24 @@ function enuToLatLng(
       latitudeRadians,
     );
 
-  const latitude =
-    origin.lat +
-    point.y /
-      metersPerDegreeLatitude;
-
-  const longitude =
-    origin.lng +
-    point.x /
-      Math.max(
-        1,
-        metersPerDegreeLongitude,
-      );
-
   return [
-    latitude,
-    longitude,
+    origin.lat +
+      point.y /
+        metersPerDegreeLatitude,
+
+    origin.lng +
+      point.x /
+        Math.max(
+          1,
+          metersPerDegreeLongitude,
+        ),
   ];
 }
 
 function toLatLngArray(
-  points: Vector2[],
+  points:
+    Vector2[],
+
   origin: {
     lat: number;
     lng: number;
@@ -146,12 +190,9 @@ function toLatLngArray(
   );
 }
 
-/* =========================================================
-   Heading Helpers
-   ========================================================= */
-
 function headingVector(
-  heading: number,
+  heading:
+    number,
 ): Vector2 {
   const radians =
     (
@@ -174,8 +215,11 @@ function headingVector(
 }
 
 function headingEndpoint(
-  aircraft: AircraftState,
-  distanceMeters: number,
+  aircraft:
+    AircraftState,
+
+  distanceMeters:
+    number,
 ): Vector2 {
   const direction =
     headingVector(
@@ -196,7 +240,7 @@ function headingEndpoint(
 }
 
 /* =========================================================
-   Aircraft Marker
+   Aircraft Icon
    ========================================================= */
 
 function createAircraftIcon(
@@ -204,38 +248,40 @@ function createAircraftIcon(
     | "leader"
     | "follower",
 
-  heading: number,
+  heading:
+    number,
 ) {
   const color =
     type ===
     "leader"
-      ? "#F6B23C"
-      : "#5AA9FF";
+      ? colors.primary
+      : colors.info;
 
   return L.divIcon({
-    className: "",
+    className:
+      "missionnexus-intercept-aircraft",
 
     iconSize: [
-      40,
-      40,
+      42,
+      42,
     ],
 
     iconAnchor: [
-      20,
-      20,
+      21,
+      21,
+    ],
+
+    popupAnchor: [
+      0,
+      -22,
     ],
 
     html: `
       <div
         style="
-          width:40px;
-          height:40px;
-          border-radius:50%;
-          border:1px solid ${color}99;
-          background:rgba(3,4,5,0.92);
-          box-shadow:
-            0 0 0 4px ${color}10,
-            0 0 18px ${color}35;
+          position:relative;
+          width:42px;
+          height:42px;
           display:flex;
           align-items:center;
           justify-content:center;
@@ -244,9 +290,20 @@ function createAircraftIcon(
       >
         <div
           style="
+            position:absolute;
+            inset:2px;
+            border-radius:999px;
+            border:1px solid ${color}88;
+            background:${color}12;
+            box-shadow:0 0 18px ${color}55;
+          "
+        ></div>
+
+        <div
+          style="
             position:relative;
-            width:23px;
-            height:23px;
+            width:24px;
+            height:24px;
             transform:rotate(${heading}deg);
             transform-origin:center;
           "
@@ -269,9 +326,9 @@ function createAircraftIcon(
               position:absolute;
               left:1px;
               top:11px;
-              width:21px;
+              width:22px;
               height:2px;
-              border-radius:2px;
+              border-radius:999px;
               background:${color};
             "
           ></div>
@@ -281,7 +338,7 @@ function createAircraftIcon(
               position:absolute;
               left:8px;
               top:12px;
-              width:7px;
+              width:8px;
               height:8px;
               background:${color};
               clip-path:polygon(50% 100%,0 0,100% 0);
@@ -294,17 +351,22 @@ function createAircraftIcon(
 }
 
 /* =========================================================
-   Toolbar Button
+   UI Button
    ========================================================= */
 
-function ToolbarButton({
+function MapButton({
   label,
   active = false,
   onClick,
 }: {
-  label: string;
-  active?: boolean;
-  onClick: () => void;
+  label:
+    string;
+
+  active?:
+    boolean;
+
+  onClick:
+    () => void;
 }) {
   return (
     <button
@@ -313,15 +375,15 @@ function ToolbarButton({
         onClick
       }
       className={[
-        "h-9 whitespace-nowrap rounded-[4px] border px-3",
+        "h-[34px] rounded-[4px] border px-3",
 
         "font-mono text-[14px] font-medium",
 
         "transition-colors duration-150",
 
         active
-          ? "border-[rgba(246,178,60,0.30)] bg-[rgba(246,178,60,0.07)] text-[#F6B23C]"
-          : "border-white/[0.08] bg-[#05060d] text-white/60 hover:border-white/[0.16] hover:bg-white/[0.03] hover:text-white",
+          ? "border-[rgba(246,178,60,0.30)] bg-[rgba(246,178,60,0.06)] text-[#F6B23C]"
+          : "border-white/[0.08] bg-[#030405] text-white/58 hover:border-white/[0.16] hover:bg-white/[0.025] hover:text-white",
       ].join(" ")}
     >
       {label}
@@ -330,87 +392,7 @@ function ToolbarButton({
 }
 
 /* =========================================================
-   Icon Button
-   ========================================================= */
-
-function IconButton({
-  label,
-  onClick,
-  children,
-}: {
-  label: string;
-  onClick: () => void;
-  children: ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      aria-label={
-        label
-      }
-      title={
-        label
-      }
-      onClick={
-        onClick
-      }
-      className={[
-        "flex h-9 w-9 shrink-0 items-center justify-center",
-
-        "rounded-[4px] border border-white/[0.08]",
-
-        "bg-[#05060d] text-white/60",
-
-        "transition-colors duration-150",
-
-        "hover:border-white/[0.16] hover:bg-white/[0.03] hover:text-white",
-      ].join(" ")}
-    >
-      {children}
-    </button>
-  );
-}
-
-/* =========================================================
-   Legend Item
-   ========================================================= */
-
-function LegendItem({
-  label,
-  colorClass,
-  dashed = false,
-}: {
-  label: string;
-  colorClass: string;
-  dashed?: boolean;
-}) {
-  return (
-    <div className="flex items-center gap-2">
-      {dashed ? (
-        <span
-          className={[
-            "h-px w-6 border-t-2 border-dashed",
-            colorClass,
-          ].join(" ")}
-        />
-      ) : (
-        <span
-          className={[
-            "h-2 w-6 rounded-full",
-            colorClass,
-          ].join(" ")}
-        />
-      )}
-
-      <span className="text-[14px] text-white/46">
-        {label}
-      </span>
-    </div>
-  );
-}
-
-/* =========================================================
-   Main Component
+   Main
    ========================================================= */
 
 export function InterceptMap({
@@ -419,137 +401,118 @@ export function InterceptMap({
     DEFAULT_ORIGIN,
 }: InterceptMapProps) {
   const containerRef =
-    useRef<HTMLDivElement | null>(
-      null,
-    );
+    useRef<
+      HTMLDivElement |
+      null
+    >(null);
 
   const mapRef =
-    useRef<L.Map | null>(
-      null,
-    );
+    useRef<
+      LeafletMap |
+      null
+    >(null);
 
-  /* =======================================================
-     Base map layers
-     ======================================================= */
-
-  const satelliteLayerRef =
-    useRef<L.TileLayer | null>(
-      null,
-    );
-
-  const labelLayerRef =
-    useRef<L.TileLayer | null>(
-      null,
-    );
-
-  const streetLayerRef =
-    useRef<L.TileLayer | null>(
-      null,
-    );
-
-  /* =======================================================
-     Aircraft layers
-     ======================================================= */
+  const baseTileRef =
+    useRef<
+      TileLayer |
+      null
+    >(null);
 
   const leaderMarkerRef =
-    useRef<L.Marker | null>(
-      null,
-    );
+    useRef<
+      L.Marker |
+      null
+    >(null);
 
   const followerMarkerRef =
-    useRef<L.Marker | null>(
-      null,
-    );
-
-  /* =======================================================
-     Flight trail layers
-     ======================================================= */
+    useRef<
+      L.Marker |
+      null
+    >(null);
 
   const leaderTrailRef =
-    useRef<L.Polyline | null>(
-      null,
-    );
+    useRef<
+      L.Polyline |
+      null
+    >(null);
 
   const followerTrailRef =
-    useRef<L.Polyline | null>(
-      null,
-    );
-
-  /* =======================================================
-     Heading layers
-     ======================================================= */
+    useRef<
+      L.Polyline |
+      null
+    >(null);
 
   const leaderHeadingRef =
-    useRef<L.Polyline | null>(
-      null,
-    );
+    useRef<
+      L.Polyline |
+      null
+    >(null);
 
   const followerHeadingRef =
-    useRef<L.Polyline | null>(
-      null,
-    );
-
-  /* =======================================================
-     Prediction layers
-     ======================================================= */
+    useRef<
+      L.Polyline |
+      null
+    >(null);
 
   const baselinePathRef =
-    useRef<L.Polyline | null>(
-      null,
-    );
+    useRef<
+      L.Polyline |
+      null
+    >(null);
 
-  const mlPathRef =
-    useRef<L.Polyline | null>(
-      null,
-    );
+  const ctrvPathRef =
+    useRef<
+      L.Polyline |
+      null
+    >(null);
 
-  /* =======================================================
-     Guidance layers
-     ======================================================= */
+  const adaptivePathRef =
+    useRef<
+      L.Polyline |
+      null
+    >(null);
 
   const guidanceLineRef =
-    useRef<L.Polyline | null>(
-      null,
-    );
+    useRef<
+      L.Polyline |
+      null
+    >(null);
 
   const relationshipLineRef =
-    useRef<L.Polyline | null>(
-      null,
-    );
+    useRef<
+      L.Polyline |
+      null
+    >(null);
 
   const guidanceMarkerRef =
-    useRef<L.CircleMarker | null>(
-      null,
-    );
+    useRef<
+      L.CircleMarker |
+      null
+    >(null);
 
-  /* =======================================================
-     Safety layers
-     ======================================================= */
+  const desiredSeparationRef =
+    useRef<
+      L.Circle |
+      null
+    >(null);
 
-  const desiredCircleRef =
-    useRef<L.Circle | null>(
-      null,
-    );
-
-  const safetyCircleRef =
-    useRef<L.Circle | null>(
-      null,
-    );
+  const protectedSeparationRef =
+    useRef<
+      L.Circle |
+      null
+    >(null);
 
   const homeMarkerRef =
-    useRef<L.CircleMarker | null>(
-      null,
-    );
-
-  /* =======================================================
-     UI State
-     ======================================================= */
+    useRef<
+      L.CircleMarker |
+      null
+    >(null);
 
   const [
     baseMap,
     setBaseMap,
   ] =
-    useState<BaseMapMode>(
+    useState<InterceptBaseMap>(
       "satellite",
     );
 
@@ -570,16 +533,24 @@ export function InterceptMap({
     );
 
   const [
-    showMl,
-    setShowMl,
+    showBaseline,
+    setShowBaseline,
   ] =
     useState(
       true,
     );
 
   const [
-    showBaseline,
-    setShowBaseline,
+    showCtrv,
+    setShowCtrv,
+  ] =
+    useState(
+      true,
+    );
+
+  const [
+    showAdaptive,
+    setShowAdaptive,
   ] =
     useState(
       true,
@@ -592,10 +563,6 @@ export function InterceptMap({
     useState(
       true,
     );
-
-  /* =======================================================
-     Geographic positions
-     ======================================================= */
 
   const positions =
     useMemo(
@@ -628,7 +595,7 @@ export function InterceptMap({
           enuToLatLng(
             headingEndpoint(
               snapshot.leader,
-              160,
+              170,
             ),
             origin,
           ),
@@ -637,7 +604,7 @@ export function InterceptMap({
           enuToLatLng(
             headingEndpoint(
               snapshot.follower,
-              160,
+              170,
             ),
             origin,
           ),
@@ -660,7 +627,13 @@ export function InterceptMap({
             origin,
           ),
 
-        ml:
+        ctrv:
+          toLatLngArray(
+            snapshot.ctrvPath,
+            origin,
+          ),
+
+        adaptive:
           toLatLngArray(
             snapshot.mlPath,
             origin,
@@ -674,6 +647,7 @@ export function InterceptMap({
         snapshot.leaderTrail,
         snapshot.followerTrail,
         snapshot.baselinePath,
+        snapshot.ctrvPath,
         snapshot.mlPath,
         origin.lat,
         origin.lng,
@@ -681,16 +655,13 @@ export function InterceptMap({
     );
 
   /* =======================================================
-     Map Initialization
+     Initialize Map
      ======================================================= */
 
   useEffect(
     () => {
-      const container =
-        containerRef.current;
-
       if (
-        !container ||
+        !containerRef.current ||
         mapRef.current
       ) {
         return;
@@ -698,105 +669,129 @@ export function InterceptMap({
 
       const map =
         L.map(
-          container,
+          containerRef.current,
           {
+            center: [
+              origin.lat,
+              origin.lng,
+            ],
+
+            zoom:
+              15,
+
+            minZoom:
+              3,
+
+            maxZoom:
+              19,
+
             zoomControl:
               false,
 
             attributionControl:
               true,
 
+            worldCopyJump:
+              false,
+
             preferCanvas:
               true,
-
-            minZoom:
-              3,
-
-            maxZoom:
-              20,
-
-            worldCopyJump:
-              true,
-
-            scrollWheelZoom:
-              true,
-
-            doubleClickZoom:
-              true,
-
-            dragging:
-              true,
           },
         );
 
-      /* -----------------------------------------------
-         Real satellite imagery
-         ----------------------------------------------- */
+      mapRef.current =
+        map;
 
-      const satellite =
+      const initialTileLayer =
         L.tileLayer(
-          "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+          baseMaps.satellite
+            .url,
           {
             maxZoom:
-              19,
+              baseMaps.satellite
+                .maxZoom,
 
             attribution:
-              "Imagery © Esri",
+              baseMaps.satellite
+                .attribution,
           },
+        ).addTo(
+          map,
         );
 
-      /* -----------------------------------------------
-         Satellite labels
-         ----------------------------------------------- */
+      baseTileRef.current =
+        initialTileLayer;
 
-      const labels =
-        L.tileLayer(
-          "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",
-          {
-            maxZoom:
-              19,
+      /* ===============================================
+         MissionNexus attribution styling
+         Mirrors existing AeroWorldMap.
+         =============================================== */
 
-            attribution:
-              "Labels © Esri",
-          },
+      const styleAttribution =
+        () => {
+          const element =
+            containerRef.current
+              ?.querySelector(
+                ".leaflet-control-attribution",
+              ) as
+              | HTMLElement
+              | null;
+
+          if (
+            !element
+          ) {
+            return;
+          }
+
+          element.style.fontSize =
+            "13px";
+
+          element.style.lineHeight =
+            "1.35";
+
+          element.style.padding =
+            "4px 7px";
+
+          element.style.background =
+            "rgba(5, 6, 13, 0.84)";
+
+          element.style.color =
+            "rgba(255,255,255,0.74)";
+
+          element.style.borderRadius =
+            "4px 0 0 0";
+
+          element
+            .querySelectorAll(
+              "a",
+            )
+            .forEach(
+              (
+                link,
+              ) => {
+                const anchor =
+                  link as HTMLElement;
+
+                anchor.style.color =
+                  "#9CCAFF";
+
+                anchor.style.fontSize =
+                  "13px";
+              },
+            );
+        };
+
+      styleAttribution();
+
+      const attributionTimer =
+        window.setTimeout(
+          styleAttribution,
+          120,
         );
 
-      /* -----------------------------------------------
-         Street fallback
-         ----------------------------------------------- */
-
-      const street =
-        L.tileLayer(
-          "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-          {
-            maxZoom:
-              19,
-
-            attribution:
-              "© OpenStreetMap contributors",
-          },
-        );
-
-      satellite.addTo(
-        map,
-      );
-
-      labels.addTo(
-        map,
-      );
-
-      satelliteLayerRef.current =
-        satellite;
-
-      labelLayerRef.current =
-        labels;
-
-      streetLayerRef.current =
-        street;
-
-      /* -----------------------------------------------
-         Leader marker
-         ----------------------------------------------- */
+      /* ===============================================
+         Aircraft
+         =============================================== */
 
       leaderMarkerRef.current =
         L.marker(
@@ -809,7 +804,7 @@ export function InterceptMap({
               ),
 
             zIndexOffset:
-              1100,
+              1200,
           },
         )
           .bindTooltip(
@@ -817,20 +812,11 @@ export function InterceptMap({
             {
               direction:
                 "top",
-
-              offset: [
-                0,
-                -14,
-              ],
             },
           )
           .addTo(
             map,
           );
-
-      /* -----------------------------------------------
-         Follower marker
-         ----------------------------------------------- */
 
       followerMarkerRef.current =
         L.marker(
@@ -843,7 +829,7 @@ export function InterceptMap({
               ),
 
             zIndexOffset:
-              1000,
+              1100,
           },
         )
           .bindTooltip(
@@ -851,39 +837,28 @@ export function InterceptMap({
             {
               direction:
                 "top",
-
-              offset: [
-                0,
-                -14,
-              ],
             },
           )
           .addTo(
             map,
           );
 
-      /* -----------------------------------------------
+      /* ===============================================
          Trails
-         ----------------------------------------------- */
+         =============================================== */
 
       leaderTrailRef.current =
         L.polyline(
           positions.leaderTrail,
           {
             color:
-              "#F6B23C",
+              colors.primary,
 
             weight:
               3,
 
             opacity:
               0.9,
-
-            lineCap:
-              "round",
-
-            lineJoin:
-              "round",
           },
         ).addTo(
           map,
@@ -894,27 +869,21 @@ export function InterceptMap({
           positions.followerTrail,
           {
             color:
-              "#5AA9FF",
+              colors.info,
 
             weight:
               3,
 
             opacity:
               0.9,
-
-            lineCap:
-              "round",
-
-            lineJoin:
-              "round",
           },
         ).addTo(
           map,
         );
 
-      /* -----------------------------------------------
-         Aircraft heading vectors
-         ----------------------------------------------- */
+      /* ===============================================
+         Heading vectors
+         =============================================== */
 
       leaderHeadingRef.current =
         L.polyline(
@@ -924,13 +893,13 @@ export function InterceptMap({
           ],
           {
             color:
-              "#F6B23C",
+              colors.primary,
 
             weight:
               1.5,
 
             opacity:
-              0.42,
+              0.38,
 
             dashArray:
               "4 7",
@@ -947,13 +916,13 @@ export function InterceptMap({
           ],
           {
             color:
-              "#5AA9FF",
+              colors.info,
 
             weight:
               1.5,
 
             opacity:
-              0.42,
+              0.38,
 
             dashArray:
               "4 7",
@@ -962,9 +931,9 @@ export function InterceptMap({
           map,
         );
 
-      /* -----------------------------------------------
-         Baseline predictor
-         ----------------------------------------------- */
+      /* ===============================================
+         Predictors
+         =============================================== */
 
       baselinePathRef.current =
         L.polyline(
@@ -974,84 +943,67 @@ export function InterceptMap({
           ],
           {
             color:
-              "#FFFFFF",
+              colors.white,
 
             weight:
-              2.2,
+              2,
 
             opacity:
-              0.64,
+              0.62,
 
             dashArray:
               "5 8",
-
-            lineCap:
-              "round",
           },
         ).addTo(
           map,
         );
 
-      /* -----------------------------------------------
-         Online ML predictor
-         ----------------------------------------------- */
-
-      mlPathRef.current =
+      ctrvPathRef.current =
         L.polyline(
           [
             positions.leader,
-            ...positions.ml,
+            ...positions.ctrv,
           ],
           {
             color:
-              "#59D99A",
+              colors.primary,
+
+            weight:
+              2.5,
+
+            opacity:
+              0.82,
+
+            dashArray:
+              "7 6",
+          },
+        ).addTo(
+          map,
+        );
+
+      adaptivePathRef.current =
+        L.polyline(
+          [
+            positions.leader,
+            ...positions.adaptive,
+          ],
+          {
+            color:
+              colors.nominal,
 
             weight:
               3.2,
 
             opacity:
               0.96,
-
-            dashArray:
-              "10 6",
-
-            lineCap:
-              "round",
           },
         ).addTo(
           map,
         );
 
-      /* -----------------------------------------------
-         Follower -> AI guidance target
-         ----------------------------------------------- */
-
-      guidanceLineRef.current =
-        L.polyline(
-          [
-            positions.follower,
-            positions.guidance,
-          ],
-          {
-            color:
-              "#5AA9FF",
-
-            weight:
-              2.2,
-
-            opacity:
-              0.76,
-
-            dashArray:
-              "7 5",
-          },
-        ).addTo(
-          map,
-        );
-
-      /* -----------------------------------------------
-         Leader / follower relationship
-         ----------------------------------------------- */
+      /* ===============================================
+         Relationship + Guidance
+         =============================================== */
 
       relationshipLineRef.current =
         L.polyline(
@@ -1061,13 +1013,13 @@ export function InterceptMap({
           ],
           {
             color:
-              "#FFFFFF",
+              colors.white,
 
             weight:
               1,
 
             opacity:
-              0.24,
+              0.2,
 
             dashArray:
               "3 8",
@@ -1076,9 +1028,28 @@ export function InterceptMap({
           map,
         );
 
-      /* -----------------------------------------------
-         AI guidance target
-         ----------------------------------------------- */
+      guidanceLineRef.current =
+        L.polyline(
+          [
+            positions.follower,
+            positions.guidance,
+          ],
+          {
+            color:
+              colors.info,
+
+            weight:
+              2,
+
+            opacity:
+              0.72,
+
+            dashArray:
+              "7 5",
+          },
+        ).addTo(
+          map,
+        );
 
       guidanceMarkerRef.current =
         L.circleMarker(
@@ -1088,34 +1059,30 @@ export function InterceptMap({
               7,
 
             color:
-              "#5AA9FF",
+              colors.info,
 
             weight:
               2,
 
             fillColor:
-              "#5AA9FF",
+              colors.info,
 
             fillOpacity:
-              0.2,
+              0.22,
           },
         )
           .bindTooltip(
-            "GUIDANCE TARGET",
-            {
-              direction:
-                "top",
-            },
+            "Guidance target",
           )
           .addTo(
             map,
           );
 
-      /* -----------------------------------------------
-         Desired shadow distance
-         ----------------------------------------------- */
+      /* ===============================================
+         Safety Geometry
+         =============================================== */
 
-      desiredCircleRef.current =
+      desiredSeparationRef.current =
         L.circle(
           positions.leader,
           {
@@ -1123,13 +1090,13 @@ export function InterceptMap({
               snapshot.desiredSeparationMeters,
 
             color:
-              "#F6B23C",
+              colors.primary,
 
             weight:
               1.5,
 
             opacity:
-              0.56,
+              0.52,
 
             fillOpacity:
               0,
@@ -1141,11 +1108,7 @@ export function InterceptMap({
           map,
         );
 
-      /* -----------------------------------------------
-         Hard protected separation
-         ----------------------------------------------- */
-
-      safetyCircleRef.current =
+      protectedSeparationRef.current =
         L.circle(
           positions.leader,
           {
@@ -1153,19 +1116,19 @@ export function InterceptMap({
               snapshot.minimumSeparationMeters,
 
             color:
-              "#FF5A63",
+              colors.critical,
 
             weight:
               1.7,
 
             opacity:
-              0.78,
+              0.76,
 
             fillColor:
-              "#FF5A63",
+              colors.critical,
 
             fillOpacity:
-              0.06,
+              0.055,
 
             dashArray:
               "5 6",
@@ -1174,55 +1137,32 @@ export function InterceptMap({
           map,
         );
 
-      /* -----------------------------------------------
-         Home
-         ----------------------------------------------- */
-
       homeMarkerRef.current =
         L.circleMarker(
           positions.home,
           {
             radius:
-              5,
+              6,
 
             color:
-              "#59D99A",
+              colors.background,
 
             weight:
               2,
 
             fillColor:
-              "#59D99A",
+              colors.nominal,
 
             fillOpacity:
-              0.42,
+              1,
           },
         )
           .bindTooltip(
             "HOME",
-            {
-              direction:
-                "top",
-            },
           )
           .addTo(
             map,
           );
-
-      mapRef.current =
-        map;
-
-      map.setView(
-        [
-          origin.lat,
-          origin.lng,
-        ],
-        15,
-      );
-
-      /* -----------------------------------------------
-         Dragging disables automatic follow
-         ----------------------------------------------- */
 
       map.on(
         "dragstart",
@@ -1233,14 +1173,28 @@ export function InterceptMap({
         },
       );
 
-      /* -----------------------------------------------
-         Initial fit
-         ----------------------------------------------- */
+      const resizeTimers = [
+        window.setTimeout(
+          () =>
+            map.invalidateSize(),
+          80,
+        ),
+
+        window.setTimeout(
+          () =>
+            map.invalidateSize(),
+          300,
+        ),
+
+        window.setTimeout(
+          () =>
+            map.invalidateSize(),
+          800,
+        ),
+      ];
 
       window.setTimeout(
         () => {
-          map.invalidateSize();
-
           const bounds =
             L.latLngBounds([
               positions.leader,
@@ -1268,13 +1222,29 @@ export function InterceptMap({
             );
           }
         },
-        100,
+        120,
       );
 
       return () => {
+        window.clearTimeout(
+          attributionTimer,
+        );
+
+        resizeTimers.forEach(
+          (
+            timer,
+          ) =>
+            window.clearTimeout(
+              timer,
+            ),
+        );
+
         map.remove();
 
         mapRef.current =
+          null;
+
+        baseTileRef.current =
           null;
       };
     },
@@ -1282,106 +1252,7 @@ export function InterceptMap({
   );
 
   /* =======================================================
-     Base Map Switching
-     ======================================================= */
-
-  useEffect(
-    () => {
-      const map =
-        mapRef.current;
-
-      const satellite =
-        satelliteLayerRef.current;
-
-      const labels =
-        labelLayerRef.current;
-
-      const street =
-        streetLayerRef.current;
-
-      if (
-        !map ||
-        !satellite ||
-        !labels ||
-        !street
-      ) {
-        return;
-      }
-
-      if (
-        baseMap ===
-        "satellite"
-      ) {
-        if (
-          map.hasLayer(
-            street,
-          )
-        ) {
-          map.removeLayer(
-            street,
-          );
-        }
-
-        if (
-          !map.hasLayer(
-            satellite,
-          )
-        ) {
-          satellite.addTo(
-            map,
-          );
-        }
-
-        if (
-          !map.hasLayer(
-            labels,
-          )
-        ) {
-          labels.addTo(
-            map,
-          );
-        }
-
-        return;
-      }
-
-      if (
-        map.hasLayer(
-          labels,
-        )
-      ) {
-        map.removeLayer(
-          labels,
-        );
-      }
-
-      if (
-        map.hasLayer(
-          satellite,
-        )
-      ) {
-        map.removeLayer(
-          satellite,
-        );
-      }
-
-      if (
-        !map.hasLayer(
-          street,
-        )
-      ) {
-        street.addTo(
-          map,
-        );
-      }
-    },
-    [
-      baseMap,
-    ],
-  );
-
-  /* =======================================================
-     Live Tactical Updates
+     Basemap
      ======================================================= */
 
   useEffect(
@@ -1395,109 +1266,167 @@ export function InterceptMap({
         return;
       }
 
-      /* Aircraft */
+      if (
+        baseTileRef.current
+      ) {
+        map.removeLayer(
+          baseTileRef.current,
+        );
+      }
 
-      leaderMarkerRef.current?.setLatLng(
-        positions.leader,
+      const config =
+        baseMaps[
+          baseMap
+        ];
+
+      const layer =
+        L.tileLayer(
+          config.url,
+          {
+            maxZoom:
+              config.maxZoom,
+
+            attribution:
+              config.attribution,
+          },
+        );
+
+      layer.addTo(
+        map,
       );
 
-      leaderMarkerRef.current?.setIcon(
-        createAircraftIcon(
-          "leader",
-          snapshot.leader.heading,
-        ),
-      );
+      layer.bringToBack();
 
-      followerMarkerRef.current?.setLatLng(
-        positions.follower,
-      );
+      baseTileRef.current =
+        layer;
+    },
+    [
+      baseMap,
+    ],
+  );
 
-      followerMarkerRef.current?.setIcon(
-        createAircraftIcon(
-          "follower",
-          snapshot.follower.heading,
-        ),
-      );
+  /* =======================================================
+     Live Updates
+     ======================================================= */
 
-      /* Trails */
+  useEffect(
+    () => {
+      const map =
+        mapRef.current;
 
-      leaderTrailRef.current?.setLatLngs(
-        positions.leaderTrail,
-      );
+      if (
+        !map
+      ) {
+        return;
+      }
 
-      followerTrailRef.current?.setLatLngs(
-        positions.followerTrail,
-      );
+      leaderMarkerRef.current
+        ?.setLatLng(
+          positions.leader,
+        );
 
-      /* Heading vectors */
+      leaderMarkerRef.current
+        ?.setIcon(
+          createAircraftIcon(
+            "leader",
+            snapshot.leader.heading,
+          ),
+        );
 
-      leaderHeadingRef.current?.setLatLngs([
-        positions.leader,
-        positions.leaderHeading,
-      ]);
+      followerMarkerRef.current
+        ?.setLatLng(
+          positions.follower,
+        );
 
-      followerHeadingRef.current?.setLatLngs([
-        positions.follower,
-        positions.followerHeading,
-      ]);
+      followerMarkerRef.current
+        ?.setIcon(
+          createAircraftIcon(
+            "follower",
+            snapshot.follower.heading,
+          ),
+        );
 
-      /* Prediction */
+      leaderTrailRef.current
+        ?.setLatLngs(
+          positions.leaderTrail,
+        );
 
-      baselinePathRef.current?.setLatLngs([
-        positions.leader,
-        ...positions.baseline,
-      ]);
+      followerTrailRef.current
+        ?.setLatLngs(
+          positions.followerTrail,
+        );
 
-      mlPathRef.current?.setLatLngs([
-        positions.leader,
-        ...positions.ml,
-      ]);
+      leaderHeadingRef.current
+        ?.setLatLngs([
+          positions.leader,
+          positions.leaderHeading,
+        ]);
 
-      /* Guidance */
+      followerHeadingRef.current
+        ?.setLatLngs([
+          positions.follower,
+          positions.followerHeading,
+        ]);
 
-      guidanceLineRef.current?.setLatLngs([
-        positions.follower,
-        positions.guidance,
-      ]);
+      baselinePathRef.current
+        ?.setLatLngs([
+          positions.leader,
+          ...positions.baseline,
+        ]);
 
-      guidanceMarkerRef.current?.setLatLng(
-        positions.guidance,
-      );
+      ctrvPathRef.current
+        ?.setLatLngs([
+          positions.leader,
+          ...positions.ctrv,
+        ]);
 
-      /* Relationship */
+      adaptivePathRef.current
+        ?.setLatLngs([
+          positions.leader,
+          ...positions.adaptive,
+        ]);
 
-      relationshipLineRef.current?.setLatLngs([
-        positions.follower,
-        positions.leader,
-      ]);
+      relationshipLineRef.current
+        ?.setLatLngs([
+          positions.follower,
+          positions.leader,
+        ]);
 
-      /* Safety */
+      guidanceLineRef.current
+        ?.setLatLngs([
+          positions.follower,
+          positions.guidance,
+        ]);
 
-      desiredCircleRef.current?.setLatLng(
-        positions.leader,
-      );
+      guidanceMarkerRef.current
+        ?.setLatLng(
+          positions.guidance,
+        );
 
-      desiredCircleRef.current?.setRadius(
-        snapshot.desiredSeparationMeters,
-      );
+      desiredSeparationRef.current
+        ?.setLatLng(
+          positions.leader,
+        );
 
-      safetyCircleRef.current?.setLatLng(
-        positions.leader,
-      );
+      desiredSeparationRef.current
+        ?.setRadius(
+          snapshot.desiredSeparationMeters,
+        );
 
-      safetyCircleRef.current?.setRadius(
-        snapshot.minimumSeparationMeters,
-      );
+      protectedSeparationRef.current
+        ?.setLatLng(
+          positions.leader,
+        );
 
-      /* Home */
+      protectedSeparationRef.current
+        ?.setRadius(
+          snapshot.minimumSeparationMeters,
+        );
 
-      homeMarkerRef.current?.setLatLng(
-        positions.home,
-      );
-
-      /* -----------------------------------------------
-         Follow modes
-         ----------------------------------------------- */
+      homeMarkerRef.current
+        ?.setLatLng(
+          positions.home,
+        );
 
       if (
         followMode ===
@@ -1540,52 +1469,36 @@ export function InterceptMap({
               -0.12,
             );
 
-        const leaderVisible =
-          visibleBounds.contains(
-            positions.leader,
-          );
-
-        const followerVisible =
-          visibleBounds.contains(
-            positions.follower,
-          );
-
-        const guidanceVisible =
-          visibleBounds.contains(
-            positions.guidance,
-          );
-
         if (
-          !leaderVisible ||
-          !followerVisible ||
-          !guidanceVisible
+          !visibleBounds.contains(
+            positions.leader,
+          ) ||
+          !visibleBounds.contains(
+            positions.follower,
+          ) ||
+          !visibleBounds.contains(
+            positions.guidance,
+          )
         ) {
-          const bounds =
+          map.fitBounds(
             L.latLngBounds([
               positions.leader,
               positions.follower,
               positions.guidance,
-            ]);
+            ]),
+            {
+              padding: [
+                90,
+                90,
+              ],
 
-          if (
-            bounds.isValid()
-          ) {
-            map.fitBounds(
-              bounds,
-              {
-                padding: [
-                  90,
-                  90,
-                ],
+              maxZoom:
+                17,
 
-                maxZoom:
-                  17,
-
-                animate:
-                  false,
-              },
-            );
-          }
+              animate:
+                false,
+            },
+          );
         }
       }
     },
@@ -1600,38 +1513,42 @@ export function InterceptMap({
   );
 
   /* =======================================================
-     Layer Visibility
+     Visibility
      ======================================================= */
 
   useEffect(
     () => {
-      leaderTrailRef.current?.setStyle({
-        opacity:
-          showTrails
-            ? 0.9
-            : 0,
-      });
+      leaderTrailRef.current
+        ?.setStyle({
+          opacity:
+            showTrails
+              ? 0.9
+              : 0,
+        });
 
-      followerTrailRef.current?.setStyle({
-        opacity:
-          showTrails
-            ? 0.9
-            : 0,
-      });
+      followerTrailRef.current
+        ?.setStyle({
+          opacity:
+            showTrails
+              ? 0.9
+              : 0,
+        });
 
-      leaderHeadingRef.current?.setStyle({
-        opacity:
-          showTrails
-            ? 0.42
-            : 0,
-      });
+      leaderHeadingRef.current
+        ?.setStyle({
+          opacity:
+            showTrails
+              ? 0.38
+              : 0,
+        });
 
-      followerHeadingRef.current?.setStyle({
-        opacity:
-          showTrails
-            ? 0.42
-            : 0,
-      });
+      followerHeadingRef.current
+        ?.setStyle({
+          opacity:
+            showTrails
+              ? 0.38
+              : 0,
+        });
     },
     [
       showTrails,
@@ -1640,26 +1557,13 @@ export function InterceptMap({
 
   useEffect(
     () => {
-      mlPathRef.current?.setStyle({
-        opacity:
-          showMl
-            ? 0.96
-            : 0,
-      });
-    },
-    [
-      showMl,
-    ],
-  );
-
-  useEffect(
-    () => {
-      baselinePathRef.current?.setStyle({
-        opacity:
-          showBaseline
-            ? 0.64
-            : 0,
-      });
+      baselinePathRef.current
+        ?.setStyle({
+          opacity:
+            showBaseline
+              ? 0.62
+              : 0,
+        });
     },
     [
       showBaseline,
@@ -1668,24 +1572,56 @@ export function InterceptMap({
 
   useEffect(
     () => {
-      desiredCircleRef.current?.setStyle({
-        opacity:
-          showSafety
-            ? 0.56
-            : 0,
-      });
+      ctrvPathRef.current
+        ?.setStyle({
+          opacity:
+            showCtrv
+              ? 0.82
+              : 0,
+        });
+    },
+    [
+      showCtrv,
+    ],
+  );
 
-      safetyCircleRef.current?.setStyle({
-        opacity:
-          showSafety
-            ? 0.78
-            : 0,
+  useEffect(
+    () => {
+      adaptivePathRef.current
+        ?.setStyle({
+          opacity:
+            showAdaptive
+              ? 0.96
+              : 0,
+        });
+    },
+    [
+      showAdaptive,
+    ],
+  );
 
-        fillOpacity:
-          showSafety
-            ? 0.06
-            : 0,
-      });
+  useEffect(
+    () => {
+      desiredSeparationRef.current
+        ?.setStyle({
+          opacity:
+            showSafety
+              ? 0.52
+              : 0,
+        });
+
+      protectedSeparationRef.current
+        ?.setStyle({
+          opacity:
+            showSafety
+              ? 0.76
+              : 0,
+
+          fillOpacity:
+            showSafety
+              ? 0.055
+              : 0,
+        });
     },
     [
       showSafety,
@@ -1693,10 +1629,10 @@ export function InterceptMap({
   );
 
   /* =======================================================
-     Camera Controls
+     Camera
      ======================================================= */
 
-  function fitBoth() {
+  function focusBoth() {
     const map =
       mapRef.current;
 
@@ -1710,32 +1646,25 @@ export function InterceptMap({
       "both",
     );
 
-    const bounds =
+    map.fitBounds(
       L.latLngBounds([
         positions.leader,
         positions.follower,
         positions.guidance,
-      ]);
+      ]),
+      {
+        padding: [
+          90,
+          90,
+        ],
 
-    if (
-      bounds.isValid()
-    ) {
-      map.fitBounds(
-        bounds,
-        {
-          padding: [
-            90,
-            90,
-          ],
+        maxZoom:
+          17,
 
-          maxZoom:
-            17,
-
-          animate:
-            true,
-        },
-      );
-    }
+        animate:
+          true,
+      },
+    );
   }
 
   function focusLeader() {
@@ -1752,15 +1681,15 @@ export function InterceptMap({
       "leader",
     );
 
-    map.setView(
+    map.flyTo(
       positions.leader,
       Math.max(
         map.getZoom(),
         16,
       ),
       {
-        animate:
-          true,
+        duration:
+          0.8,
       },
     );
   }
@@ -1779,67 +1708,80 @@ export function InterceptMap({
       "follower",
     );
 
-    map.setView(
+    map.flyTo(
       positions.follower,
       Math.max(
         map.getZoom(),
         16,
       ),
       {
-        animate:
-          true,
+        duration:
+          0.8,
       },
     );
   }
 
-  /* =======================================================
-     Render
-     ======================================================= */
+  function cycleBaseMap() {
+    setBaseMap(
+      (
+        current,
+      ) => {
+        if (
+          current ===
+          "satellite"
+        ) {
+          return "osm";
+        }
+
+        if (
+          current ===
+          "osm"
+        ) {
+          return "hot";
+        }
+
+        return "satellite";
+      },
+    );
+  }
 
   return (
     <div
       className={[
-        "grid h-full min-h-[560px] overflow-hidden",
+        "grid h-full min-h-[560px]",
 
-        "grid-rows-[auto_minmax(0,1fr)_auto]",
+        "grid-rows-[58px_minmax(0,1fr)_52px]",
 
-        "bg-[#020304]",
+        "overflow-hidden bg-[#020304]",
 
         "xl:min-h-0",
       ].join(" ")}
     >
-      {/* ===================================================
-          MAP CONTROLS
-          OUTSIDE LEAFLET
-          =================================================== */}
+      {/* ===============================================
+          MAP COMMAND BAR
+          =============================================== */}
 
-      <div
-        className={[
-          "flex min-h-[72px] flex-wrap items-center justify-between gap-3",
+      <div className="flex min-w-0 items-center justify-between gap-3 border-b border-white/[0.08] bg-[#06080b] px-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <Crosshair
+            size={15}
+            strokeWidth={1.6}
+            className="shrink-0 text-[#5AA9FF]"
+          />
 
-          "border-b border-white/[0.08]",
-
-          "bg-[#07090d]",
-
-          "px-4 py-2.5",
-        ].join(" ")}
-      >
-        {/* Left controls */}
-
-        <div className="flex min-w-0 flex-wrap items-center gap-2">
-          <div className="mr-3 min-w-[170px]">
-            <div className="text-[16px] font-semibold text-white/84">
-              Map Controls
+          <div className="min-w-0">
+            <div className="truncate text-[16px] font-semibold text-white/86">
+              Intercept Map
             </div>
 
-            <div className="mt-1 text-[14px] text-white/42">
-              Basemap · tracking · layers
+            <div className="truncate text-[14px] text-white/40">
+              Real basemap · aircraft tracks · predictive guidance
             </div>
           </div>
+        </div>
 
-          {/* Basemap */}
-
-          <ToolbarButton
+        <div className="flex shrink-0 items-center gap-1.5">
+          <MapButton
             label="Satellite"
             active={
               baseMap ===
@@ -1852,35 +1794,31 @@ export function InterceptMap({
             }
           />
 
-          <ToolbarButton
-            label="Street"
+          <MapButton
+            label="Map"
             active={
-              baseMap ===
-              "street"
+              baseMap !==
+              "satellite"
             }
-            onClick={() =>
-              setBaseMap(
-                "street",
-              )
+            onClick={
+              cycleBaseMap
             }
           />
 
-          <span className="mx-1 h-7 w-px bg-white/[0.08]" />
+          <span className="mx-1 h-6 w-px bg-white/[0.08]" />
 
-          {/* Follow */}
-
-          <ToolbarButton
+          <MapButton
             label="Both"
             active={
               followMode ===
               "both"
             }
             onClick={
-              fitBoth
+              focusBoth
             }
           />
 
-          <ToolbarButton
+          <MapButton
             label="Leader"
             active={
               followMode ===
@@ -1891,7 +1829,7 @@ export function InterceptMap({
             }
           />
 
-          <ToolbarButton
+          <MapButton
             label="Follower"
             active={
               followMode ===
@@ -1902,73 +1840,133 @@ export function InterceptMap({
             }
           />
 
-          <ToolbarButton
-            label="Free"
-            active={
-              followMode ===
-              "free"
-            }
+          <button
+            type="button"
+            title="Zoom out"
             onClick={() =>
-              setFollowMode(
-                "free",
-              )
+              mapRef.current
+                ?.zoomOut()
             }
-          />
+            className="flex h-[34px] w-[34px] items-center justify-center rounded-[4px] border border-white/[0.08] bg-[#030405] text-white/56 hover:text-white"
+          >
+            <Minus
+              size={15}
+            />
+          </button>
+
+          <button
+            type="button"
+            title="Zoom in"
+            onClick={() =>
+              mapRef.current
+                ?.zoomIn()
+            }
+            className="flex h-[34px] w-[34px] items-center justify-center rounded-[4px] border border-white/[0.08] bg-[#030405] text-white/56 hover:text-white"
+          >
+            <Plus
+              size={15}
+            />
+          </button>
+
+          <button
+            type="button"
+            title="Fit leader and follower"
+            onClick={
+              focusBoth
+            }
+            className="flex h-[34px] w-[34px] items-center justify-center rounded-[4px] border border-white/[0.08] bg-[#030405] text-white/56 hover:text-white"
+          >
+            <LocateFixed
+              size={15}
+            />
+          </button>
         </div>
+      </div>
 
-        {/* Right controls */}
+      {/* ===============================================
+          CLEAN MAP CANVAS
+          =============================================== */}
 
-        <div className="flex flex-wrap items-center gap-2">
-          <ToolbarButton
-            label={
-              showTrails
-                ? "Trails On"
-                : "Trails Off"
-            }
+      <div className="relative min-h-0">
+        <div
+          ref={
+            containerRef
+          }
+          className="missionnexus-map absolute inset-0 h-full w-full"
+        />
+      </div>
+
+      {/* ===============================================
+          MAP LAYER BAR
+          =============================================== */}
+
+      <div className="flex min-w-0 items-center justify-between gap-3 border-t border-white/[0.08] bg-[#06080b] px-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="shrink-0 text-[14px] font-medium text-white/54">
+            Layers
+          </span>
+
+          <MapButton
+            label="Trails"
             active={
               showTrails
             }
             onClick={() =>
               setShowTrails(
                 (
-                  value,
+                  current,
                 ) =>
-                  !value,
+                  !current,
               )
             }
           />
 
-          <ToolbarButton
-            label="ML Path"
-            active={
-              showMl
-            }
-            onClick={() =>
-              setShowMl(
-                (
-                  value,
-                ) =>
-                  !value,
-              )
-            }
-          />
-
-          <ToolbarButton
-            label="Baseline"
+          <MapButton
+            label="CV"
             active={
               showBaseline
             }
             onClick={() =>
               setShowBaseline(
                 (
-                  value,
+                  current,
                 ) =>
-                  !value,
+                  !current,
               )
             }
           />
 
-          <ToolbarButton
+          <MapButton
+            label="CTRV"
+            active={
+              showCtrv
+            }
+            onClick={() =>
+              setShowCtrv(
+                (
+                  current,
+                ) =>
+                  !current,
+              )
+            }
+          />
+
+          <MapButton
+            label="Adaptive"
+            active={
+              showAdaptive
+            }
+            onClick={() =>
+              setShowAdaptive(
+                (
+                  current,
+                ) =>
+                  !current,
+              )
+            }
+          />
+
+          <MapButton
             label="Safety"
             active={
               showSafety
@@ -1976,158 +1974,48 @@ export function InterceptMap({
             onClick={() =>
               setShowSafety(
                 (
-                  value,
+                  current,
                 ) =>
-                  !value,
+                  !current,
               )
             }
           />
-
-          <span className="mx-1 h-7 w-px bg-white/[0.08]" />
-
-          <IconButton
-            label="Zoom out"
-            onClick={() =>
-              mapRef.current?.zoomOut()
-            }
-          >
-            <Minus
-              size={16}
-            />
-          </IconButton>
-
-          <IconButton
-            label="Zoom in"
-            onClick={() =>
-              mapRef.current?.zoomIn()
-            }
-          >
-            <Plus
-              size={16}
-            />
-          </IconButton>
-
-          <IconButton
-            label="Fit both aircraft"
-            onClick={
-              fitBoth
-            }
-          >
-            <LocateFixed
-              size={16}
-            />
-          </IconButton>
-        </div>
-      </div>
-
-      {/* ===================================================
-          CLEAN LEAFLET MAP
-
-          No operational cards.
-          No control buttons.
-          No floating status panels.
-          =================================================== */}
-
-      <div className="relative min-h-0 overflow-hidden bg-[#020304]">
-        <div
-          ref={
-            containerRef
-          }
-          className="absolute inset-0 h-full w-full"
-        />
-      </div>
-
-      {/* ===================================================
-          MAP LEGEND / STATUS
-          OUTSIDE LEAFLET
-          =================================================== */}
-
-      <div
-        className={[
-          "flex min-h-[58px] flex-wrap items-center justify-between gap-3",
-
-          "border-t border-white/[0.08]",
-
-          "bg-[#06080b]",
-
-          "px-4 py-2.5",
-        ].join(" ")}
-      >
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-          <LegendItem
-            label="Leader"
-            colorClass="bg-[#F6B23C]"
-          />
-
-          <LegendItem
-            label="Follower"
-            colorClass="bg-[#5AA9FF]"
-          />
-
-          <LegendItem
-            label="ML prediction"
-            colorClass="bg-[#59D99A]"
-          />
-
-          <LegendItem
-            label="Baseline"
-            colorClass="border-white/60"
-            dashed
-          />
-
-          <LegendItem
-            label="Protected radius"
-            colorClass="bg-[#FF5A63]"
-          />
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="flex h-9 items-center gap-2 rounded-[4px] border border-white/[0.07] bg-[#05060d] px-3">
-            {baseMap ===
-            "satellite" ? (
-              <Satellite
-                size={14}
-                className="text-[#F6B23C]"
-              />
-            ) : (
-              <Layers3
-                size={14}
-                className="text-[#5AA9FF]"
-              />
-            )}
+        <div className="flex shrink-0 items-center gap-4 font-mono text-[14px]">
+          <span className="text-[#F6B23C]">
+            ● Leader
+          </span>
 
-            <span className="font-mono text-[14px] text-white/52">
-              {baseMap ===
-              "satellite"
-                ? "Satellite"
-                : "Street"}
+          <span className="text-[#5AA9FF]">
+            ● Follower
+          </span>
+
+          <span className="text-[#59D99A]">
+            ● Adaptive
+          </span>
+
+          <span className="hidden text-white/48 2xl:inline">
+            Basemap:{" "}
+            <span className="text-white/72">
+              {
+                baseMap
+              }
             </span>
-          </div>
+          </span>
 
-          <div className="flex h-9 items-center gap-2 rounded-[4px] border border-white/[0.07] bg-[#05060d] px-3">
-            {showMl ? (
-              <Eye
-                size={14}
-                className="text-[#59D99A]"
-              />
-            ) : (
-              <EyeOff
-                size={14}
-                className="text-white/34"
-              />
-            )}
-
-            <span className="font-mono text-[14px] text-white/52">
-              Intelligence Layers
-            </span>
-          </div>
-
-          <div className="flex h-9 items-center rounded-[4px] border border-white/[0.07] bg-[#05060d] px-3 font-mono text-[14px] text-white/52">
-            Follow:{" "}
-            <span className="ml-1 text-[#5AA9FF]">
-              {followMode.toUpperCase()}
-            </span>
-          </div>
+          {baseMap ===
+          "satellite" ? (
+            <Satellite
+              size={14}
+              className="text-[#F6B23C]"
+            />
+          ) : (
+            <Layers3
+              size={14}
+              className="text-[#5AA9FF]"
+            />
+          )}
         </div>
       </div>
     </div>
