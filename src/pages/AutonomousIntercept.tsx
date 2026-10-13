@@ -27,6 +27,7 @@ import {
 } from "../hooks/useInterceptSimulation";
 
 import type {
+  AiModuleState,
   InterceptorState,
   PredictorMode,
 } from "../hooks/useInterceptSimulation";
@@ -70,16 +71,12 @@ function formatDistance(
   value:
     number | null,
 ) {
-  if (
-    value ===
+  return value ===
     null
-  ) {
-    return "—";
-  }
-
-  return `${Math.round(
-    value,
-  )} m`;
+    ? "—"
+    : `${Math.round(
+        value,
+      )} m`;
 }
 
 function formatEta(
@@ -127,25 +124,29 @@ function MetricCell({
   return (
     <div className="flex min-w-0 items-center justify-between gap-2 border-r border-white/[0.07] px-3 last:border-r-0">
       <div className="min-w-0">
-        <div className="truncate text-[11px] font-medium text-white/38">
-          {metric.label}
+        <div className="truncate text-[14px] font-medium text-white/42">
+          {
+            metric.label
+          }
         </div>
 
         <div
           className={[
-            "mt-0.5 truncate font-mono text-[13px] font-semibold",
+            "mt-0.5 truncate font-mono text-[14px] font-semibold",
 
             toneClass[
               metric.tone
             ],
           ].join(" ")}
         >
-          {metric.value}
+          {
+            metric.value
+          }
         </div>
       </div>
 
       <Icon
-        size={15}
+        size={16}
         className={[
           "shrink-0",
 
@@ -174,14 +175,14 @@ function StateRow({
     string;
 }) {
   return (
-    <div className="flex min-h-[34px] items-center justify-between gap-3 border-b border-white/[0.055] last:border-b-0">
-      <span className="text-[13px] text-white/44">
+    <div className="flex min-h-[36px] items-center justify-between gap-3 border-b border-white/[0.055] last:border-b-0">
+      <span className="text-[14px] text-white/48">
         {label}
       </span>
 
       <span
         className={[
-          "max-w-[62%] truncate text-right font-mono text-[13px] font-medium",
+          "max-w-[64%] truncate text-right font-mono text-[14px] font-medium",
 
           valueClass,
         ].join(" ")}
@@ -221,12 +222,12 @@ function RangeControl({
   return (
     <div className="rounded-[5px] border border-white/[0.07] bg-[#05060d] p-3">
       <div className="flex items-center justify-between gap-3">
-        <span className="text-[13px] text-white/58">
+        <span className="text-[14px] text-white/60">
           {label}
         </span>
 
         <span
-          className="font-mono text-[13px] font-semibold"
+          className="font-mono text-[14px] font-semibold"
           style={{
             color:
               accent,
@@ -288,13 +289,35 @@ function InterceptorCard({
         number,
     ) => void;
 }) {
+  const active =
+    interceptor.status ===
+      "PURSUIT" ||
+    interceptor.status ===
+      "RENDEZVOUS" ||
+    interceptor.status ===
+      "SHADOW";
+
+  const statusDetail =
+    interceptor.status ===
+    "PURSUIT"
+      ? interceptor.guidanceLocked
+        ? "LOCKED LEAD"
+        : "ACQUIRING"
+      : interceptor.status ===
+          "RENDEZVOUS"
+        ? "SLOT CAPTURE"
+        : interceptor.status ===
+            "SHADOW"
+          ? "SLOT HELD"
+          : interceptor.status;
+
   return (
     <div
       className={[
         "rounded-[5px] border p-3",
 
-        interceptor.assigned
-          ? "border-white/[0.14] bg-white/[0.025]"
+        active
+          ? "border-white/[0.15] bg-white/[0.025]"
           : "border-white/[0.07] bg-[#05060d]",
       ].join(" ")}
     >
@@ -307,39 +330,47 @@ function InterceptorCard({
                 interceptor.color,
 
               boxShadow:
-                `0 0 8px ${interceptor.color}`,
+                `0 0 9px ${interceptor.color}`,
             }}
           />
 
-          <span className="text-[14px] font-semibold text-white/80">
+          <span className="text-[15px] font-semibold text-white/82">
             {
               interceptor.callsign
             }
           </span>
         </div>
 
-        <span
-          className="font-mono text-[11px] font-semibold"
-          style={{
-            color:
-              interceptor.assigned
-                ? interceptor.color
-                : "rgba(255,255,255,.34)",
-          }}
-        >
-          {
-            interceptor.status
-          }
-        </span>
+        <div className="text-right">
+          <div
+            className="font-mono text-[14px] font-semibold"
+            style={{
+              color:
+                interceptor.assigned
+                  ? interceptor.color
+                  : "rgba(255,255,255,.34)",
+            }}
+          >
+            {
+              interceptor.status
+            }
+          </div>
+
+          <div className="mt-0.5 font-mono text-[12px] text-white/32">
+            {
+              statusDetail
+            }
+          </div>
+        </div>
       </div>
 
-      <div className="mt-2 grid grid-cols-3 gap-2">
+      <div className="mt-3 grid grid-cols-4 gap-2">
         <div>
-          <div className="text-[11px] text-white/30">
+          <div className="text-[12px] text-white/30">
             Current
           </div>
 
-          <div className="font-mono text-[12px] text-white/68">
+          <div className="font-mono text-[14px] text-white/68">
             {
               interceptor.airspeed.toFixed(
                 0,
@@ -349,12 +380,12 @@ function InterceptorCard({
         </div>
 
         <div>
-          <div className="text-[11px] text-white/30">
-            Target
+          <div className="text-[12px] text-white/30">
+            Command
           </div>
 
           <div
-            className="font-mono text-[12px]"
+            className="font-mono text-[14px]"
             style={{
               color:
                 interceptor.color,
@@ -369,16 +400,33 @@ function InterceptorCard({
         </div>
 
         <div>
-          <div className="text-[11px] text-white/30">
-            Limit
+          <div className="text-[12px] text-white/30">
+            Slot Err
           </div>
 
-          <div className="font-mono text-[12px] text-[#F6B23C]">
-            {
-              interceptor.speedLimitMps.toFixed(
-                0,
-              )
-            }
+          <div className="font-mono text-[14px] text-white/68">
+            {interceptor.slotErrorMeters ===
+            null
+              ? "—"
+              : Math.round(
+                  interceptor.slotErrorMeters,
+                )}
+          </div>
+        </div>
+
+        <div>
+          <div className="text-[12px] text-white/30">
+            ETA
+          </div>
+
+          <div className="font-mono text-[14px] text-[#F6B23C]">
+            {interceptor.etaSeconds ===
+            null
+              ? "—"
+              : interceptor.etaSeconds.toFixed(
+                  0,
+                )}
+            s
           </div>
         </div>
       </div>
@@ -410,6 +458,103 @@ function InterceptorCard({
   );
 }
 
+function AiModuleCard({
+  module,
+}: {
+  module:
+    AiModuleState;
+}) {
+  const ml =
+    module.category ===
+    "ML";
+
+  const stateColor =
+    module.state ===
+      "ACTIVE" ||
+    module.state ===
+      "LEARNING"
+      ? ml
+        ? "text-[#A8FF4F]"
+        : "text-[#5AA9FF]"
+      : module.state ===
+          "REJECTED"
+        ? "text-[#FF5A63]"
+        : module.state ===
+            "WARMING"
+          ? "text-[#F6B23C]"
+          : "text-white/34";
+
+  return (
+    <div
+      className={[
+        "rounded-[5px] border p-3",
+
+        ml
+          ? "border-[rgba(168,255,79,.14)] bg-[rgba(168,255,79,.025)]"
+          : "border-white/[0.07] bg-[#05060d]",
+      ].join(" ")}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            {ml ? (
+              <BrainCircuit
+                size={15}
+                className="shrink-0 text-[#A8FF4F]"
+              />
+            ) : (
+              <Cpu
+                size={15}
+                className="shrink-0 text-[#5AA9FF]"
+              />
+            )}
+
+            <span className="truncate text-[14px] font-semibold text-white/76">
+              {
+                module.label
+              }
+            </span>
+          </div>
+
+          <div className="mt-1.5 text-[14px] leading-[1.45] text-white/38">
+            {
+              module.detail
+            }
+          </div>
+        </div>
+
+        <div className="shrink-0 text-right">
+          <div
+            className={[
+              "font-mono text-[12px] font-semibold",
+
+              ml
+                ? "text-[#A8FF4F]"
+                : "text-[#5AA9FF]",
+            ].join(" ")}
+          >
+            {
+              module.category
+            }
+          </div>
+
+          <div
+            className={[
+              "mt-1 font-mono text-[12px] font-semibold",
+
+              stateColor,
+            ].join(" ")}
+          >
+            {
+              module.state
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function AutonomousIntercept() {
   const {
     snapshot,
@@ -417,165 +562,148 @@ export function AutonomousIntercept() {
   } =
     useInterceptSimulation();
 
-  const confidence =
-    Math.round(
-      snapshot.ai
-        .confidence *
-        100,
-    );
-
-  const activeCriticalZone =
-    snapshot.criticalZones.find(
-      (
-        zone,
-      ) =>
-        zone.active,
-    );
-
   const metrics:
     Metric[] = [
-      {
-        label:
-          "Threat",
+    {
+      label:
+        "Threat",
 
-        value:
-          snapshot.alert.phase,
+      value:
+        snapshot.alert.phase,
 
-        icon:
-          AlertTriangle,
+      icon:
+        AlertTriangle,
 
-        tone:
-          snapshot.alert.active
+      tone:
+        snapshot.alert.active
+          ? "critical"
+          : "nominal",
+    },
+
+    {
+      label:
+        "Fleet",
+
+      value:
+        snapshot.fleetPhase,
+
+      icon:
+        Radio,
+
+      tone:
+        snapshot.interceptAuthorized
+          ? "info"
+          : "muted",
+    },
+
+    {
+      label:
+        "Intruder",
+
+      value:
+        `${snapshot.intruder.airspeed.toFixed(
+          1,
+        )} m/s`,
+
+      icon:
+        Plane,
+
+      tone:
+        "critical",
+    },
+
+    {
+      label:
+        "Nearest",
+
+      value:
+        formatDistance(
+          snapshot.nearestSeparationMeters,
+        ),
+
+      icon:
+        Navigation,
+
+      tone:
+        snapshot.separationSafe
+          ? "nominal"
+          : "critical",
+    },
+
+    {
+      label:
+        "Fleet ETA",
+
+      value:
+        formatEta(
+          snapshot.etaSeconds,
+        ),
+
+      icon:
+        Target,
+
+      tone:
+        snapshot.etaSeconds !==
+        null
+          ? "caution"
+          : "muted",
+    },
+
+    {
+      label:
+        "ML Gate",
+
+      value:
+        snapshot.mlValidation.status,
+
+      icon:
+        BrainCircuit,
+
+      tone:
+        snapshot.mlValidation.status ===
+        "VALIDATED"
+          ? "nominal"
+          : snapshot.mlValidation.status ===
+              "REJECTED"
             ? "critical"
-            : "nominal",
-      },
+            : "caution",
+    },
+  ];
 
-      {
-        label:
-          "Intruder",
-
-        value:
-          `${snapshot.intruder.airspeed.toFixed(
-            1,
-          )} m/s`,
-
-        icon:
-          Plane,
-
-        tone:
-          "critical",
-      },
-
-      {
-        label:
-          "Response",
-
-        value:
-          snapshot.interceptAuthorized
-            ? "4 / 4"
-            : "STANDBY",
-
-        icon:
-          Radio,
-
-        tone:
-          snapshot.interceptAuthorized
-            ? "info"
-            : "muted",
-      },
-
-      {
-        label:
-          "Nearest",
-
-        value:
-          formatDistance(
-            snapshot.nearestSeparationMeters,
-          ),
-
-        icon:
-          Navigation,
-
-        tone:
-          snapshot.separationSafe
-            ? "nominal"
-            : "critical",
-      },
-
-      {
-        label:
-          "Formation ETA",
-
-        value:
-          formatEta(
-            snapshot.etaSeconds,
-          ),
-
-        icon:
-          Target,
-
-        tone:
-          snapshot.etaSeconds !==
-          null
-            ? "caution"
-            : "muted",
-      },
-
-      {
-        label:
-          "AI",
-
-        value:
-          snapshot.ai.ready
-            ? `${confidence}%`
-            : "TRAINING",
-
-        icon:
-          BrainCircuit,
-
-        tone:
-          "nominal",
-      },
-    ];
-
-  function selectPredictor(
-    predictor:
+  function setPredictor(
+    mode:
       PredictorMode,
   ) {
     actions.setPredictorMode(
-      predictor,
+      mode,
     );
   }
 
   return (
     <div className="bg-[#05060d] text-white">
       <section className="xl:h-[calc(100vh-70px)] xl:overflow-hidden">
-        <div className="mx-auto grid w-full max-w-[1600px] gap-2 px-4 pb-3 pt-2 sm:px-6 lg:px-8 xl:h-full xl:grid-rows-[40px_52px_minmax(0,1fr)] xl:px-10 2xl:px-14">
-          {/* Compact title */}
-
+        <div className="mx-auto grid w-full max-w-[1640px] gap-2 px-4 pb-3 pt-2 sm:px-6 lg:px-8 xl:h-full xl:grid-rows-[40px_54px_minmax(0,1fr)] xl:px-10 2xl:px-14">
           <header className="flex items-center justify-between gap-4 border-b border-white/[0.08]">
             <div className="flex min-w-0 items-center gap-3">
-              <h1 className="shrink-0 text-[18px] font-semibold">
+              <h1 className="shrink-0 text-[16px] font-semibold">
                 Autonomous Intercept
               </h1>
 
-              <span className="hidden truncate text-[12px] text-white/38 lg:block">
-                Predictive multi-UAV non-contact defence simulation
+              <span className="hidden truncate text-[14px] text-white/42 lg:block">
+                Locked predictive pursuit · capture gate · non-contact four-UAV shadow formation
               </span>
             </div>
 
             <div className="flex shrink-0 gap-2">
-              <span className="rounded-[4px] border border-[rgba(89,217,154,.20)] px-2 py-1 font-mono text-[11px] text-[#59D99A]">
+              <span className="rounded-[4px] border border-[rgba(89,217,154,.20)] px-2 py-1 font-mono text-[14px] text-[#59D99A]">
                 ● SIM ACTIVE
               </span>
 
-              <span className="hidden rounded-[4px] border border-[rgba(90,169,255,.20)] px-2 py-1 font-mono text-[11px] text-[#5AA9FF] md:block">
+              <span className="hidden rounded-[4px] border border-[rgba(90,169,255,.20)] px-2 py-1 font-mono text-[14px] text-[#5AA9FF] md:block">
                 HUMAN-IN-LOOP
               </span>
             </div>
           </header>
-
-          {/* Compact metrics */}
 
           <section className="grid grid-cols-2 overflow-hidden rounded-[5px] border border-white/[0.08] bg-[#07090d] md:grid-cols-3 xl:grid-cols-6">
             {metrics.map(
@@ -594,24 +722,20 @@ export function AutonomousIntercept() {
             )}
           </section>
 
-          {/* Workspace */}
-
-          <section className="grid min-h-[880px] overflow-hidden rounded-[6px] border border-white/[0.09] bg-[#020304] xl:min-h-0 xl:grid-cols-[minmax(0,1fr)_430px]">
-            {/* Map */}
-
-            <div className="grid min-h-0 grid-rows-[38px_minmax(0,1fr)]">
+          <section className="grid min-h-[920px] overflow-hidden rounded-[6px] border border-white/[0.09] bg-[#020304] xl:min-h-0 xl:grid-cols-[minmax(0,1fr)_470px]">
+            <div className="grid min-h-0 grid-rows-[40px_minmax(0,1fr)]">
               <div className="flex items-center justify-between border-b border-white/[0.08] bg-[#06080b] px-3">
                 <div className="flex items-center gap-2">
                   <MapPinned
-                    size={14}
+                    size={15}
                     className="text-[#5AA9FF]"
                   />
 
-                  <span className="text-[14px] font-medium text-white/80">
-                    Ahmedabad Airspace Simulation
+                  <span className="text-[16px] font-medium text-white/82">
+                    Predictive Intercept Workspace
                   </span>
 
-                  <span className="hidden font-mono text-[11px] text-white/32 lg:inline">
+                  <span className="hidden font-mono text-[14px] text-white/34 lg:inline">
                     {
                       snapshot.missionId
                     }
@@ -619,7 +743,7 @@ export function AutonomousIntercept() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <span className="font-mono text-[11px] text-white/34">
+                  <span className="font-mono text-[14px] text-white/38">
                     WP{" "}
                     {
                       snapshot.activeWaypointIndex
@@ -636,15 +760,15 @@ export function AutonomousIntercept() {
                     onClick={
                       actions.toggleRunning
                     }
-                    className="flex h-7 items-center gap-1.5 rounded-[4px] border border-white/[0.08] px-2 text-[11px] text-white/56"
+                    className="flex h-8 items-center gap-1.5 rounded-[4px] border border-white/[0.08] px-2.5 text-[14px] text-white/60"
                   >
                     {snapshot.running ? (
                       <Pause
-                        size={11}
+                        size={12}
                       />
                     ) : (
                       <Play
-                        size={11}
+                        size={12}
                       />
                     )}
 
@@ -658,10 +782,10 @@ export function AutonomousIntercept() {
                     onClick={
                       actions.reset
                     }
-                    className="flex h-7 items-center gap-1.5 rounded-[4px] border border-white/[0.08] px-2 text-[11px] text-white/56"
+                    className="flex h-8 items-center gap-1.5 rounded-[4px] border border-white/[0.08] px-2.5 text-[14px] text-white/60"
                   >
                     <RotateCcw
-                      size={11}
+                      size={12}
                     />
 
                     New Plan
@@ -676,11 +800,7 @@ export function AutonomousIntercept() {
               />
             </div>
 
-            {/* Inspector */}
-
             <aside className="min-h-0 overflow-y-auto border-t border-white/[0.08] bg-[#07090d] xl:border-l xl:border-t-0">
-              {/* Alert */}
-
               <section
                 className={[
                   "border-b px-4 py-3",
@@ -693,7 +813,7 @@ export function AutonomousIntercept() {
                 <div className="flex items-start gap-3">
                   <div
                     className={[
-                      "mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-[4px] border",
+                      "flex h-9 w-9 shrink-0 items-center justify-center rounded-[4px] border",
 
                       snapshot.alert.active
                         ? "border-[rgba(255,49,90,.32)] text-[#FF315A]"
@@ -714,7 +834,7 @@ export function AutonomousIntercept() {
                   <div className="min-w-0 flex-1">
                     <div
                       className={[
-                        "text-[15px] font-semibold",
+                        "text-[16px] font-semibold",
 
                         snapshot.alert.active
                           ? "text-[#FF5A72]"
@@ -726,20 +846,11 @@ export function AutonomousIntercept() {
                       }
                     </div>
 
-                    <div className="mt-1 text-[13px] leading-[1.45] text-white/42">
+                    <div className="mt-1 text-[14px] leading-[1.45] text-white/46">
                       {
                         snapshot.alert.message
                       }
                     </div>
-
-                    {activeCriticalZone ? (
-                      <div className="mt-2 font-mono text-[12px] text-[#FF315A]">
-                        ZONE:{" "}
-                        {
-                          activeCriticalZone.label
-                        }
-                      </div>
-                    ) : null}
 
                     <button
                       type="button"
@@ -751,87 +862,24 @@ export function AutonomousIntercept() {
                         actions.interceptAll
                       }
                       className={[
-                        "mt-3 h-10 w-full rounded-[5px] border text-[14px] font-semibold transition-colors",
+                        "mt-3 h-10 w-full rounded-[5px] border text-[14px] font-semibold",
 
                         snapshot.interceptAuthorized
-                          ? "cursor-default border-[rgba(89,217,154,.26)] bg-[rgba(89,217,154,.05)] text-[#59D99A]"
+                          ? "border-[rgba(89,217,154,.26)] bg-[rgba(89,217,154,.05)] text-[#59D99A]"
                           : snapshot.alert.latched
-                            ? "border-[rgba(246,178,60,.34)] bg-[rgba(246,178,60,.08)] text-[#F6B23C] hover:bg-[rgba(246,178,60,.13)]"
+                            ? "border-[rgba(246,178,60,.34)] bg-[rgba(246,178,60,.08)] text-[#F6B23C]"
                             : "cursor-not-allowed border-white/[0.07] text-white/22",
                       ].join(" ")}
                     >
                       {snapshot.interceptAuthorized
-                        ? "4-UAV RESPONSE ACTIVE"
+                        ? `${snapshot.fleetPhase} · 4-UAV RESPONSE`
                         : snapshot.alert.latched
                           ? "INTERCEPT ALL 4"
-                          : "WAITING FOR PERIMETER ALERT"}
+                          : "WAITING FOR AIRSPACE ALERT"}
                     </button>
                   </div>
                 </div>
               </section>
-
-              {/* Intruder */}
-
-              <section className="border-b border-white/[0.08] px-4 py-3">
-                <div className="mb-3 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Plane
-                      size={16}
-                      className="text-[#FF315A]"
-                    />
-
-                    <span className="text-[16px] font-semibold text-white/82">
-                      Unauthorized UAV
-                    </span>
-                  </div>
-
-                  <span className="font-mono text-[11px] text-[#FF5A72]">
-                    {
-                      snapshot.intruder.mode
-                    }
-                  </span>
-                </div>
-
-                <RangeControl
-                  label="Target Airspeed"
-                  value={
-                    snapshot.speedControl
-                      .intruderCommandedAirspeed
-                  }
-                  suffix="m/s"
-                  min={12}
-                  max={50}
-                  step={0.5}
-                  accent="#FF315A"
-                  onChange={
-                    actions.setIntruderCommandedAirspeed
-                  }
-                />
-
-                <div className="mt-2">
-                  <StateRow
-                    label="Actual Airspeed"
-                    value={`${snapshot.intruder.airspeed.toFixed(
-                      1,
-                    )} m/s`}
-                    valueClass="text-[#FF5A72]"
-                  />
-
-                  <StateRow
-                    label="Heading"
-                    value={`${snapshot.intruder.heading.toFixed(
-                      0,
-                    )}°`}
-                  />
-
-                  <StateRow
-                    label="Route"
-                    value={`WP ${snapshot.activeWaypointIndex}`}
-                  />
-                </div>
-              </section>
-
-              {/* Four UAV controllers */}
 
               <section className="border-b border-white/[0.08] px-4 py-3">
                 <div className="mb-3 flex items-center justify-between">
@@ -846,7 +894,7 @@ export function AutonomousIntercept() {
                     </span>
                   </div>
 
-                  <span className="font-mono text-[11px] text-white/36">
+                  <span className="font-mono text-[14px] text-white/38">
                     40–90 m/s
                   </span>
                 </div>
@@ -876,66 +924,103 @@ export function AutonomousIntercept() {
                   )}
                 </div>
 
-                <div className="mt-2">
+                <div className="mt-2 grid gap-2">
                   <RangeControl
-                    label="Formation Standoff"
+                    label="Intruder Target Airspeed"
+                    value={
+                      snapshot.speedControl
+                        .intruderCommandedAirspeed
+                    }
+                    suffix="m/s"
+                    min={12}
+                    max={50}
+                    step={0.5}
+                    accent="#FF315A"
+                    onChange={
+                      actions.setIntruderCommandedAirspeed
+                    }
+                  />
+
+                  <RangeControl
+                    label="Shadow Standoff"
                     value={
                       snapshot.desiredSeparationMeters
                     }
                     suffix="m"
-                    min={140}
-                    max={350}
+                    min={220}
+                    max={420}
                     step={10}
+                    accent="#F6B23C"
                     onChange={
                       actions.setDesiredSeparation
                     }
                   />
                 </div>
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    actions.setAdaptiveSpeedSync(
-                      !snapshot.speedControl
-                        .adaptiveSync,
-                    )
-                  }
-                  className="mt-2 flex h-11 w-full items-center justify-between rounded-[5px] border border-[rgba(89,217,154,.18)] bg-[rgba(89,217,154,.025)] px-3"
-                >
-                  <div className="text-left">
-                    <div className="text-[13px] text-white/64">
-                      Adaptive Catch-up Control
-                    </div>
-
-                    <div className="text-[11px] text-white/30">
-                      Range · closure · turn demand
-                    </div>
-                  </div>
-
-                  <span className="font-mono text-[12px] font-semibold text-[#59D99A]">
-                    {snapshot.speedControl.adaptiveSync
-                      ? "ON"
-                      : "OFF"}
-                  </span>
-                </button>
               </section>
 
-              {/* AI */}
-
               <section className="border-b border-white/[0.08] px-4 py-3">
-                <div className="mb-3 flex items-center justify-between">
+                <div className="mb-3 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2">
                     <BrainCircuit
                       size={16}
                       className="text-[#A8FF4F]"
                     />
 
-                    <span className="text-[16px] font-semibold text-white/82">
-                      Predictive Guidance
-                    </span>
+                    <div>
+                      <div className="text-[16px] font-semibold text-white/82">
+                        AI / ML Pipeline
+                      </div>
+
+                      <div className="mt-0.5 text-[14px] text-white/38">
+                        Measured model authority, not a cosmetic confidence score
+                      </div>
+                    </div>
                   </div>
 
-                  <span className="font-mono text-[12px] font-semibold text-[#A8FF4F]">
+                  <span
+                    className={[
+                      "font-mono text-[14px] font-semibold",
+
+                      snapshot.mlValidation.status ===
+                      "VALIDATED"
+                        ? "text-[#A8FF4F]"
+                        : snapshot.mlValidation.status ===
+                            "REJECTED"
+                          ? "text-[#FF5A63]"
+                          : "text-[#F6B23C]",
+                    ].join(" ")}
+                  >
+                    {
+                      snapshot.mlValidation.status
+                    }
+                  </span>
+                </div>
+
+                <div className="grid gap-2">
+                  {snapshot.ai.modules.map(
+                    (
+                      module,
+                    ) => (
+                      <AiModuleCard
+                        key={
+                          module.id
+                        }
+                        module={
+                          module
+                        }
+                      />
+                    ),
+                  )}
+                </div>
+              </section>
+
+              <section className="border-b border-white/[0.08] px-4 py-3">
+                <div className="mb-3 flex items-center justify-between">
+                  <span className="text-[16px] font-semibold text-white/82">
+                    Trajectory Predictor
+                  </span>
+
+                  <span className="font-mono text-[14px] text-[#A8FF4F]">
                     {
                       snapshot.ai.selectedPredictor
                     }
@@ -946,12 +1031,12 @@ export function AutonomousIntercept() {
                   <button
                     type="button"
                     onClick={() =>
-                      selectPredictor(
+                      setPredictor(
                         "baseline",
                       )
                     }
                     className={[
-                      "rounded-[5px] border p-2.5 text-left",
+                      "rounded-[5px] border p-3 text-left",
 
                       snapshot.predictorMode ===
                       "baseline"
@@ -959,24 +1044,24 @@ export function AutonomousIntercept() {
                         : "border-white/[0.07] bg-[#05060d]",
                     ].join(" ")}
                   >
-                    <div className="text-[13px] font-semibold text-white/72">
+                    <div className="text-[14px] font-semibold text-white/72">
                       CV Baseline
                     </div>
 
-                    <div className="mt-1 text-[11px] text-white/32">
-                      Straight-line model
+                    <div className="mt-1 text-[14px] text-white/36">
+                      No learned correction
                     </div>
                   </button>
 
                   <button
                     type="button"
                     onClick={() =>
-                      selectPredictor(
+                      setPredictor(
                         "ml",
                       )
                     }
                     className={[
-                      "rounded-[5px] border p-2.5 text-left",
+                      "rounded-[5px] border p-3 text-left",
 
                       snapshot.predictorMode ===
                       "ml"
@@ -984,59 +1069,86 @@ export function AutonomousIntercept() {
                         : "border-white/[0.07] bg-[#05060d]",
                     ].join(" ")}
                   >
-                    <div className="text-[13px] font-semibold text-[#A8FF4F]">
-                      Adaptive
+                    <div className="text-[14px] font-semibold text-[#A8FF4F]">
+                      Validated Ensemble
                     </div>
 
-                    <div className="mt-1 text-[11px] text-white/32">
-                      CV + CTRV + residual
+                    <div className="mt-1 text-[14px] text-white/36">
+                      CV + CTRV + gated residual MLP
                     </div>
                   </button>
                 </div>
 
                 <div className="mt-2">
                   <StateRow
-                    label="Confidence"
-                    value={`${confidence}%`}
-                    valueClass="text-[#A8FF4F]"
-                  />
-
-                  <StateRow
                     label="Training Samples"
                     value={`${snapshot.ai.trainingSamples}`}
                   />
 
                   <StateRow
-                    label="CV Weight"
-                    value={`${Math.round(
-                      snapshot.ai.weights.cv *
-                        100,
-                    )}%`}
+                    label="Validation Samples"
+                    value={`${snapshot.performance.validationSamples}`}
                   />
 
                   <StateRow
-                    label="CTRV Weight"
-                    value={`${Math.round(
-                      snapshot.ai.weights.ctrv *
-                        100,
-                    )}%`}
+                    label="CV Error"
+                    value={
+                      formatError(
+                        snapshot.performance
+                          .baselineErrorMeters,
+                      )
+                    }
+                  />
+
+                  <StateRow
+                    label="CTRV Error"
+                    value={
+                      formatError(
+                        snapshot.performance
+                          .ctrvErrorMeters,
+                      )
+                    }
                     valueClass="text-[#D77DFF]"
                   />
 
                   <StateRow
-                    label="Learned Weight"
-                    value={`${Math.round(
-                      snapshot.ai.weights.learned *
-                        100,
-                    )}%`}
+                    label="MLP Error"
+                    value={
+                      formatError(
+                        snapshot.performance
+                          .learnedErrorMeters,
+                      )
+                    }
                     valueClass="text-[#A8FF4F]"
+                  />
+
+                  <StateRow
+                    label="Ensemble Error"
+                    value={
+                      formatError(
+                        snapshot.performance
+                          .mlErrorMeters,
+                      )
+                    }
+                    valueClass="text-[#59D99A]"
+                  />
+
+                  <StateRow
+                    label="ML Contribution"
+                    value={`${snapshot.mlValidation.contributionPercent.toFixed(
+                      0,
+                    )}%`}
+                    valueClass={
+                      snapshot.mlValidation.status ===
+                      "VALIDATED"
+                        ? "text-[#A8FF4F]"
+                        : "text-white/38"
+                    }
                   />
                 </div>
               </section>
 
-              {/* Safety */}
-
-              <section className="border-b border-white/[0.08] px-4 py-3">
+              <section className="px-4 py-3">
                 <div className="mb-2 flex items-center gap-2">
                   <ShieldCheck
                     size={16}
@@ -1048,17 +1160,12 @@ export function AutonomousIntercept() {
                   />
 
                   <span className="text-[16px] font-semibold text-white/82">
-                    Separation Safety
+                    Safety Controller
                   </span>
                 </div>
 
                 <StateRow
-                  label="Protected Radius"
-                  value={`${snapshot.minimumSeparationMeters} m`}
-                />
-
-                <StateRow
-                  label="Nearest UAV"
+                  label="Nearest Interceptor"
                   value={
                     formatDistance(
                       snapshot.nearestSeparationMeters,
@@ -1073,164 +1180,41 @@ export function AutonomousIntercept() {
                       snapshot.predictedClosestSeparationMeters,
                     )
                   }
+                />
+
+                <StateRow
+                  label="Hard Protected Radius"
+                  value={`${snapshot.minimumSeparationMeters + 22} m`}
+                />
+
+                <StateRow
+                  label="Recovery Gate"
+                  value={
+                    snapshot.anticipatorySafetyGate
+                      ? "ACTIVE"
+                      : "CLEAR"
+                  }
                   valueClass={
                     snapshot.anticipatorySafetyGate
                       ? "text-[#FF42A1]"
                       : "text-[#59D99A]"
                   }
                 />
+
+                <StateRow
+                  label="Formation Stability"
+                  value={`${snapshot.fleetStableSeconds.toFixed(
+                    1,
+                  )} / 2.0 s`}
+                  valueClass={
+                    snapshot.fleetPhase ===
+                    "SHADOW"
+                      ? "text-[#59D99A]"
+                      : "text-[#F6B23C]"
+                  }
+                />
               </section>
             </aside>
-          </section>
-        </div>
-      </section>
-
-      {/* Evidence below fold */}
-
-      <section className="border-t border-white/[0.08] bg-[#05060d]">
-        <div className="mx-auto grid w-full max-w-[1600px] gap-4 px-4 py-5 sm:px-6 lg:px-8 xl:grid-cols-[1.2fr_0.8fr] xl:px-10 2xl:px-14">
-          <section className="overflow-hidden rounded-[6px] border border-white/[0.08] bg-[#07090d]">
-            <div className="border-b border-white/[0.07] px-4 py-3">
-              <div className="text-[16px] font-semibold text-[#F6B23C]">
-                Prediction Evidence
-              </div>
-
-              <div className="mt-1 text-[13px] text-white/42">
-                Every model is scored against the actual future intruder position
-              </div>
-            </div>
-
-            <div className="grid gap-3 p-4 md:grid-cols-4">
-              <div className="rounded-[5px] border border-white/[0.07] bg-[#05060d] p-3">
-                <div className="text-[13px] text-white/40">
-                  CV Error
-                </div>
-
-                <div className="mt-2 font-mono text-[17px] text-white">
-                  {formatError(
-                    snapshot.performance
-                      .baselineErrorMeters,
-                  )}
-                </div>
-              </div>
-
-              <div className="rounded-[5px] border border-white/[0.07] bg-[#05060d] p-3">
-                <div className="text-[13px] text-white/40">
-                  CTRV Error
-                </div>
-
-                <div className="mt-2 font-mono text-[17px] text-[#D77DFF]">
-                  {formatError(
-                    snapshot.performance
-                      .ctrvErrorMeters,
-                  )}
-                </div>
-              </div>
-
-              <div className="rounded-[5px] border border-white/[0.07] bg-[#05060d] p-3">
-                <div className="text-[13px] text-white/40">
-                  Adaptive Error
-                </div>
-
-                <div className="mt-2 font-mono text-[17px] text-[#A8FF4F]">
-                  {formatError(
-                    snapshot.performance
-                      .mlErrorMeters,
-                  )}
-                </div>
-              </div>
-
-              <div className="rounded-[5px] border border-white/[0.07] bg-[#05060d] p-3">
-                <div className="text-[13px] text-white/40">
-                  vs CV
-                </div>
-
-                <div
-                  className={[
-                    "mt-2 font-mono text-[17px]",
-
-                    (
-                      snapshot.performance
-                        .improvementPercent ??
-                      0
-                    ) >=
-                    0
-                      ? "text-[#59D99A]"
-                      : "text-[#FF315A]",
-                  ].join(" ")}
-                >
-                  {snapshot.performance
-                    .improvementPercent ===
-                  null
-                    ? "TRAINING"
-                    : `${snapshot.performance.improvementPercent >=
-                        0
-                        ? "+"
-                        : ""}${snapshot.performance.improvementPercent.toFixed(
-                        1,
-                      )}%`}
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <section className="overflow-hidden rounded-[6px] border border-white/[0.08] bg-[#07090d]">
-            <div className="flex items-center justify-between border-b border-white/[0.07] px-4 py-3">
-              <div>
-                <div className="text-[16px] font-semibold text-[#F6B23C]">
-                  Mission State
-                </div>
-
-                <div className="mt-1 text-[13px] text-white/42">
-                  One randomized scenario per reset / reload
-                </div>
-              </div>
-
-              <Cpu
-                size={18}
-                className="text-[#5AA9FF]"
-              />
-            </div>
-
-            <div className="p-4">
-              <StateRow
-                label="Mission"
-                value={
-                  snapshot.missionId
-                }
-              />
-
-              <StateRow
-                label="Perimeter"
-                value="MONITORED"
-                valueClass="text-[#5BFF8A]"
-              />
-
-              <StateRow
-                label="Critical Zones"
-                value="2 DEMO ZONES"
-                valueClass="text-[#FF315A]"
-              />
-
-              <StateRow
-                label="Interceptor Fleet"
-                value="4 UAV"
-                valueClass="text-[#00E5FF]"
-              />
-
-              <StateRow
-                label="Dispatch"
-                value="OPERATOR AUTHORIZED"
-                valueClass="text-[#F6B23C]"
-              />
-
-              <StateRow
-                label="Mode"
-                value={
-                  snapshot.mode
-                }
-              />
-            </div>
           </section>
         </div>
       </section>
