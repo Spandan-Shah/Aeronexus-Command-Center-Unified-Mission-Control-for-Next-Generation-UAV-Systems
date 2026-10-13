@@ -32,6 +32,16 @@ export type ThreatPhase =
   | "CONTAINED"
   | "MISSION_COMPLETE";
 
+export type FleetPhase =
+  | "STANDBY"
+  | "PURSUIT"
+  | "STAGING"
+  | "RENDEZVOUS"
+  | "FORMATION"
+  | "SHADOW"
+  | "RECOVERY"
+  | "RTL";
+
 export type Vector2 = {
   x: number;
   y: number;
@@ -51,7 +61,8 @@ export type AircraftState =
 
 export type InterceptorStatus =
   | "PATROL"
-  | "DISPATCHED"
+  | "PURSUIT"
+  | "STAGING"
   | "RENDEZVOUS"
   | "SHADOW"
   | "HOLD"
@@ -63,11 +74,30 @@ export type InterceptorState =
     stationId: string;
     station: Vector2;
     color: string;
-    status: InterceptorStatus;
-    speedLimitMps: number;
-    targetAirspeed: number;
-    assigned: boolean;
-    formationSlot: number;
+
+    status:
+      InterceptorStatus;
+
+    speedLimitMps:
+      number;
+
+    targetAirspeed:
+      number;
+
+    assigned:
+      boolean;
+
+    formationSlot:
+      number;
+
+    guidanceLocked:
+      boolean;
+
+    slotErrorMeters:
+      number | null;
+
+    etaSeconds:
+      number | null;
   };
 
 export type CriticalZone = {
@@ -100,49 +130,128 @@ export type PredictorWeights = {
   learned: number;
 };
 
+export type AiModuleState = {
+  id: string;
+  label: string;
+
+  category:
+    | "ML"
+    | "ALGORITHM";
+
+  state:
+    | "ACTIVE"
+    | "LEARNING"
+    | "WARMING"
+    | "STANDBY"
+    | "REJECTED";
+
+  detail: string;
+};
+
+export type MlValidationState = {
+  status:
+    | "WARMING"
+    | "VALIDATED"
+    | "REJECTED";
+
+  bestPhysicsErrorMeters:
+    number | null;
+
+  learnedErrorMeters:
+    number | null;
+
+  improvementPercent:
+    number | null;
+
+  contributionPercent:
+    number;
+
+  reason:
+    string;
+};
+
 export type PredictionPerformance = {
-  baselineErrorMeters: number | null;
-  ctrvErrorMeters: number | null;
-  learnedErrorMeters: number | null;
-  mlErrorMeters: number | null;
-  improvementPercent: number | null;
-  validationSamples: number;
+  baselineErrorMeters:
+    number | null;
+
+  ctrvErrorMeters:
+    number | null;
+
+  learnedErrorMeters:
+    number | null;
+
+  mlErrorMeters:
+    number | null;
+
+  improvementPercent:
+    number | null;
+
+  validationSamples:
+    number;
 };
 
 export type InterceptSnapshot = {
   running: boolean;
-  mode: InterceptMode;
-  predictorMode: PredictorMode;
-  simTimeSeconds: number;
 
-  intruder: AircraftState;
-  interceptors: InterceptorState[];
+  mode:
+    InterceptMode;
 
-  perimeter: Vector2[];
-  criticalZones: CriticalZone[];
+  fleetPhase:
+    FleetPhase;
 
-  alert: ThreatAlert;
-  interceptAuthorized: boolean;
+  fleetStableSeconds:
+    number;
 
-  intruderFlightPlan: Vector2[];
-  activeWaypointIndex: number;
-  missionId: string;
+  predictorMode:
+    PredictorMode;
 
-  intruderTrail: Vector2[];
+  simTimeSeconds:
+    number;
 
-  interceptorTrails: Record<
-    number,
-    Vector2[]
-  >;
+  intruder:
+    AircraftState;
 
-  baselinePath: Vector2[];
-  ctrvPath: Vector2[];
-  mlPath: Vector2[];
+  interceptors:
+    InterceptorState[];
 
-  formationTargets: Record<
-    number,
-    Vector2
-  >;
+  perimeter:
+    Vector2[];
+
+  criticalZones:
+    CriticalZone[];
+
+  alert:
+    ThreatAlert;
+
+  interceptAuthorized:
+    boolean;
+
+  intruderFlightPlan:
+    Vector2[];
+
+  activeWaypointIndex:
+    number;
+
+  missionId:
+    string;
+
+  intruderTrail:
+    Vector2[];
+
+  interceptorTrails:
+    Record<number, Vector2[]>;
+
+  baselinePath:
+    Vector2[];
+
+  ctrvPath:
+    Vector2[];
+
+  mlPath:
+    Vector2[];
+
+  formationTargets:
+    Record<number, Vector2>;
 
   nearestSeparationMeters:
     number | null;
@@ -168,6 +277,9 @@ export type InterceptSnapshot = {
   anticipatorySafetyGate:
     boolean;
 
+  mlValidation:
+    MlValidationState;
+
   ai: {
     model: string;
 
@@ -176,7 +288,8 @@ export type InterceptSnapshot = {
       | "CTRV"
       | "ADAPTIVE";
 
-    confidence: number;
+    confidence:
+      number;
 
     predictionHorizonSeconds:
       number;
@@ -192,6 +305,9 @@ export type InterceptSnapshot = {
 
     weights:
       PredictorWeights;
+
+    modules:
+      AiModuleState[];
   };
 
   performance:
@@ -213,9 +329,16 @@ export type InterceptSnapshot = {
    Internal Types
    ========================================================= */
 
-type ResidualModel = {
-  weightsX: number[];
-  weightsY: number[];
+type NeuralResidualModel = {
+  inputSize: number;
+  hiddenSize: number;
+
+  w1: number[][];
+  b1: number[];
+
+  w2: number[][];
+  b2: number[];
+
   sampleCount: number;
   learningRate: number;
 };
@@ -230,6 +353,7 @@ type PredictorErrors = {
 type PendingPrediction = {
   dueAt: number;
   features: number[];
+
   cv: Vector2;
   ctrv: Vector2;
   learned: Vector2;
@@ -239,12 +363,46 @@ type PendingPrediction = {
 type InternalInterceptor =
   InterceptorState & {
     patrolPhase: number;
+
+    lockedInterceptPoint:
+      Vector2 | null;
+
+    lockedLeadSeconds:
+      number;
+
+    lockExpiresAt:
+      number;
+
+    pursuitStableSeconds:
+      number;
+
+    stagingStableSeconds:
+      number;
+
+    slotStableSeconds:
+      number;
+
+    shadowBreakSeconds:
+      number;
+
+    recoveryClearSeconds:
+      number;
+
+    recoveryEnteredAt:
+      number;
   };
 
 type InternalSimulation = {
   running: boolean;
 
-  mode: InterceptMode;
+  mode:
+    InterceptMode;
+
+  fleetPhase:
+    FleetPhase;
+
+  fleetStableSeconds:
+    number;
 
   predictorMode:
     PredictorMode;
@@ -301,10 +459,7 @@ type InternalSimulation = {
     Vector2[];
 
   interceptorTrails:
-    Record<
-      number,
-      Vector2[]
-    >;
+    Record<number, Vector2[]>;
 
   baselinePath:
     Vector2[];
@@ -319,10 +474,7 @@ type InternalSimulation = {
     Vector2[];
 
   formationTargets:
-    Record<
-      number,
-      Vector2
-    >;
+    Record<number, Vector2>;
 
   pendingPredictions:
     PendingPrediction[];
@@ -330,8 +482,8 @@ type InternalSimulation = {
   errors:
     PredictorErrors;
 
-  residualModel:
-    ResidualModel;
+  neuralModel:
+    NeuralResidualModel;
 
   intruderTurnAcceleration:
     number;
@@ -353,6 +505,9 @@ type InternalSimulation = {
    Constants
    ========================================================= */
 
+const GRAVITY =
+  9.80665;
+
 const PREDICTION_HORIZON_SECONDS =
   3;
 
@@ -363,13 +518,82 @@ const TRAIL_INTERVAL_MS =
   150;
 
 const TRAIL_LIMIT =
-  220;
+  240;
 
 const ERROR_HISTORY_LIMIT =
-  40;
+  48;
 
 const RESIDUAL_SCALE_METERS =
-  70;
+  80;
+
+const HARD_SAFETY_MARGIN =
+  22;
+
+const FLEET_MINIMUM_SEPARATION =
+  95;
+
+/*
+ * Phase gates.
+ */
+const PURSUIT_CAPTURE_RANGE =
+  900;
+
+const PURSUIT_CAPTURE_POINT_ERROR =
+  330;
+
+const PURSUIT_CAPTURE_HOLD_SECONDS =
+  0.7;
+
+const STAGING_POSITION_TOLERANCE =
+  190;
+
+const STAGING_HEADING_TOLERANCE =
+  20;
+
+const STAGING_SPEED_TOLERANCE =
+  6;
+
+const STAGING_HOLD_SECONDS =
+  1.2;
+
+const SLOT_CAPTURE_TOLERANCE =
+  85;
+
+const SLOT_HEADING_TOLERANCE =
+  12;
+
+const SLOT_SPEED_TOLERANCE =
+  4.5;
+
+const SLOT_CAPTURE_HOLD_SECONDS =
+  2;
+
+const SLOT_BREAK_TOLERANCE =
+  150;
+
+const SHADOW_BREAK_HOLD_SECONDS =
+  1.4;
+
+const FLEET_STABLE_HOLD_SECONDS =
+  2;
+
+const RECOVERY_CLEAR_HOLD_SECONDS =
+  1.1;
+
+const INTERCEPT_REPLAN_SECONDS =
+  4;
+
+/*
+ * ML validation.
+ */
+const ML_MIN_TRAINING_SAMPLES =
+  18;
+
+const ML_MIN_VALIDATION_SAMPLES =
+  12;
+
+const ML_REQUIRED_ADVANTAGE =
+  0.02;
 
 const PREDICTION_HORIZONS = [
   0.75,
@@ -380,67 +604,38 @@ const PREDICTION_HORIZONS = [
   4.5,
 ];
 
-/*
- * Fictional simulation perimeter around the local ENU
- * origin. It is not an official or real-world airspace
- * boundary.
- */
-const MONITORED_PERIMETER:
-  Vector2[] = [
-  {
-    x: -1850,
-    y: -300,
-  },
-  {
-    x: -1620,
-    y: -1050,
-  },
-  {
-    x: -850,
-    y: -1510,
-  },
-  {
-    x: 50,
-    y: -1580,
-  },
-  {
-    x: 920,
-    y: -1410,
-  },
-  {
-    x: 1600,
-    y: -890,
-  },
-  {
-    x: 1840,
-    y: -120,
-  },
-  {
-    x: 1680,
-    y: 720,
-  },
-  {
-    x: 1110,
-    y: 1370,
-  },
-  {
-    x: 240,
-    y: 1580,
-  },
-  {
-    x: -720,
-    y: 1450,
-  },
-  {
-    x: -1450,
-    y: 920,
-  },
+const LEAD_SEARCH_HORIZONS = [
+  4,
+  6,
+  8,
+  10,
+  12,
+  15,
+  18,
+  22,
+  26,
 ];
 
-/*
- * These are deliberately fictional demo overlays.
- * They are not actual facility/cantonment boundaries.
- */
+/* =========================================================
+   Fictional Demo Geography
+   ========================================================= */
+
+const MONITORED_PERIMETER:
+  Vector2[] = [
+  { x: -1850, y: -300 },
+  { x: -1620, y: -1050 },
+  { x: -850, y: -1510 },
+  { x: 50, y: -1580 },
+  { x: 920, y: -1410 },
+  { x: 1600, y: -890 },
+  { x: 1840, y: -120 },
+  { x: 1680, y: 720 },
+  { x: 1110, y: 1370 },
+  { x: 240, y: 1580 },
+  { x: -720, y: 1450 },
+  { x: -1450, y: 920 },
+];
+
 const CRITICAL_ZONE_DEFINITIONS:
   Omit<
     CriticalZone,
@@ -462,34 +657,13 @@ const CRITICAL_ZONE_DEFINITIONS:
     },
 
     points: [
-      {
-        x: -830,
-        y: 40,
-      },
-      {
-        x: -620,
-        y: -80,
-      },
-      {
-        x: -300,
-        y: -20,
-      },
-      {
-        x: -120,
-        y: 260,
-      },
-      {
-        x: -220,
-        y: 610,
-      },
-      {
-        x: -570,
-        y: 690,
-      },
-      {
-        x: -850,
-        y: 480,
-      },
+      { x: -830, y: 40 },
+      { x: -620, y: -80 },
+      { x: -300, y: -20 },
+      { x: -120, y: 260 },
+      { x: -220, y: 610 },
+      { x: -570, y: 690 },
+      { x: -850, y: 480 },
     ],
   },
 
@@ -498,10 +672,10 @@ const CRITICAL_ZONE_DEFINITIONS:
       "cantonment-demo",
 
     label:
-      "CANTONMENT",
+      "CANTONMENT DEMO",
 
     subtitle:
-      "Restricted Infrastructure Demo Zone",
+      "Fictional Restricted Infrastructure Zone",
 
     center: {
       x: 590,
@@ -509,42 +683,20 @@ const CRITICAL_ZONE_DEFINITIONS:
     },
 
     points: [
-      {
-        x: 210,
-        y: -610,
-      },
-      {
-        x: 520,
-        y: -790,
-      },
-      {
-        x: 860,
-        y: -670,
-      },
-      {
-        x: 1030,
-        y: -350,
-      },
-      {
-        x: 860,
-        y: -30,
-      },
-      {
-        x: 510,
-        y: 20,
-      },
-      {
-        x: 250,
-        y: -180,
-      },
+      { x: 210, y: -610 },
+      { x: 520, y: -790 },
+      { x: 860, y: -670 },
+      { x: 1030, y: -350 },
+      { x: 860, y: -30 },
+      { x: 510, y: 20 },
+      { x: 250, y: -180 },
     ],
   },
 ];
 
 const INTERCEPTOR_CONFIG = [
   {
-    id:
-      1,
+    id: 1,
 
     station: {
       x: -1320,
@@ -555,15 +707,14 @@ const INTERCEPTOR_CONFIG = [
       "#00E5FF",
 
     speedLimitMps:
-      72,
+      75,
 
     formationSlot:
       0,
   },
 
   {
-    id:
-      2,
+    id: 2,
 
     station: {
       x: 1320,
@@ -574,15 +725,14 @@ const INTERCEPTOR_CONFIG = [
       "#B78CFF",
 
     speedLimitMps:
-      78,
+      80,
 
     formationSlot:
       1,
   },
 
   {
-    id:
-      3,
+    id: 3,
 
     station: {
       x: -1320,
@@ -593,15 +743,14 @@ const INTERCEPTOR_CONFIG = [
       "#FFB84D",
 
     speedLimitMps:
-      84,
+      85,
 
     formationSlot:
       2,
   },
 
   {
-    id:
-      4,
+    id: 4,
 
     station: {
       x: 1320,
@@ -617,19 +766,7 @@ const INTERCEPTOR_CONFIG = [
     formationSlot:
       3,
   },
-];
-
-/*
- * All four formation points remain behind/lateral to the
- * target's motion rather than putting an interceptor directly
- * in front of it.
- */
-const FORMATION_OFFSETS = [
-  120,
-  160,
-  200,
-  240,
-];
+] as const;
 
 /* =========================================================
    Math
@@ -675,11 +812,10 @@ function normalizeHeading(
   return (
     (
       heading %
-        360
+      360
     ) +
     360
-  ) %
-    360;
+  ) % 360;
 }
 
 function normalizeSignedAngle(
@@ -803,42 +939,6 @@ function average(
   );
 }
 
-function dot(
-  weights:
-    number[],
-
-  features:
-    number[],
-) {
-  let output =
-    0;
-
-  for (
-    let index =
-      0;
-    index <
-      weights.length;
-    index +=
-      1
-  ) {
-    output +=
-      (
-        weights[
-          index
-        ] ??
-        0
-      ) *
-      (
-        features[
-          index
-        ] ??
-        0
-      );
-  }
-
-  return output;
-}
-
 function pointInPolygon(
   point:
     Vector2,
@@ -918,6 +1018,279 @@ function pointInPolygon(
 }
 
 /* =========================================================
+   Fixed-Wing Geometry
+   ========================================================= */
+
+function minimumTurnRadius(
+  speed:
+    number,
+
+  maxBankDegrees:
+    number,
+) {
+  const tangent =
+    Math.tan(
+      toRadians(
+        Math.max(
+          1,
+          maxBankDegrees,
+        ),
+      ),
+    );
+
+  return (
+    speed *
+    speed /
+    (
+      GRAVITY *
+      tangent
+    )
+  );
+}
+
+function requiredTurnRadiusToPoint(
+  aircraft:
+    AircraftState,
+
+  target:
+    Vector2,
+) {
+  const distance =
+    distanceBetween(
+      aircraft,
+      target,
+    );
+
+  const bearing =
+    bearingBetween(
+      aircraft,
+      target,
+    );
+
+  const headingError =
+    Math.abs(
+      normalizeSignedAngle(
+        bearing -
+        aircraft.heading,
+      ),
+    );
+
+  if (
+    headingError <
+    3
+  ) {
+    return Number.POSITIVE_INFINITY;
+  }
+
+  const angle =
+    toRadians(
+      Math.min(
+        headingError,
+        179,
+      ),
+    );
+
+  const denominator =
+    2 *
+    Math.sin(
+      angle,
+    );
+
+  if (
+    Math.abs(
+      denominator,
+    ) <
+    0.001
+  ) {
+    return Number.POSITIVE_INFINITY;
+  }
+
+  return (
+    distance /
+    Math.abs(
+      denominator,
+    )
+  );
+}
+
+function turnToPointFeasible(
+  aircraft:
+    AircraftState,
+
+  target:
+    Vector2,
+
+  maxBankDegrees:
+    number,
+) {
+  const headingError =
+    Math.abs(
+      normalizeSignedAngle(
+        bearingBetween(
+          aircraft,
+          target,
+        ) -
+        aircraft.heading,
+      ),
+    );
+
+  if (
+    headingError <=
+    8
+  ) {
+    return true;
+  }
+
+  const minimumRadius =
+    minimumTurnRadius(
+      aircraft.airspeed,
+      maxBankDegrees,
+    );
+
+  const requiredRadius =
+    requiredTurnRadiusToPoint(
+      aircraft,
+      target,
+    );
+
+  return (
+    requiredRadius >=
+    minimumRadius *
+      0.9
+  );
+}
+
+function curvatureSafeCarrot(
+  aircraft:
+    AircraftState,
+
+  target:
+    Vector2,
+
+  maxBankDegrees:
+    number,
+) {
+  if (
+    turnToPointFeasible(
+      aircraft,
+      target,
+      maxBankDegrees,
+    )
+  ) {
+    return target;
+  }
+
+  const targetBearing =
+    bearingBetween(
+      aircraft,
+      target,
+    );
+
+  const signedError =
+    normalizeSignedAngle(
+      targetBearing -
+      aircraft.heading,
+    );
+
+  const side =
+    signedError >=
+    0
+      ? 1
+      : -1;
+
+  const radius =
+    minimumTurnRadius(
+      aircraft.airspeed,
+      maxBankDegrees,
+    );
+
+  const forward =
+    headingVector(
+      aircraft.heading,
+    );
+
+  const lateral =
+    headingVector(
+      aircraft.heading +
+        side *
+          90,
+    );
+
+  const forwardDistance =
+    clamp(
+      radius *
+        0.9,
+      220,
+      900,
+    );
+
+  const lateralDistance =
+    clamp(
+      radius *
+        0.55,
+      120,
+      520,
+    );
+
+  return {
+    x:
+      aircraft.x +
+      forward.x *
+        forwardDistance +
+      lateral.x *
+        lateralDistance,
+
+    y:
+      aircraft.y +
+      forward.y *
+        forwardDistance +
+      lateral.y *
+        lateralDistance,
+  };
+}
+
+function relativeTargetCoordinates(
+  target:
+    AircraftState,
+
+  point:
+    Vector2,
+) {
+  const forward =
+    headingVector(
+      target.heading,
+    );
+
+  const right =
+    headingVector(
+      target.heading +
+        90,
+    );
+
+  const dx =
+    point.x -
+    target.x;
+
+  const dy =
+    point.y -
+    target.y;
+
+  return {
+    forward:
+      dx *
+        forward.x +
+      dy *
+        forward.y,
+
+    right:
+      dx *
+        right.x +
+      dy *
+        right.y,
+  };
+}
+
+/* =========================================================
    Relative Motion
    ========================================================= */
 
@@ -938,44 +1311,40 @@ function calculateClosingRate(
       interceptor,
     );
 
-  const relativePosition = {
-    x:
-      target.x -
-      interceptor.x,
+  const relativeX =
+    target.x -
+    interceptor.x;
 
-    y:
-      target.y -
-      interceptor.y,
-  };
+  const relativeY =
+    target.y -
+    interceptor.y;
 
-  const distance =
+  const range =
     Math.max(
       1,
       Math.hypot(
-        relativePosition.x,
-        relativePosition.y,
+        relativeX,
+        relativeY,
       ),
     );
-
-  const unitX =
-    relativePosition.x /
-    distance;
-
-  const unitY =
-    relativePosition.y /
-    distance;
 
   return (
     (
       interceptorVelocity.x -
       targetVelocity.x
     ) *
-      unitX +
+      (
+        relativeX /
+        range
+      ) +
     (
       interceptorVelocity.y -
       targetVelocity.y
     ) *
-      unitY
+      (
+        relativeY /
+        range
+      )
   );
 }
 
@@ -1060,7 +1429,7 @@ function predictClosestApproach(
 }
 
 /* =========================================================
-   Predictor 1: Constant Velocity
+   Physics Predictors
    ========================================================= */
 
 function constantVelocityPrediction(
@@ -1087,10 +1456,6 @@ function constantVelocityPrediction(
         secondsAhead,
   };
 }
-
-/* =========================================================
-   Predictor 2: CTRV
-   ========================================================= */
 
 function ctrvPrediction(
   target:
@@ -1160,30 +1525,113 @@ function ctrvPrediction(
 }
 
 /* =========================================================
-   Online Residual Predictor
+   Residual MLP
    ========================================================= */
 
-function createResidualModel():
-  ResidualModel {
-  return {
-    weightsX: [
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-    ],
+function deterministicWeight(
+  row:
+    number,
 
-    weightsY: [
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
+  column:
+    number,
+) {
+  return (
+    Math.sin(
+      (
+        row +
+        1
+      ) *
+        (
+          column +
+          2
+        ) *
+        1.731,
+    ) *
+    0.035
+  );
+}
+
+function createNeuralResidualModel():
+  NeuralResidualModel {
+  const inputSize =
+    8;
+
+  const hiddenSize =
+    10;
+
+  return {
+    inputSize,
+
+    hiddenSize,
+
+    w1:
+      Array.from(
+        {
+          length:
+            hiddenSize,
+        },
+
+        (
+          _,
+          hiddenIndex,
+        ) =>
+          Array.from(
+            {
+              length:
+                inputSize,
+            },
+
+            (
+              __,
+              inputIndex,
+            ) =>
+              deterministicWeight(
+                hiddenIndex,
+                inputIndex,
+              ),
+          ),
+      ),
+
+    b1:
+      Array.from(
+        {
+          length:
+            hiddenSize,
+        },
+        () =>
+          0,
+      ),
+
+    w2:
+      Array.from(
+        {
+          length:
+            2,
+        },
+
+        (
+          _,
+          outputIndex,
+        ) =>
+          Array.from(
+            {
+              length:
+                hiddenSize,
+            },
+
+            (
+              __,
+              hiddenIndex,
+            ) =>
+              deterministicWeight(
+                outputIndex +
+                  20,
+                hiddenIndex,
+              ),
+          ),
+      ),
+
+    b2: [
       0,
       0,
     ],
@@ -1192,11 +1640,11 @@ function createResidualModel():
       0,
 
     learningRate:
-      0.012,
+      0.006,
   };
 }
 
-function buildResidualFeatures(
+function buildMlFeatures(
   target:
     AircraftState,
 
@@ -1206,14 +1654,7 @@ function buildResidualFeatures(
   horizonSeconds:
     number,
 ) {
-  const heading =
-    toRadians(
-      target.heading,
-    );
-
   return [
-    1,
-
     clamp(
       target.turnRate /
         10,
@@ -1223,7 +1664,7 @@ function buildResidualFeatures(
 
     clamp(
       turnAcceleration /
-        8,
+        10,
       -1.5,
       1.5,
     ),
@@ -1246,23 +1687,158 @@ function buildResidualFeatures(
     ),
 
     Math.sin(
-      heading,
+      toRadians(
+        target.heading,
+      ),
     ),
 
     Math.cos(
-      heading,
+      toRadians(
+        target.heading,
+      ),
     ),
 
     clamp(
       horizonSeconds /
-        4.5,
+        8,
       0,
+      1.5,
+    ),
+
+    clamp(
+      (
+        target.turnRate *
+        target.airspeed
+      ) /
+        250,
+      -1.5,
       1.5,
     ),
   ];
 }
 
-function learnedPrediction(
+function mlForward(
+  model:
+    NeuralResidualModel,
+
+  features:
+    number[],
+) {
+  const hidden =
+    Array.from(
+      {
+        length:
+          model.hiddenSize,
+      },
+
+      (
+        _,
+        hiddenIndex,
+      ) => {
+        const row =
+          model.w1[
+            hiddenIndex
+          ] ??
+          [];
+
+        let value =
+          model.b1[
+            hiddenIndex
+          ] ??
+          0;
+
+        for (
+          let inputIndex =
+            0;
+
+          inputIndex <
+            model.inputSize;
+
+          inputIndex +=
+            1
+        ) {
+          value +=
+            (
+              row[
+                inputIndex
+              ] ??
+              0
+            ) *
+            (
+              features[
+                inputIndex
+              ] ??
+              0
+            );
+        }
+
+        return Math.tanh(
+          value,
+        );
+      },
+    );
+
+  const output =
+    Array.from(
+      {
+        length:
+          2,
+      },
+
+      (
+        _,
+        outputIndex,
+      ) => {
+        const row =
+          model.w2[
+            outputIndex
+          ] ??
+          [];
+
+        let value =
+          model.b2[
+            outputIndex
+          ] ??
+          0;
+
+        for (
+          let hiddenIndex =
+            0;
+
+          hiddenIndex <
+            model.hiddenSize;
+
+          hiddenIndex +=
+            1
+        ) {
+          value +=
+            (
+              row[
+                hiddenIndex
+              ] ??
+              0
+            ) *
+            (
+              hidden[
+                hiddenIndex
+              ] ??
+              0
+            );
+        }
+
+        return Math.tanh(
+          value,
+        );
+      },
+    );
+
+  return {
+    hidden,
+    output,
+  };
+}
+
+function neuralPrediction(
   target:
     AircraftState,
 
@@ -1273,7 +1849,7 @@ function learnedPrediction(
     number,
 
   model:
-    ResidualModel,
+    NeuralResidualModel,
 ): Vector2 {
   const physics =
     ctrvPrediction(
@@ -1282,34 +1858,44 @@ function learnedPrediction(
     );
 
   const features =
-    buildResidualFeatures(
+    buildMlFeatures(
       target,
       turnAcceleration,
       secondsAhead,
     );
 
+  const result =
+    mlForward(
+      model,
+      features,
+    );
+
   return {
     x:
       physics.x +
-      dot(
-        model.weightsX,
-        features,
+      (
+        result.output[
+          0
+        ] ??
+        0
       ) *
         RESIDUAL_SCALE_METERS,
 
     y:
       physics.y +
-      dot(
-        model.weightsY,
-        features,
+      (
+        result.output[
+          1
+        ] ??
+        0
       ) *
         RESIDUAL_SCALE_METERS,
   };
 }
 
-function trainResidualModel(
+function trainNeuralResidualModel(
   model:
-    ResidualModel,
+    NeuralResidualModel,
 
   features:
     number[],
@@ -1320,110 +1906,294 @@ function trainResidualModel(
   actual:
     Vector2,
 ) {
-  const targetResidualX =
-    (
-      actual.x -
-      ctrvPoint.x
-    ) /
-    RESIDUAL_SCALE_METERS;
+  const target = [
+    clamp(
+      (
+        actual.x -
+        ctrvPoint.x
+      ) /
+        RESIDUAL_SCALE_METERS,
+      -1,
+      1,
+    ),
 
-  const targetResidualY =
-    (
-      actual.y -
-      ctrvPoint.y
-    ) /
-    RESIDUAL_SCALE_METERS;
+    clamp(
+      (
+        actual.y -
+        ctrvPoint.y
+      ) /
+        RESIDUAL_SCALE_METERS,
+      -1,
+      1,
+    ),
+  ];
 
-  const predictedResidualX =
-    dot(
-      model.weightsX,
+  const forward =
+    mlForward(
+      model,
       features,
     );
 
-  const predictedResidualY =
-    dot(
-      model.weightsY,
-      features,
+  const outputGradients =
+    Array.from(
+      {
+        length:
+          2,
+      },
+
+      (
+        _,
+        outputIndex,
+      ) => {
+        const output =
+          forward.output[
+            outputIndex
+          ] ??
+          0;
+
+        const expected =
+          target[
+            outputIndex
+          ] ??
+          0;
+
+        return (
+          (
+            output -
+            expected
+          ) *
+          (
+            1 -
+            output *
+              output
+          )
+        );
+      },
     );
 
-  const errorX =
-    clamp(
-      targetResidualX -
-        predictedResidualX,
-      -1.5,
-      1.5,
+  const hiddenGradients =
+    Array.from(
+      {
+        length:
+          model.hiddenSize,
+      },
+
+      (
+        _,
+        hiddenIndex,
+      ) => {
+        let downstream =
+          0;
+
+        for (
+          let outputIndex =
+            0;
+
+          outputIndex <
+            2;
+
+          outputIndex +=
+            1
+        ) {
+          downstream +=
+            (
+              model.w2[
+                outputIndex
+              ]?.[
+                hiddenIndex
+              ] ??
+              0
+            ) *
+            (
+              outputGradients[
+                outputIndex
+              ] ??
+              0
+            );
+        }
+
+        const hidden =
+          forward.hidden[
+            hiddenIndex
+          ] ??
+          0;
+
+        return (
+          downstream *
+          (
+            1 -
+            hidden *
+              hidden
+          )
+        );
+      },
     );
 
-  const errorY =
-    clamp(
-      targetResidualY -
-        predictedResidualY,
-      -1.5,
-      1.5,
-    );
+  for (
+    let outputIndex =
+      0;
 
-  features.forEach(
-    (
-      rawFeature,
-      index,
-    ) => {
-      const feature =
-        clamp(
-          rawFeature,
-          -1.5,
-          1.5,
-        );
+    outputIndex <
+      2;
 
-      model.weightsX[
-        index
-      ] +=
-        model.learningRate *
-        errorX *
-        feature;
+    outputIndex +=
+      1
+  ) {
+    const gradient =
+      outputGradients[
+        outputIndex
+      ] ??
+      0;
 
-      model.weightsY[
-        index
-      ] +=
-        model.learningRate *
-        errorY *
-        feature;
+    const row =
+      model.w2[
+        outputIndex
+      ];
 
-      model.weightsX[
-        index
-      ] =
-        clamp(
-          model.weightsX[
-            index
-          ],
-          -1.5,
-          1.5,
-        );
+    if (
+      row
+    ) {
+      for (
+        let hiddenIndex =
+          0;
 
-      model.weightsY[
-        index
-      ] =
-        clamp(
-          model.weightsY[
-            index
-          ],
-          -1.5,
-          1.5,
-        );
-    },
-  );
+        hiddenIndex <
+          model.hiddenSize;
+
+        hiddenIndex +=
+          1
+      ) {
+        row[
+          hiddenIndex
+        ] =
+          clamp(
+            (
+              row[
+                hiddenIndex
+              ] ??
+              0
+            ) -
+              model.learningRate *
+                gradient *
+                (
+                  forward.hidden[
+                    hiddenIndex
+                  ] ??
+                  0
+                ),
+            -2,
+            2,
+          );
+      }
+    }
+
+    model.b2[
+      outputIndex
+    ] =
+      clamp(
+        (
+          model.b2[
+            outputIndex
+          ] ??
+          0
+        ) -
+          model.learningRate *
+            gradient,
+        -2,
+        2,
+      );
+  }
+
+  for (
+    let hiddenIndex =
+      0;
+
+    hiddenIndex <
+      model.hiddenSize;
+
+    hiddenIndex +=
+      1
+  ) {
+    const gradient =
+      hiddenGradients[
+        hiddenIndex
+      ] ??
+      0;
+
+    const row =
+      model.w1[
+        hiddenIndex
+      ];
+
+    if (
+      row
+    ) {
+      for (
+        let inputIndex =
+          0;
+
+        inputIndex <
+          model.inputSize;
+
+        inputIndex +=
+          1
+      ) {
+        row[
+          inputIndex
+        ] =
+          clamp(
+            (
+              row[
+                inputIndex
+              ] ??
+              0
+            ) -
+              model.learningRate *
+                gradient *
+                (
+                  features[
+                    inputIndex
+                  ] ??
+                  0
+                ),
+            -2,
+            2,
+          );
+      }
+    }
+
+    model.b1[
+      hiddenIndex
+    ] =
+      clamp(
+        (
+          model.b1[
+            hiddenIndex
+          ] ??
+          0
+        ) -
+          model.learningRate *
+            gradient,
+        -2,
+        2,
+      );
+  }
 
   model.sampleCount +=
     1;
 }
 
 /* =========================================================
-   Adaptive Ensemble
+   ML Validation / Ensemble
    ========================================================= */
 
-function predictorWeights(
+function evaluateMlValidation(
   errors:
     PredictorErrors,
-): PredictorWeights {
+
+  trainingSamples:
+    number,
+): MlValidationState {
   const cv =
     average(
       errors.cv,
@@ -1439,25 +2209,172 @@ function predictorWeights(
       errors.learned,
     );
 
-  if (
+  const validationSamples =
+    Math.min(
+      errors.cv.length,
+      errors.ctrv.length,
+      errors.learned.length,
+    );
+
+  const bestPhysics =
     cv ===
       null ||
     ctrv ===
+      null
+      ? null
+      : Math.min(
+          cv,
+          ctrv,
+        );
+
+  if (
+    trainingSamples <
+      ML_MIN_TRAINING_SAMPLES ||
+    validationSamples <
+      ML_MIN_VALIDATION_SAMPLES ||
+    bestPhysics ===
       null ||
     learned ===
       null
   ) {
     return {
-      cv:
-        0.15,
+      status:
+        "WARMING",
 
-      ctrv:
-        0.55,
+      bestPhysicsErrorMeters:
+        bestPhysics,
 
-      learned:
-        0.3,
+      learnedErrorMeters:
+        learned,
+
+      improvementPercent:
+        null,
+
+      contributionPercent:
+        0,
+
+      reason:
+        `Needs ${ML_MIN_TRAINING_SAMPLES} training and ${ML_MIN_VALIDATION_SAMPLES} validation samples.`,
     };
   }
+
+  const improvementPercent =
+    (
+      (
+        bestPhysics -
+        learned
+      ) /
+      bestPhysics
+    ) *
+    100;
+
+  const validated =
+    learned <=
+    bestPhysics *
+      (
+        1 -
+        ML_REQUIRED_ADVANTAGE
+      );
+
+  if (
+    !validated
+  ) {
+    return {
+      status:
+        "REJECTED",
+
+      bestPhysicsErrorMeters:
+        bestPhysics,
+
+      learnedErrorMeters:
+        learned,
+
+      improvementPercent,
+
+      contributionPercent:
+        0,
+
+      reason:
+        "Residual MLP did not outperform the best physics predictor. ML guidance authority is disabled.",
+    };
+  }
+
+  const contributionPercent =
+    clamp(
+      10 +
+        improvementPercent *
+          1.5,
+      10,
+      35,
+    );
+
+  return {
+    status:
+      "VALIDATED",
+
+    bestPhysicsErrorMeters:
+      bestPhysics,
+
+    learnedErrorMeters:
+      learned,
+
+    improvementPercent,
+
+    contributionPercent,
+
+    reason:
+      "Residual MLP passed rolling validation and receives bounded ensemble authority.",
+  };
+}
+
+function predictorWeights(
+  errors:
+    PredictorErrors,
+
+  trainingSamples:
+    number,
+): PredictorWeights {
+  const cv =
+    average(
+      errors.cv,
+    );
+
+  const ctrv =
+    average(
+      errors.ctrv,
+    );
+
+  const validation =
+    evaluateMlValidation(
+      errors,
+      trainingSamples,
+    );
+
+  if (
+    cv ===
+      null ||
+    ctrv ===
+      null
+  ) {
+    return {
+      cv:
+        0.25,
+
+      ctrv:
+        0.75,
+
+      learned:
+        0,
+    };
+  }
+
+  const learnedShare =
+    validation.contributionPercent /
+    100;
+
+  const physicsShare =
+    1 -
+    learnedShare;
 
   const cvScore =
     1 /
@@ -1473,30 +2390,27 @@ function predictorWeights(
       2,
     );
 
-  const learnedScore =
-    1 /
-    Math.max(
-      learned,
-      2,
-    );
-
   const total =
     cvScore +
-    ctrvScore +
-    learnedScore;
+    ctrvScore;
 
   return {
     cv:
-      cvScore /
-      total,
+      physicsShare *
+      (
+        cvScore /
+        total
+      ),
 
     ctrv:
-      ctrvScore /
-      total,
+      physicsShare *
+      (
+        ctrvScore /
+        total
+      ),
 
     learned:
-      learnedScore /
-      total,
+      learnedShare,
   };
 }
 
@@ -1552,11 +2466,11 @@ function adaptivePrediction(
     );
 
   const learned =
-    learnedPrediction(
+    neuralPrediction(
       simulation.intruder,
       simulation.intruderTurnAcceleration,
       secondsAhead,
-      simulation.residualModel,
+      simulation.neuralModel,
     );
 
   return weightedPoint(
@@ -1565,12 +2479,14 @@ function adaptivePrediction(
     learned,
     predictorWeights(
       simulation.errors,
+      simulation.neuralModel
+        .sampleCount,
     ),
   );
 }
 
 /* =========================================================
-   Random Mission Plan
+   Random Scenario
    ========================================================= */
 
 function randomBetween(
@@ -1591,22 +2507,26 @@ function randomBetween(
 }
 
 function createRandomFlightPlan() {
-  const entries: Vector2[] = [
+  const entries:
+    Vector2[] = [
     {
-      x: -2350,
-      y: -950,
+      x: -2450,
+      y: -1000,
     },
+
     {
-      x: -2250,
-      y: 1050,
+      x: -2380,
+      y: 1100,
     },
+
     {
-      x: 2250,
-      y: -1050,
+      x: 2380,
+      y: -1100,
     },
+
     {
-      x: 2350,
-      y: 950,
+      x: 2450,
+      y: 1000,
     },
   ];
 
@@ -1627,54 +2547,93 @@ function createRandomFlightPlan() {
     entries[
       entryIndex
     ] ?? {
-      x: -2350,
-      y: -950,
+      x: -2450,
+      y: -1000,
     };
 
   const finish =
     entries[
       exitIndex
     ] ?? {
-      x: 2350,
-      y: 950,
+      x: 2450,
+      y: 1000,
     };
 
-  const middleOne = {
-    x:
-      randomBetween(
-        -800,
-        800,
+  const dx =
+    finish.x -
+    start.x;
+
+  const dy =
+    finish.y -
+    start.y;
+
+  const length =
+    Math.max(
+      1,
+      Math.hypot(
+        dx,
+        dy,
       ),
+    );
+
+  const perpendicular = {
+    x:
+      -dy /
+      length,
 
     y:
-      randomBetween(
-        -850,
-        850,
-      ),
+      dx /
+      length,
   };
 
-  const middleTwo = {
-    x:
-      randomBetween(
-        -900,
-        900,
-      ),
+  const offsetOne =
+    randomBetween(
+      -320,
+      320,
+    );
 
-    y:
-      randomBetween(
-        -850,
-        850,
-      ),
-  };
+  const offsetTwo =
+    randomBetween(
+      -320,
+      320,
+    );
 
   return [
     {
       ...start,
     },
 
-    middleOne,
+    {
+      x:
+        start.x +
+        dx *
+          0.34 +
+        perpendicular.x *
+          offsetOne,
 
-    middleTwo,
+      y:
+        start.y +
+        dy *
+          0.34 +
+        perpendicular.y *
+          offsetOne,
+    },
+
+    {
+      x:
+        start.x +
+        dx *
+          0.68 +
+        perpendicular.x *
+          offsetTwo,
+
+      y:
+        start.y +
+        dy *
+          0.68 +
+        perpendicular.y *
+          offsetTwo,
+    },
 
     {
       ...finish,
@@ -1683,7 +2642,7 @@ function createRandomFlightPlan() {
 }
 
 /* =========================================================
-   Interceptor Creation
+   Initial State
    ========================================================= */
 
 function createInterceptor(
@@ -1707,9 +2666,11 @@ function createInterceptor(
       config.station.y,
 
     heading:
-      45 +
-      index *
-        90,
+      normalizeHeading(
+        45 +
+        index *
+          90,
+      ),
 
     airspeed:
       23,
@@ -1751,16 +2712,50 @@ function createInterceptor(
     formationSlot:
       config.formationSlot,
 
+    guidanceLocked:
+      false,
+
+    slotErrorMeters:
+      null,
+
+    etaSeconds:
+      null,
+
     patrolPhase:
-      index *
-      Math.PI /
+      (
+        index *
+        Math.PI
+      ) /
       2,
+
+    lockedInterceptPoint:
+      null,
+
+    lockedLeadSeconds:
+      0,
+
+    lockExpiresAt:
+      0,
+
+    pursuitStableSeconds:
+      0,
+
+    stagingStableSeconds:
+      0,
+
+    slotStableSeconds:
+      0,
+
+    shadowBreakSeconds:
+      0,
+
+    recoveryClearSeconds:
+      0,
+
+    recoveryEnteredAt:
+      0,
   };
 }
-
-/* =========================================================
-   Initial State
-   ========================================================= */
 
 function createInitialSimulation():
   InternalSimulation {
@@ -1774,8 +2769,8 @@ function createInitialSimulation():
     flightPlan[
       0
     ] ?? {
-      x: -2300,
-      y: -900,
+      x: -2400,
+      y: -1000,
     };
 
   const second =
@@ -1814,37 +2809,18 @@ function createInitialSimulation():
     },
   );
 
-  const criticalZones =
-    CRITICAL_ZONE_DEFINITIONS.map(
-      (
-        zone,
-      ) => ({
-        ...zone,
-
-        center: {
-          ...zone.center,
-        },
-
-        points:
-          zone.points.map(
-            (
-              point,
-            ) => ({
-              ...point,
-            }),
-          ),
-
-        active:
-          false,
-      }),
-    );
-
   return {
     running:
       true,
 
     mode:
       "IDLE",
+
+    fleetPhase:
+      "STANDBY",
+
+    fleetStableSeconds:
+      0,
 
     predictorMode:
       "ml",
@@ -1898,7 +2874,30 @@ function createInitialSimulation():
         }),
       ),
 
-    criticalZones,
+    criticalZones:
+      CRITICAL_ZONE_DEFINITIONS.map(
+        (
+          zone,
+        ) => ({
+          ...zone,
+
+          center: {
+            ...zone.center,
+          },
+
+          points:
+            zone.points.map(
+              (
+                point,
+              ) => ({
+                ...point,
+              }),
+            ),
+
+          active:
+            false,
+        }),
+      ),
 
     alert: {
       active:
@@ -1946,10 +2945,10 @@ function createInitialSimulation():
       true,
 
     desiredSeparationMeters:
-      180,
+      250,
 
     minimumSeparationMeters:
-      95,
+      140,
 
     intruderTrail:
       [],
@@ -1989,8 +2988,8 @@ function createInitialSimulation():
         [],
     },
 
-    residualModel:
-      createResidualModel(),
+    neuralModel:
+      createNeuralResidualModel(),
 
     intruderTurnAcceleration:
       0,
@@ -2040,8 +3039,10 @@ function getConnectedGamepad():
   for (
     let index =
       0;
+
     index <
       gamepads.length;
+
     index +=
       1
   ) {
@@ -2061,7 +3062,208 @@ function getConnectedGamepad():
 }
 
 /* =========================================================
-   Intruder
+   Coordinated Fixed-Wing Dynamics
+   ========================================================= */
+
+function stepFixedWingBank(
+  aircraft:
+    AircraftState,
+
+  desiredBankDegrees:
+    number,
+
+  targetSpeed:
+    number,
+
+  maximumSpeed:
+    number,
+
+  deltaSeconds:
+    number,
+
+  maximumBankDegrees:
+    number,
+) {
+  const bankCommand =
+    clamp(
+      desiredBankDegrees,
+      -maximumBankDegrees,
+      maximumBankDegrees,
+    );
+
+  const rollRateLimit =
+    42;
+
+  const bankDelta =
+    clamp(
+      bankCommand -
+        aircraft.bank,
+      -rollRateLimit *
+        deltaSeconds,
+      rollRateLimit *
+        deltaSeconds,
+    );
+
+  aircraft.bank +=
+    bankDelta;
+
+  const speedCommand =
+    clamp(
+      targetSpeed,
+      12,
+      maximumSpeed,
+    );
+
+  const accelerationLimit =
+    7.5;
+
+  const decelerationLimit =
+    10;
+
+  const speedError =
+    speedCommand -
+    aircraft.airspeed;
+
+  aircraft.airspeed =
+    Math.max(
+      10,
+      aircraft.airspeed +
+        clamp(
+          speedError,
+          -decelerationLimit *
+            deltaSeconds,
+          accelerationLimit *
+            deltaSeconds,
+        ),
+    );
+
+  const speedForTurn =
+    Math.max(
+      aircraft.airspeed,
+      12,
+    );
+
+  const turnRateRadians =
+    (
+      GRAVITY *
+      Math.tan(
+        toRadians(
+          aircraft.bank,
+        ),
+      )
+    ) /
+    speedForTurn;
+
+  aircraft.turnRate =
+    toDegrees(
+      turnRateRadians,
+    );
+
+  aircraft.heading =
+    normalizeHeading(
+      aircraft.heading +
+        aircraft.turnRate *
+          deltaSeconds,
+    );
+
+  const velocity =
+    velocityVector(
+      aircraft,
+    );
+
+  aircraft.x +=
+    velocity.x *
+    deltaSeconds;
+
+  aircraft.y +=
+    velocity.y *
+    deltaSeconds;
+}
+
+function stepFixedWingToHeading(
+  aircraft:
+    AircraftState,
+
+  desiredHeading:
+    number,
+
+  targetSpeed:
+    number,
+
+  maximumSpeed:
+    number,
+
+  deltaSeconds:
+    number,
+
+  maximumBankDegrees:
+    number,
+) {
+  const headingError =
+    normalizeSignedAngle(
+      desiredHeading -
+        aircraft.heading,
+    );
+
+  const desiredBank =
+    clamp(
+      headingError *
+        0.9,
+      -maximumBankDegrees,
+      maximumBankDegrees,
+    );
+
+  stepFixedWingBank(
+    aircraft,
+    desiredBank,
+    targetSpeed,
+    maximumSpeed,
+    deltaSeconds,
+    maximumBankDegrees,
+  );
+}
+
+function stepFixedWingToPoint(
+  aircraft:
+    AircraftState,
+
+  target:
+    Vector2,
+
+  targetSpeed:
+    number,
+
+  maximumSpeed:
+    number,
+
+  deltaSeconds:
+    number,
+
+  maximumBankDegrees:
+    number,
+) {
+  const steeringPoint =
+    curvatureSafeCarrot(
+      aircraft,
+      target,
+      maximumBankDegrees,
+    );
+
+  stepFixedWingToHeading(
+    aircraft,
+    bearingBetween(
+      aircraft,
+      steeringPoint,
+    ),
+    targetSpeed,
+    maximumSpeed,
+    deltaSeconds,
+    maximumBankDegrees,
+  );
+}
+
+/* =========================================================
+   Intruder Motion
    ========================================================= */
 
 function updateIntruder(
@@ -2077,16 +3279,23 @@ function updateIntruder(
     simulation.intruder.mode =
       "MISSION COMPLETE";
 
-    simulation.intruder.airspeed +=
-      (
-        0 -
-        simulation.intruder
-          .airspeed
-      ) *
-      Math.min(
-        1,
-        deltaSeconds *
-          2,
+    simulation.intruder.bank *=
+      Math.max(
+        0,
+        1 -
+          deltaSeconds *
+            2,
+      );
+
+    simulation.intruder.turnRate =
+      0;
+
+    simulation.intruder.airspeed =
+      Math.max(
+        0,
+        simulation.intruder.airspeed -
+          8 *
+            deltaSeconds,
       );
 
     return;
@@ -2142,13 +3351,24 @@ function updateIntruder(
     simulation.intruder.mode =
       "USB MANUAL";
 
-    simulation.intruder.turnRate =
-      steering *
-      12;
+    targetSpeed =
+      clamp(
+        targetSpeed +
+          speedAxis *
+            10,
+        12,
+        50,
+      );
 
-    targetSpeed +=
-      speedAxis *
-      10;
+    stepFixedWingBank(
+      simulation.intruder,
+      steering *
+        35,
+      targetSpeed,
+      50,
+      deltaSeconds,
+      35,
+    );
   } else {
     simulation.gamepad = {
       connected:
@@ -2181,41 +3401,25 @@ function updateIntruder(
       return;
     }
 
-    const desiredHeading =
-      bearingBetween(
-        simulation.intruder,
-        waypoint,
-      );
-
-    const headingError =
-      normalizeSignedAngle(
-        desiredHeading -
-        simulation.intruder
-          .heading,
-      );
-
-    const gentleVariation =
-      Math.sin(
-        simulation.simTimeSeconds *
-          0.55,
-      ) *
-      0.75;
-
-    simulation.intruder.turnRate =
+    stepFixedWingToPoint(
+      simulation.intruder,
+      waypoint,
       clamp(
-        headingError *
-          0.18 +
-          gentleVariation,
-        -10,
-        10,
-      );
+        targetSpeed,
+        12,
+        50,
+      ),
+      50,
+      deltaSeconds,
+      35,
+    );
 
     if (
       distanceBetween(
         simulation.intruder,
         waypoint,
       ) <
-      90
+      100
     ) {
       if (
         simulation.activeWaypointIndex >=
@@ -2241,56 +3445,6 @@ function updateIntruder(
       deltaSeconds,
       0.01,
     );
-
-  targetSpeed =
-    clamp(
-      targetSpeed,
-      12,
-      50,
-    );
-
-  simulation.intruder.airspeed +=
-    (
-      targetSpeed -
-      simulation.intruder
-        .airspeed
-    ) *
-    Math.min(
-      1,
-      deltaSeconds *
-        1.7,
-    );
-
-  simulation.intruder.heading =
-    normalizeHeading(
-      simulation.intruder
-        .heading +
-        simulation.intruder
-          .turnRate *
-          deltaSeconds,
-    );
-
-  simulation.intruder.bank =
-    clamp(
-      simulation.intruder
-        .turnRate *
-        3.2,
-      -40,
-      40,
-    );
-
-  const velocity =
-    velocityVector(
-      simulation.intruder,
-    );
-
-  simulation.intruder.x +=
-    velocity.x *
-    deltaSeconds;
-
-  simulation.intruder.y +=
-    velocity.y *
-    deltaSeconds;
 }
 
 /* =========================================================
@@ -2328,11 +3482,11 @@ function updatePredictionPaths(
       (
         horizon,
       ) =>
-        learnedPrediction(
+        neuralPrediction(
           simulation.intruder,
           simulation.intruderTurnAcceleration,
           horizon,
-          simulation.residualModel,
+          simulation.neuralModel,
         ),
     );
 
@@ -2419,8 +3573,8 @@ function evaluatePredictions(
         ),
       );
 
-      trainResidualModel(
-        simulation.residualModel,
+      trainNeuralResidualModel(
+        simulation.neuralModel,
         pending.features,
         pending.ctrv,
         actual,
@@ -2482,24 +3636,19 @@ function queuePrediction(
       PREDICTION_HORIZON_SECONDS,
     );
 
-  const features =
-    buildResidualFeatures(
-      simulation.intruder,
-      simulation.intruderTurnAcceleration,
-      PREDICTION_HORIZON_SECONDS,
-    );
-
   const learned =
-    learnedPrediction(
+    neuralPrediction(
       simulation.intruder,
       simulation.intruderTurnAcceleration,
       PREDICTION_HORIZON_SECONDS,
-      simulation.residualModel,
+      simulation.neuralModel,
     );
 
   const weights =
     predictorWeights(
       simulation.errors,
+      simulation.neuralModel
+        .sampleCount,
     );
 
   simulation.pendingPredictions.push(
@@ -2509,7 +3658,12 @@ function queuePrediction(
         PREDICTION_HORIZON_SECONDS *
           1000,
 
-      features,
+      features:
+        buildMlFeatures(
+          simulation.intruder,
+          simulation.intruderTurnAcceleration,
+          PREDICTION_HORIZON_SECONDS,
+        ),
 
       cv,
 
@@ -2551,7 +3705,7 @@ function updatePredictionEngine(
 }
 
 /* =========================================================
-   Alert Detection
+   Threat Detection
    ========================================================= */
 
 function updateThreatAlert(
@@ -2564,7 +3718,7 @@ function updateThreatAlert(
       simulation.perimeter,
     );
 
-  const activeCriticalZone =
+  const criticalZone =
     simulation.criticalZones.find(
       (
         zone,
@@ -2584,12 +3738,14 @@ function updateThreatAlert(
 
         active:
           zone.id ===
-          activeCriticalZone?.id,
+          criticalZone?.id,
       }),
     );
 
   if (
-    activeCriticalZone
+    simulation.mode ===
+      "SHADOW" &&
+    simulation.interceptAuthorized
   ) {
     simulation.alert = {
       active:
@@ -2599,19 +3755,56 @@ function updateThreatAlert(
         true,
 
       phase:
-        "CRITICAL_ZONE",
+        "CONTAINED",
 
       title:
-        "CRITICAL INFRASTRUCTURE ALERT",
+        "NON-CONTACT INTERCEPT ESTABLISHED",
 
       message:
-        `Unauthorized UAV entered ${activeCriticalZone.label} demo protection zone.`,
+        "All four interceptor UAVs are stable in their assigned shadow slots.",
     };
 
-    simulation.mode =
-      simulation.interceptAuthorized
-        ? "INTERCEPT"
-        : "ALERT";
+    simulation.intruderWasInsidePerimeter =
+      insidePerimeter;
+
+    return;
+  }
+
+  if (
+    criticalZone
+  ) {
+    simulation.alert = {
+      active:
+        true,
+
+      latched:
+        true,
+
+      phase:
+        simulation.interceptAuthorized
+          ? "INTERCEPTING"
+          : "CRITICAL_ZONE",
+
+      title:
+        simulation.interceptAuthorized
+          ? "FOUR-UAV RESPONSE ACTIVE"
+          : "CRITICAL INFRASTRUCTURE ALERT",
+
+      message:
+        simulation.interceptAuthorized
+          ? "Predictive non-contact response remains active."
+          : `Unauthorized UAV entered ${criticalZone.label} demo zone.`,
+    };
+
+    if (
+      !simulation.interceptAuthorized
+    ) {
+      simulation.mode =
+        "ALERT";
+    }
+
+    simulation.intruderWasInsidePerimeter =
+      insidePerimeter;
 
     return;
   }
@@ -2634,13 +3827,15 @@ function updateThreatAlert(
         "MONITORED AIRSPACE ALERT",
 
       message:
-        "Unauthorized UAV crossed the green monitored-airspace perimeter. Operator authorization required.",
+        "Unauthorized UAV crossed the monitored perimeter. Operator authorization required.",
     };
 
-    simulation.mode =
-      simulation.interceptAuthorized
-        ? "INTERCEPT"
-        : "ALERT";
+    if (
+      !simulation.interceptAuthorized
+    ) {
+      simulation.mode =
+        "ALERT";
+    }
   }
 
   simulation.intruderWasInsidePerimeter =
@@ -2648,12 +3843,24 @@ function updateThreatAlert(
 
   if (
     simulation.interceptAuthorized &&
-    simulation.alert.latched
+    simulation.alert.latched &&
+    simulation.mode !==
+      "HOLD" &&
+    simulation.mode !==
+      "RTL" &&
+    simulation.mode !==
+      "ABORT" &&
+    simulation.mode !==
+      "SHADOW"
   ) {
-    simulation.alert = {
-      ...simulation.alert,
+    simulation.mode =
+      "INTERCEPT";
 
+    simulation.alert = {
       active:
+        true,
+
+      latched:
         true,
 
       phase:
@@ -2663,15 +3870,13 @@ function updateThreatAlert(
         "FOUR-UAV RESPONSE ACTIVE",
 
       message:
-        "All four interceptor UAVs are converging on independent non-contact formation slots.",
+        "Locked pursuit, curvature-safe staging and non-contact formation guidance are active.",
     };
-
-    simulation.mode =
-      "INTERCEPT";
   }
 
   if (
-    simulation.missionComplete
+    simulation.missionComplete &&
+    !simulation.interceptAuthorized
   ) {
     simulation.alert = {
       ...simulation.alert,
@@ -2683,274 +3888,656 @@ function updateThreatAlert(
         "INTRUDER FLIGHT COMPLETE",
 
       message:
-        "This simulated intruder mission is complete. Reset or refresh to generate a new flight plan.",
+        "The randomized intruder mission has finished. Generate a new plan for another scenario.",
     };
   }
 }
 
 /* =========================================================
-   Formation Targets
+   Prediction / Formation Geometry
    ========================================================= */
 
-function predictedHeadingFor(
+function predictedPositionAt(
   simulation:
     InternalSimulation,
+
+  secondsAhead:
+    number,
 ) {
-  const path =
+  if (
     simulation.predictorMode ===
-    "ml"
-      ? simulation.mlPath
-      : simulation.baselinePath;
-
-  if (
-    path.length <
-    2
+    "baseline"
   ) {
-    return simulation.intruder
-      .heading;
+    return constantVelocityPrediction(
+      simulation.intruder,
+      secondsAhead,
+    );
   }
 
-  const previous =
-    path[
-      path.length -
-        2
-    ];
-
-  const last =
-    path[
-      path.length -
-        1
-    ];
-
-  if (
-    !previous ||
-    !last
-  ) {
-    return simulation.intruder
-      .heading;
-  }
-
-  return bearingBetween(
-    previous,
-    last,
+  return adaptivePrediction(
+    simulation,
+    secondsAhead,
   );
 }
 
-function createFormationTargets(
+function predictedHeadingAt(
   simulation:
     InternalSimulation,
+
+  secondsAhead:
+    number,
 ) {
-  const selectedPath =
-    simulation.predictorMode ===
-    "ml"
-      ? simulation.mlPath
-      : simulation.baselinePath;
+  return normalizeHeading(
+    simulation.intruder
+      .heading +
+      simulation.intruder
+        .turnRate *
+        secondsAhead,
+  );
+}
 
-  const predictedPosition =
-    selectedPath[
-      3
-    ] ?? {
-      x:
-        simulation.intruder.x,
+function finalShadowSlotAt(
+  simulation:
+    InternalSimulation,
 
-      y:
-        simulation.intruder.y,
-    };
+  interceptor:
+    InternalInterceptor,
 
-  const predictedHeading =
-    predictedHeadingFor(
+  secondsAhead:
+    number,
+) {
+  const predicted =
+    predictedPositionAt(
       simulation,
+      secondsAhead,
     );
 
-  const output:
-    Record<
-      number,
-      Vector2
-    > = {};
+  const heading =
+    predictedHeadingAt(
+      simulation,
+      secondsAhead,
+    );
 
-  simulation.interceptors.forEach(
-    (
-      interceptor,
-    ) => {
-      const offset =
-        FORMATION_OFFSETS[
-          interceptor.formationSlot
-        ] ??
-        180;
+  const forward =
+    headingVector(
+      heading,
+    );
 
-      const slotBearing =
-        normalizeHeading(
-          predictedHeading +
-            offset,
-        );
+  const right =
+    headingVector(
+      heading +
+        90,
+    );
 
-      const direction =
-        headingVector(
-          slotBearing,
-        );
+  const distance =
+    simulation.desiredSeparationMeters;
 
-      output[
-        interceptor.id
-      ] = {
-        x:
-          predictedPosition.x +
-          direction.x *
-            simulation.desiredSeparationMeters,
+  const layouts = [
+    {
+      behind:
+        distance *
+        1.0,
 
-        y:
-          predictedPosition.y +
-          direction.y *
-            simulation.desiredSeparationMeters,
-      };
+      lateral:
+        -distance *
+        0.46,
     },
-  );
 
-  simulation.formationTargets =
-    output;
+    {
+      behind:
+        distance *
+        1.0,
+
+      lateral:
+        distance *
+        0.46,
+    },
+
+    {
+      behind:
+        distance *
+        1.38,
+
+      lateral:
+        -distance *
+        0.76,
+    },
+
+    {
+      behind:
+        distance *
+        1.38,
+
+      lateral:
+        distance *
+        0.76,
+    },
+  ];
+
+  const layout =
+    layouts[
+      interceptor.formationSlot
+    ] ??
+    layouts[
+      0
+    ];
+
+  if (
+    !layout
+  ) {
+    return predicted;
+  }
+
+  return {
+    x:
+      predicted.x -
+      forward.x *
+        layout.behind +
+      right.x *
+        layout.lateral,
+
+    y:
+      predicted.y -
+      forward.y *
+        layout.behind +
+      right.y *
+        layout.lateral,
+  };
 }
 
-/* =========================================================
-   Aircraft Steering
-   ========================================================= */
+function stagingSlotAt(
+  simulation:
+    InternalSimulation,
 
-function steerAircraft(
-  aircraft:
-    AircraftState,
+  interceptor:
+    InternalInterceptor,
 
-  target:
-    Vector2,
-
-  targetSpeed:
-    number,
-
-  maximumSpeed:
-    number,
-
-  deltaSeconds:
-    number,
-
-  maximumTurnRate:
+  secondsAhead:
     number,
 ) {
-  const desiredHeading =
-    bearingBetween(
-      aircraft,
-      target,
+  const predicted =
+    predictedPositionAt(
+      simulation,
+      secondsAhead,
     );
 
-  const headingError =
-    normalizeSignedAngle(
-      desiredHeading -
-      aircraft.heading,
+  const heading =
+    predictedHeadingAt(
+      simulation,
+      secondsAhead,
     );
 
-  aircraft.turnRate =
-    clamp(
-      headingError *
-        0.2,
-      -maximumTurnRate,
-      maximumTurnRate,
+  const forward =
+    headingVector(
+      heading,
     );
 
-  aircraft.heading =
-    normalizeHeading(
-      aircraft.heading +
-        aircraft.turnRate *
-          deltaSeconds,
+  const right =
+    headingVector(
+      heading +
+        90,
     );
 
-  aircraft.bank =
-    clamp(
-      aircraft.turnRate *
-        3.2,
-      -42,
-      42,
+  const distance =
+    simulation.desiredSeparationMeters;
+
+  const layouts = [
+    {
+      behind:
+        distance *
+        2.15,
+
+      lateral:
+        -distance *
+        0.82,
+    },
+
+    {
+      behind:
+        distance *
+        2.15,
+
+      lateral:
+        distance *
+        0.82,
+    },
+
+    {
+      behind:
+        distance *
+        2.55,
+
+      lateral:
+        -distance *
+        1.18,
+    },
+
+    {
+      behind:
+        distance *
+        2.55,
+
+      lateral:
+        distance *
+        1.18,
+    },
+  ];
+
+  const layout =
+    layouts[
+      interceptor.formationSlot
+    ] ??
+    layouts[
+      0
+    ];
+
+  if (
+    !layout
+  ) {
+    return predicted;
+  }
+
+  return {
+    x:
+      predicted.x -
+      forward.x *
+        layout.behind +
+      right.x *
+        layout.lateral,
+
+    y:
+      predicted.y -
+      forward.y *
+        layout.behind +
+      right.y *
+        layout.lateral,
+  };
+}
+
+function pursuitCapturePoint(
+  simulation:
+    InternalSimulation,
+
+  interceptor:
+    InternalInterceptor,
+
+  horizon:
+    number,
+) {
+  const predicted =
+    predictedPositionAt(
+      simulation,
+      horizon,
     );
 
-  aircraft.airspeed +=
-    (
-      clamp(
-        targetSpeed,
-        18,
-        maximumSpeed,
-      ) -
-      aircraft.airspeed
+  const heading =
+    predictedHeadingAt(
+      simulation,
+      horizon,
+    );
+
+  const forward =
+    headingVector(
+      heading,
+    );
+
+  const right =
+    headingVector(
+      heading +
+        90,
+    );
+
+  const side =
+    interceptor.formationSlot %
+      2 ===
+    0
+      ? -1
+      : 1;
+
+  const aft =
+    Math.max(
+      simulation.desiredSeparationMeters *
+        1.65,
+      simulation.minimumSeparationMeters +
+        270,
+    );
+
+  const lateral =
+    120 +
+    Math.floor(
+      interceptor.formationSlot /
+        2,
     ) *
-    Math.min(
-      1,
-      deltaSeconds *
-        2.2,
-    );
+      65;
 
-  const velocity =
-    velocityVector(
-      aircraft,
-    );
+  return {
+    x:
+      predicted.x -
+      forward.x *
+        aft +
+      right.x *
+        side *
+        lateral,
 
-  aircraft.x +=
-    velocity.x *
-    deltaSeconds;
-
-  aircraft.y +=
-    velocity.y *
-    deltaSeconds;
+    y:
+      predicted.y -
+      forward.y *
+        aft +
+      right.y *
+        side *
+        lateral,
+  };
 }
 
 /* =========================================================
-   Patrol
+   Locked Intercept Planner
    ========================================================= */
 
-function patrolTarget(
+function lockInterceptSolution(
   simulation:
     InternalSimulation,
 
   interceptor:
     InternalInterceptor,
 ) {
-  const angle =
-    simulation.simTimeSeconds *
-      0.18 +
-    interceptor.patrolPhase;
+  let selectedPoint =
+    pursuitCapturePoint(
+      simulation,
+      interceptor,
+      26,
+    );
 
-  const radius =
-    130;
+  let selectedHorizon =
+    26;
 
-  return {
-    x:
-      interceptor.station.x +
-      Math.cos(
-        angle,
-      ) *
-        radius,
+  for (
+    const horizon of
+    LEAD_SEARCH_HORIZONS
+  ) {
+    const candidate =
+      pursuitCapturePoint(
+        simulation,
+        interceptor,
+        horizon,
+      );
 
-    y:
-      interceptor.station.y +
-      Math.sin(
-        angle,
-      ) *
-        radius,
-  };
+    const requiredDistance =
+      distanceBetween(
+        interceptor,
+        candidate,
+      );
+
+    const headingError =
+      Math.abs(
+        normalizeSignedAngle(
+          bearingBetween(
+            interceptor,
+            candidate,
+          ) -
+            interceptor.heading,
+        ),
+      );
+
+    const turnPenalty =
+      clamp(
+        1 -
+          headingError /
+            270,
+        0.5,
+        1,
+      );
+
+    const availableDistance =
+      interceptor.speedLimitMps *
+      horizon *
+      turnPenalty *
+      0.84;
+
+    selectedPoint =
+      candidate;
+
+    selectedHorizon =
+      horizon;
+
+    if (
+      requiredDistance <=
+      availableDistance
+    ) {
+      break;
+    }
+  }
+
+  interceptor.lockedInterceptPoint =
+    selectedPoint;
+
+  interceptor.lockedLeadSeconds =
+    selectedHorizon;
+
+  interceptor.lockExpiresAt =
+    simulation.simTimeSeconds +
+    INTERCEPT_REPLAN_SECONDS;
+
+  interceptor.guidanceLocked =
+    true;
 }
 
 /* =========================================================
-   Simple Inter-UAV Deconfliction
+   Safety
    ========================================================= */
 
-function applyDeconfliction(
+function dynamicRecoveryDistance(
+  simulation:
+    InternalSimulation,
+
+  interceptor:
+    InternalInterceptor,
+) {
+  const closingRate =
+    Math.max(
+      0,
+      calculateClosingRate(
+        simulation.intruder,
+        interceptor,
+      ),
+    );
+
+  return (
+    simulation.minimumSeparationMeters +
+    clamp(
+      32 +
+        closingRate *
+          0.75,
+      45,
+      72,
+    )
+  );
+}
+
+function tangentRecoveryTarget(
+  simulation:
+    InternalSimulation,
+
+  interceptor:
+    InternalInterceptor,
+) {
+  const radial =
+    bearingBetween(
+      simulation.intruder,
+      interceptor,
+    );
+
+  const tangentA =
+    normalizeHeading(
+      radial +
+        90,
+    );
+
+  const tangentB =
+    normalizeHeading(
+      radial -
+        90,
+    );
+
+  const tangentHeading =
+    Math.abs(
+      normalizeSignedAngle(
+        tangentA -
+        interceptor.heading,
+      ),
+    ) <=
+    Math.abs(
+      normalizeSignedAngle(
+        tangentB -
+        interceptor.heading,
+      ),
+    )
+      ? tangentA
+      : tangentB;
+
+  const tangent =
+    headingVector(
+      tangentHeading,
+    );
+
+  const outward =
+    headingVector(
+      radial,
+    );
+
+  return {
+    x:
+      interceptor.x +
+      tangent.x *
+        560 +
+      outward.x *
+        240,
+
+    y:
+      interceptor.y +
+      tangent.y *
+        560 +
+      outward.y *
+        240,
+  };
+}
+
+function enforceHardTargetSeparation(
+  simulation:
+    InternalSimulation,
+
+  interceptor:
+    InternalInterceptor,
+) {
+  const hardRadius =
+    simulation.minimumSeparationMeters +
+    HARD_SAFETY_MARGIN;
+
+  const separation =
+    distanceBetween(
+      simulation.intruder,
+      interceptor,
+    );
+
+  if (
+    separation >=
+    hardRadius
+  ) {
+    return;
+  }
+
+  let dx =
+    interceptor.x -
+    simulation.intruder.x;
+
+  let dy =
+    interceptor.y -
+    simulation.intruder.y;
+
+  let magnitude =
+    Math.hypot(
+      dx,
+      dy,
+    );
+
+  if (
+    magnitude <
+    0.001
+  ) {
+    const fallback =
+      headingVector(
+        interceptor.heading +
+          180,
+      );
+
+    dx =
+      fallback.x;
+
+    dy =
+      fallback.y;
+
+    magnitude =
+      1;
+  }
+
+  const unitX =
+    dx /
+    magnitude;
+
+  const unitY =
+    dy /
+    magnitude;
+
+  interceptor.x =
+    simulation.intruder.x +
+    unitX *
+      hardRadius;
+
+  interceptor.y =
+    simulation.intruder.y +
+    unitY *
+      hardRadius;
+
+  interceptor.airspeed =
+    Math.min(
+      interceptor.airspeed,
+      simulation.intruder
+        .airspeed +
+        2,
+    );
+
+  interceptor.targetAirspeed =
+    Math.min(
+      interceptor.targetAirspeed,
+      simulation.intruder
+        .airspeed +
+        1,
+    );
+
+  interceptor.status =
+    "RECOVERY";
+
+  interceptor.mode =
+    "HARD SAFETY";
+
+  interceptor.guidanceLocked =
+    false;
+}
+
+function applyFleetAvoidance(
   interceptor:
     InternalInterceptor,
 
   interceptors:
     InternalInterceptor[],
 
-  desiredTarget:
+  target:
     Vector2,
 ) {
-  let adjustmentX =
-    0;
+  let x =
+    target.x;
 
-  let adjustmentY =
-    0;
+  let y =
+    target.y;
 
   interceptors.forEach(
     (
@@ -2971,52 +4558,750 @@ function applyDeconfliction(
 
       if (
         separation >=
-        85
+        180
       ) {
         return;
       }
 
-      const awayHeading =
-        bearingBetween(
-          other,
-          interceptor,
-        );
-
       const away =
         headingVector(
-          awayHeading,
+          bearingBetween(
+            other,
+            interceptor,
+          ),
         );
 
       const strength =
         (
-          85 -
+          180 -
           separation
         ) *
-        2.2;
+        1.7;
 
-      adjustmentX +=
+      x +=
         away.x *
         strength;
 
-      adjustmentY +=
+      y +=
         away.y *
         strength;
     },
   );
 
   return {
-    x:
-      desiredTarget.x +
-      adjustmentX,
-
-    y:
-      desiredTarget.y +
-      adjustmentY,
+    x,
+    y,
   };
 }
 
+function enforceFleetHardSeparation(
+  simulation:
+    InternalSimulation,
+) {
+  for (
+    let firstIndex =
+      0;
+
+    firstIndex <
+      simulation.interceptors.length;
+
+    firstIndex +=
+      1
+  ) {
+    for (
+      let secondIndex =
+        firstIndex +
+        1;
+
+      secondIndex <
+        simulation.interceptors.length;
+
+      secondIndex +=
+        1
+    ) {
+      const first =
+        simulation.interceptors[
+          firstIndex
+        ];
+
+      const second =
+        simulation.interceptors[
+          secondIndex
+        ];
+
+      if (
+        !first ||
+        !second
+      ) {
+        continue;
+      }
+
+      const dx =
+        second.x -
+        first.x;
+
+      const dy =
+        second.y -
+        first.y;
+
+      let separation =
+        Math.hypot(
+          dx,
+          dy,
+        );
+
+      if (
+        separation >=
+        FLEET_MINIMUM_SEPARATION
+      ) {
+        continue;
+      }
+
+      separation =
+        Math.max(
+          separation,
+          0.001,
+        );
+
+      const unitX =
+        dx /
+        separation;
+
+      const unitY =
+        dy /
+        separation;
+
+      const correction =
+        (
+          FLEET_MINIMUM_SEPARATION -
+          separation
+        ) /
+        2;
+
+      first.x -=
+        unitX *
+        correction;
+
+      first.y -=
+        unitY *
+        correction;
+
+      second.x +=
+        unitX *
+        correction;
+
+      second.y +=
+        unitY *
+        correction;
+    }
+  }
+
+  simulation.interceptors.forEach(
+    (
+      interceptor,
+    ) =>
+      enforceHardTargetSeparation(
+        simulation,
+        interceptor,
+      ),
+  );
+}
+
 /* =========================================================
-   Interceptors
+   Patrol / Tracking Helpers
+   ========================================================= */
+
+function patrolTarget(
+  simulation:
+    InternalSimulation,
+
+  interceptor:
+    InternalInterceptor,
+) {
+  const angle =
+    simulation.simTimeSeconds *
+      0.18 +
+    interceptor.patrolPhase;
+
+  return {
+    x:
+      interceptor.station.x +
+      Math.cos(
+        angle,
+      ) *
+        130,
+
+    y:
+      interceptor.station.y +
+      Math.sin(
+        angle,
+      ) *
+        130,
+  };
+}
+
+function headingAlignmentError(
+  first:
+    AircraftState,
+
+  second:
+    AircraftState,
+) {
+  return Math.abs(
+    normalizeSignedAngle(
+      first.heading -
+        second.heading,
+    ),
+  );
+}
+
+function expectedLaneSign(
+  interceptor:
+    InternalInterceptor,
+) {
+  return (
+    interceptor.formationSlot %
+      2 ===
+    0
+  )
+    ? -1
+    : 1;
+}
+
+function isCorrectApproachLane(
+  simulation:
+    InternalSimulation,
+
+  interceptor:
+    InternalInterceptor,
+) {
+  const relative =
+    relativeTargetCoordinates(
+      simulation.intruder,
+      interceptor,
+    );
+
+  const side =
+    expectedLaneSign(
+      interceptor,
+    );
+
+  const isBehind =
+    relative.forward <
+    -simulation.desiredSeparationMeters *
+      1.15;
+
+  const sideCorrect =
+    side <
+    0
+      ? relative.right <
+        -45
+      : relative.right >
+        45;
+
+  return (
+    isBehind &&
+    sideCorrect
+  );
+}
+
+/* =========================================================
+   Moving Slot Tracking
+   ========================================================= */
+
+function stepMovingSlotTracking(
+  simulation:
+    InternalSimulation,
+
+  interceptor:
+    InternalInterceptor,
+
+  target:
+    Vector2,
+
+  deltaSeconds:
+    number,
+
+  phase:
+    "STAGING" |
+    "RENDEZVOUS" |
+    "SHADOW",
+) {
+  const errorX =
+    target.x -
+    interceptor.x;
+
+  const errorY =
+    target.y -
+    interceptor.y;
+
+  const errorMagnitude =
+    Math.max(
+      0.001,
+      Math.hypot(
+        errorX,
+        errorY,
+      ),
+    );
+
+  const gain =
+    phase ===
+    "STAGING"
+      ? 0.045
+      : phase ===
+          "RENDEZVOUS"
+        ? 0.07
+        : 0.05;
+
+  const maxCorrection =
+    phase ===
+    "STAGING"
+      ? 12
+      : phase ===
+          "RENDEZVOUS"
+        ? 10
+        : 7;
+
+  const correctionMagnitude =
+    Math.min(
+      errorMagnitude *
+        gain,
+      maxCorrection,
+    );
+
+  const correctionX =
+    (
+      errorX /
+      errorMagnitude
+    ) *
+    correctionMagnitude;
+
+  const correctionY =
+    (
+      errorY /
+      errorMagnitude
+    ) *
+    correctionMagnitude;
+
+  const intruderVelocity =
+    velocityVector(
+      simulation.intruder,
+    );
+
+  const relativeX =
+    target.x -
+    simulation.intruder.x;
+
+  const relativeY =
+    target.y -
+    simulation.intruder.y;
+
+  const omega =
+    toRadians(
+      simulation.intruder
+        .turnRate,
+    );
+
+  const rotationVelocityX =
+    omega *
+    relativeY;
+
+  const rotationVelocityY =
+    -omega *
+    relativeX;
+
+  const desiredVelocityX =
+    intruderVelocity.x +
+    rotationVelocityX +
+    correctionX;
+
+  const desiredVelocityY =
+    intruderVelocity.y +
+    rotationVelocityY +
+    correctionY;
+
+  const desiredHeading =
+    normalizeHeading(
+      toDegrees(
+        Math.atan2(
+          desiredVelocityX,
+          desiredVelocityY,
+        ),
+      ),
+    );
+
+  let desiredSpeed =
+    Math.hypot(
+      desiredVelocityX,
+      desiredVelocityY,
+    );
+
+  if (
+    phase ===
+    "STAGING"
+  ) {
+    desiredSpeed =
+      clamp(
+        desiredSpeed,
+        simulation.intruder
+          .airspeed -
+          1,
+        simulation.intruder
+          .airspeed +
+          9,
+      );
+  }
+
+  if (
+    phase ===
+    "RENDEZVOUS"
+  ) {
+    desiredSpeed =
+      clamp(
+        desiredSpeed,
+        simulation.intruder
+          .airspeed -
+          2,
+        simulation.intruder
+          .airspeed +
+          4,
+      );
+  }
+
+  if (
+    phase ===
+    "SHADOW"
+  ) {
+    desiredSpeed =
+      clamp(
+        desiredSpeed,
+        simulation.intruder
+          .airspeed -
+          3,
+        simulation.intruder
+          .airspeed +
+          3,
+      );
+  }
+
+  interceptor.targetAirspeed =
+    clamp(
+      desiredSpeed,
+      18,
+      interceptor.speedLimitMps,
+    );
+
+  stepFixedWingToHeading(
+    interceptor,
+    desiredHeading,
+    interceptor.targetAirspeed,
+    interceptor.speedLimitMps,
+    deltaSeconds,
+    phase ===
+      "STAGING"
+      ? 38
+      : 34,
+  );
+}
+
+/* =========================================================
+   Phase Speed Policy
+   ========================================================= */
+
+function pursuitSpeedCommand(
+  simulation:
+    InternalSimulation,
+
+  interceptor:
+    InternalInterceptor,
+
+  target:
+    Vector2,
+) {
+  const distance =
+    distanceBetween(
+      interceptor,
+      target,
+    );
+
+  let margin =
+    8;
+
+  if (
+    distance >
+    1200
+  ) {
+    margin =
+      42;
+  } else if (
+    distance >
+    900
+  ) {
+    margin =
+      34;
+  } else if (
+    distance >
+    650
+  ) {
+    margin =
+      27;
+  } else if (
+    distance >
+    450
+  ) {
+    margin =
+      20;
+  } else if (
+    distance >
+    300
+  ) {
+    margin =
+      14;
+  }
+
+  let speed =
+    simulation.intruder
+      .airspeed +
+    margin;
+
+  if (
+    simulation.adaptiveSpeedSync
+  ) {
+    const closing =
+      Math.max(
+        0,
+        calculateClosingRate(
+          simulation.intruder,
+          interceptor,
+        ),
+      );
+
+    speed -=
+      clamp(
+        closing *
+          0.35,
+        0,
+        8,
+      );
+  }
+
+  return clamp(
+    speed,
+    20,
+    interceptor.speedLimitMps,
+  );
+}
+
+/* =========================================================
+   ETA Smoothing
+   ========================================================= */
+
+function updateEta(
+  simulation:
+    InternalSimulation,
+
+  interceptor:
+    InternalInterceptor,
+
+  target:
+    Vector2,
+) {
+  const remaining =
+    distanceBetween(
+      interceptor,
+      target,
+    );
+
+  let effectiveClosure =
+    8;
+
+  if (
+    interceptor.status ===
+    "PURSUIT"
+  ) {
+    effectiveClosure =
+      Math.max(
+        10,
+        interceptor.targetAirspeed -
+          simulation.intruder
+            .airspeed *
+            0.35,
+      );
+  } else {
+    effectiveClosure =
+      Math.max(
+        6,
+        Math.abs(
+          interceptor.targetAirspeed -
+            simulation.intruder
+              .airspeed,
+        ) +
+          6,
+      );
+  }
+
+  const rawEta =
+    clamp(
+      remaining /
+        effectiveClosure,
+      0,
+      300,
+    );
+
+  interceptor.etaSeconds =
+    interceptor.etaSeconds ===
+    null
+      ? rawEta
+      : interceptor.etaSeconds +
+        clamp(
+          rawEta -
+            interceptor.etaSeconds,
+          -0.4,
+          0.4,
+        );
+}
+
+/* =========================================================
+   Recovery
+   ========================================================= */
+
+function updateRecovery(
+  simulation:
+    InternalSimulation,
+
+  interceptor:
+    InternalInterceptor,
+
+  deltaSeconds:
+    number,
+
+  targets:
+    Record<
+      number,
+      Vector2
+    >,
+) {
+  const target =
+    tangentRecoveryTarget(
+      simulation,
+      interceptor,
+    );
+
+  targets[
+    interceptor.id
+  ] =
+    target;
+
+  interceptor.status =
+    "RECOVERY";
+
+  interceptor.mode =
+    "SAFETY RECOVERY";
+
+  interceptor.guidanceLocked =
+    false;
+
+  interceptor.lockedInterceptPoint =
+    null;
+
+  interceptor.targetAirspeed =
+    clamp(
+      simulation.intruder
+        .airspeed +
+        1,
+      18,
+      Math.min(
+        36,
+        interceptor.speedLimitMps,
+      ),
+    );
+
+  stepFixedWingToPoint(
+    interceptor,
+    target,
+    interceptor.targetAirspeed,
+    interceptor.speedLimitMps,
+    deltaSeconds,
+    42,
+  );
+
+  enforceHardTargetSeparation(
+    simulation,
+    interceptor,
+  );
+
+  const separation =
+    distanceBetween(
+      simulation.intruder,
+      interceptor,
+    );
+
+  const closingRate =
+    calculateClosingRate(
+      simulation.intruder,
+      interceptor,
+    );
+
+  const recoveryDistance =
+    dynamicRecoveryDistance(
+      simulation,
+      interceptor,
+    );
+
+  const minimumRecoveryDwell =
+    simulation.simTimeSeconds -
+      interceptor.recoveryEnteredAt >=
+    1;
+
+  const clear =
+    minimumRecoveryDwell &&
+    separation >
+      recoveryDistance +
+        40 &&
+    closingRate <=
+      1.5;
+
+  interceptor.recoveryClearSeconds =
+    clear
+      ? interceptor.recoveryClearSeconds +
+        deltaSeconds
+      : 0;
+
+  if (
+    interceptor.recoveryClearSeconds >=
+    RECOVERY_CLEAR_HOLD_SECONDS
+  ) {
+    interceptor.recoveryClearSeconds =
+      0;
+
+    interceptor.pursuitStableSeconds =
+      0;
+
+    interceptor.stagingStableSeconds =
+      0;
+
+    interceptor.slotStableSeconds =
+      0;
+
+    interceptor.shadowBreakSeconds =
+      0;
+
+    interceptor.status =
+      separation >
+      1050
+        ? "PURSUIT"
+        : "STAGING";
+
+    interceptor.mode =
+      interceptor.status ===
+      "PURSUIT"
+        ? "AI PURSUIT · ACQUIRING LOCK"
+        : "AI STAGING";
+  }
+}
+
+/* =========================================================
+   Interceptor State Machine
    ========================================================= */
 
 function updateInterceptors(
@@ -3026,14 +5311,20 @@ function updateInterceptors(
   deltaSeconds:
     number,
 ) {
-  createFormationTargets(
-    simulation,
-  );
+  const targets:
+    Record<
+      number,
+      Vector2
+    > = {};
 
   simulation.interceptors.forEach(
     (
       interceptor,
     ) => {
+      /* -----------------------------------------------------
+         RTL / ABORT
+         ----------------------------------------------------- */
+
       if (
         simulation.mode ===
           "RTL" ||
@@ -3049,23 +5340,36 @@ function updateInterceptors(
         interceptor.mode =
           "RTL";
 
+        interceptor.guidanceLocked =
+          false;
+
         interceptor.targetAirspeed =
           Math.min(
             interceptor.speedLimitMps,
             34,
           );
 
-        steerAircraft(
+        interceptor.slotErrorMeters =
+          null;
+
+        interceptor.etaSeconds =
+          null;
+
+        stepFixedWingToPoint(
           interceptor,
           interceptor.station,
           interceptor.targetAirspeed,
           interceptor.speedLimitMps,
           deltaSeconds,
-          11,
+          35,
         );
 
         return;
       }
+
+      /* -----------------------------------------------------
+         HOLD
+         ----------------------------------------------------- */
 
       if (
         simulation.mode ===
@@ -3077,29 +5381,36 @@ function updateInterceptors(
         interceptor.mode =
           "HOLD";
 
-        const holdTarget =
+        interceptor.guidanceLocked =
+          false;
+
+        interceptor.targetAirspeed =
+          25;
+
+        interceptor.slotErrorMeters =
+          null;
+
+        interceptor.etaSeconds =
+          null;
+
+        stepFixedWingToPoint(
+          interceptor,
           patrolTarget(
             simulation,
             interceptor,
-          );
-
-        interceptor.targetAirspeed =
-          Math.min(
-            interceptor.speedLimitMps,
-            26,
-          );
-
-        steerAircraft(
-          interceptor,
-          holdTarget,
+          ),
           interceptor.targetAirspeed,
           interceptor.speedLimitMps,
           deltaSeconds,
-          8,
+          28,
         );
 
         return;
       }
+
+      /* -----------------------------------------------------
+         PATROL
+         ----------------------------------------------------- */
 
       if (
         !simulation.interceptAuthorized
@@ -3113,13 +5424,19 @@ function updateInterceptors(
         interceptor.mode =
           "PATROL";
 
-        interceptor.targetAirspeed =
-          Math.min(
-            interceptor.speedLimitMps,
-            24,
-          );
+        interceptor.guidanceLocked =
+          false;
 
-        steerAircraft(
+        interceptor.targetAirspeed =
+          24;
+
+        interceptor.slotErrorMeters =
+          null;
+
+        interceptor.etaSeconds =
+          null;
+
+        stepFixedWingToPoint(
           interceptor,
           patrolTarget(
             simulation,
@@ -3128,7 +5445,7 @@ function updateInterceptors(
           interceptor.targetAirspeed,
           interceptor.speedLimitMps,
           deltaSeconds,
-          8,
+          28,
         );
 
         return;
@@ -3137,300 +5454,780 @@ function updateInterceptors(
       interceptor.assigned =
         true;
 
-      const slot =
-        simulation.formationTargets[
-          interceptor.id
-        ];
+      /* -----------------------------------------------------
+         Safety pre-emption
+         ----------------------------------------------------- */
 
-      if (
-        !slot
-      ) {
-        return;
-      }
-
-      const safeTarget =
-        applyDeconfliction(
+      const separation =
+        distanceBetween(
+          simulation.intruder,
           interceptor,
-          simulation.interceptors,
-          slot,
         );
 
-      const intruderSeparation =
-        distanceBetween(
+      const recoveryRadius =
+        dynamicRecoveryDistance(
+          simulation,
           interceptor,
-          simulation.intruder,
         );
 
       const closestApproach =
         predictClosestApproach(
           simulation.intruder,
           interceptor,
+          4,
         );
 
-      /*
-       * Anticipatory non-contact safety recovery.
-       */
-      if (
-        closestApproach <
+      const hardRadius =
         simulation.minimumSeparationMeters +
-          15
+        HARD_SAFETY_MARGIN;
+
+      const predictiveRecovery =
+        separation <
+          recoveryRadius +
+            70 &&
+        closestApproach <
+          hardRadius +
+            18;
+
+      const recoveryRequired =
+        separation <
+          recoveryRadius ||
+        predictiveRecovery;
+
+      if (
+        recoveryRequired &&
+        interceptor.status !==
+          "RECOVERY"
       ) {
         interceptor.status =
           "RECOVERY";
 
-        interceptor.mode =
-          "SAFETY RECOVERY";
+        interceptor.recoveryEnteredAt =
+          simulation.simTimeSeconds;
 
-        const awayHeading =
-          bearingBetween(
-            simulation.intruder,
-            interceptor,
-          );
+        interceptor.recoveryClearSeconds =
+          0;
+      }
 
-        const away =
-          headingVector(
-            awayHeading,
-          );
-
-        const recoveryPoint = {
-          x:
-            interceptor.x +
-            away.x *
-              380,
-
-          y:
-            interceptor.y +
-            away.y *
-              380,
-        };
-
-        interceptor.targetAirspeed =
-          clamp(
-            simulation.intruder
-              .airspeed -
-              4,
-            18,
-            interceptor.speedLimitMps,
-          );
-
-        steerAircraft(
+      if (
+        interceptor.status ===
+        "RECOVERY"
+      ) {
+        updateRecovery(
+          simulation,
           interceptor,
-          recoveryPoint,
-          interceptor.targetAirspeed,
-          interceptor.speedLimitMps,
           deltaSeconds,
-          12,
+          targets,
         );
 
         return;
       }
 
-      const distanceToSlot =
-        distanceBetween(
-          interceptor,
-          safeTarget,
-        );
-
-      const closingRate =
-        calculateClosingRate(
-          simulation.intruder,
-          interceptor,
-        );
-
-      const desiredHeading =
-        bearingBetween(
-          interceptor,
-          safeTarget,
-        );
-
-      const headingError =
-        Math.abs(
-          normalizeSignedAngle(
-            desiredHeading -
-            interceptor.heading,
-          ),
-        );
-
-      const turnDemand =
-        clamp(
-          headingError /
-            90,
-          0,
-          1,
-        );
-
-      /*
-       * Main fix for what was visible in f.mp4:
-       *
-       * far from the slot -> large catch-up speed
-       * approaching slot -> progressively match target speed
-       * high turn demand -> reduce excess speed
-       */
-      let targetSpeed =
-        simulation.intruder
-          .airspeed;
+      /* -----------------------------------------------------
+         Initial transition after dispatch
+         ----------------------------------------------------- */
 
       if (
-        distanceToSlot >
-        650
-      ) {
-        targetSpeed =
-          simulation.intruder
-            .airspeed +
-          clamp(
-            distanceToSlot *
-              0.055,
-            24,
-            52,
-          );
-      } else if (
-        distanceToSlot >
-        300
-      ) {
-        targetSpeed =
-          simulation.intruder
-            .airspeed +
-          clamp(
-            distanceToSlot *
-              0.045,
-            14,
-            32,
-          );
-      } else {
-        targetSpeed =
-          simulation.intruder
-            .airspeed +
-          clamp(
-            (
-              distanceToSlot -
-              70
-            ) *
-              0.035,
-            -3,
-            14,
-          );
-      }
-
-      if (
-        simulation.adaptiveSpeedSync
-      ) {
-        targetSpeed -=
-          clamp(
-            closingRate *
-              0.35,
-            -4,
-            7,
-          );
-
-        targetSpeed -=
-          turnDemand *
-          5;
-      }
-
-      interceptor.targetAirspeed =
-        clamp(
-          targetSpeed,
-          20,
-          interceptor.speedLimitMps,
-        );
-
-      if (
-        distanceToSlot <
-          75 &&
-        intruderSeparation >
-          simulation.minimumSeparationMeters
+        interceptor.status ===
+          "PATROL" ||
+        interceptor.status ===
+          "HOLD" ||
+        interceptor.status ===
+          "RTL"
       ) {
         interceptor.status =
-          "SHADOW";
+          "PURSUIT";
+
+        interceptor.mode =
+          "AI PURSUIT · ACQUIRING LOCK";
+
+        interceptor.lockedInterceptPoint =
+          null;
+
+        interceptor.guidanceLocked =
+          false;
+
+        interceptor.pursuitStableSeconds =
+          0;
+
+        interceptor.stagingStableSeconds =
+          0;
+
+        interceptor.slotStableSeconds =
+          0;
+
+        interceptor.shadowBreakSeconds =
+          0;
+      }
+
+      let guidanceTarget:
+        Vector2;
+
+      /* -----------------------------------------------------
+         PURSUIT
+         ----------------------------------------------------- */
+
+      if (
+        interceptor.status ===
+        "PURSUIT"
+      ) {
+        const needsLock =
+          interceptor.lockedInterceptPoint ===
+            null ||
+          simulation.simTimeSeconds >=
+            interceptor.lockExpiresAt;
+
+        if (
+          needsLock
+        ) {
+          lockInterceptSolution(
+            simulation,
+            interceptor,
+          );
+        }
+
+        const lockedTarget =
+          interceptor.lockedInterceptPoint ??
+          pursuitCapturePoint(
+            simulation,
+            interceptor,
+            12,
+          );
+
+        guidanceTarget =
+          lockedTarget;
+
+        interceptor.guidanceLocked =
+          true;
+
+        interceptor.mode =
+          "AI PURSUIT · LOCKED";
+
+        interceptor.slotErrorMeters =
+          null;
+
+        const targetError =
+          distanceBetween(
+            interceptor,
+            lockedTarget,
+          );
+
+        const transitionCondition =
+          separation <=
+            PURSUIT_CAPTURE_RANGE &&
+          targetError <=
+            PURSUIT_CAPTURE_POINT_ERROR;
+
+        interceptor.pursuitStableSeconds =
+          transitionCondition
+            ? interceptor.pursuitStableSeconds +
+              deltaSeconds
+            : Math.max(
+                0,
+                interceptor.pursuitStableSeconds -
+                  deltaSeconds *
+                    0.5,
+              );
+
+        if (
+          interceptor.pursuitStableSeconds >=
+          PURSUIT_CAPTURE_HOLD_SECONDS
+        ) {
+          interceptor.status =
+            "STAGING";
+
+          interceptor.mode =
+            "AI STAGING";
+
+          interceptor.guidanceLocked =
+            false;
+
+          interceptor.lockedInterceptPoint =
+            null;
+
+          interceptor.stagingStableSeconds =
+            0;
+
+          interceptor.pursuitStableSeconds =
+            0;
+        }
+      }
+
+      /* -----------------------------------------------------
+         STAGING
+
+         High-speed pursuit ends here.
+
+         Must:
+         - get behind intruder
+         - enter correct left/right lane
+         - match speed
+         - align heading
+         - prove final turn is feasible
+         ----------------------------------------------------- */
+
+      if (
+        interceptor.status ===
+        "STAGING"
+      ) {
+        guidanceTarget =
+          stagingSlotAt(
+            simulation,
+            interceptor,
+            0.6,
+          );
+
+        interceptor.mode =
+          "AI STAGING";
+
+        interceptor.guidanceLocked =
+          false;
+
+        interceptor.slotErrorMeters =
+          distanceBetween(
+            interceptor,
+            guidanceTarget,
+          );
+
+        const headingError =
+          headingAlignmentError(
+            interceptor,
+            simulation.intruder,
+          );
+
+        const speedDelta =
+          Math.abs(
+            interceptor.airspeed -
+              simulation.intruder
+                .airspeed,
+          );
+
+        const correctLane =
+          isCorrectApproachLane(
+            simulation,
+            interceptor,
+          );
+
+        const finalSlot =
+          finalShadowSlotAt(
+            simulation,
+            interceptor,
+            0.8,
+          );
+
+        const finalTurnFeasible =
+          turnToPointFeasible(
+            interceptor,
+            finalSlot,
+            34,
+          );
+
+        const safeSeparation =
+          separation >=
+          hardRadius +
+            45;
+
+        const stagingReady =
+          interceptor.slotErrorMeters <=
+            STAGING_POSITION_TOLERANCE &&
+          headingError <=
+            STAGING_HEADING_TOLERANCE &&
+          speedDelta <=
+            STAGING_SPEED_TOLERANCE &&
+          correctLane &&
+          finalTurnFeasible &&
+          safeSeparation;
+
+        interceptor.stagingStableSeconds =
+          stagingReady
+            ? interceptor.stagingStableSeconds +
+              deltaSeconds
+            : Math.max(
+                0,
+                interceptor.stagingStableSeconds -
+                  deltaSeconds *
+                    0.6,
+              );
+
+        if (
+          interceptor.stagingStableSeconds >=
+          STAGING_HOLD_SECONDS
+        ) {
+          interceptor.status =
+            "RENDEZVOUS";
+
+          interceptor.mode =
+            "AI RENDEZVOUS";
+
+          interceptor.slotStableSeconds =
+            0;
+
+          interceptor.stagingStableSeconds =
+            0;
+        }
+      }
+
+      /* -----------------------------------------------------
+         RENDEZVOUS
+
+         No high catch-up speed anymore.
+         ----------------------------------------------------- */
+
+      if (
+        interceptor.status ===
+        "RENDEZVOUS"
+      ) {
+        guidanceTarget =
+          finalShadowSlotAt(
+            simulation,
+            interceptor,
+            0.35,
+          );
+
+        interceptor.mode =
+          "AI RENDEZVOUS";
+
+        interceptor.guidanceLocked =
+          false;
+
+        interceptor.slotErrorMeters =
+          distanceBetween(
+            interceptor,
+            guidanceTarget,
+          );
+
+        const headingError =
+          headingAlignmentError(
+            interceptor,
+            simulation.intruder,
+          );
+
+        const speedDelta =
+          Math.abs(
+            interceptor.airspeed -
+              simulation.intruder
+                .airspeed,
+          );
+
+        const correctLane =
+          isCorrectApproachLane(
+            simulation,
+            interceptor,
+          );
+
+        const captured =
+          interceptor.slotErrorMeters <=
+            SLOT_CAPTURE_TOLERANCE &&
+          headingError <=
+            SLOT_HEADING_TOLERANCE &&
+          speedDelta <=
+            SLOT_SPEED_TOLERANCE &&
+          correctLane &&
+          separation >
+            hardRadius +
+              35;
+
+        interceptor.slotStableSeconds =
+          captured
+            ? interceptor.slotStableSeconds +
+              deltaSeconds
+            : Math.max(
+                0,
+                interceptor.slotStableSeconds -
+                  deltaSeconds *
+                    0.5,
+              );
+
+        if (
+          interceptor.slotStableSeconds >=
+          SLOT_CAPTURE_HOLD_SECONDS
+        ) {
+          interceptor.status =
+            "SHADOW";
+
+          interceptor.mode =
+            "AI SHADOW";
+
+          interceptor.shadowBreakSeconds =
+            0;
+        }
+      }
+
+      /* -----------------------------------------------------
+         SHADOW
+         ----------------------------------------------------- */
+
+      if (
+        interceptor.status ===
+        "SHADOW"
+      ) {
+        guidanceTarget =
+          finalShadowSlotAt(
+            simulation,
+            interceptor,
+            0,
+          );
 
         interceptor.mode =
           "AI SHADOW";
-      } else {
-        interceptor.status =
-          distanceToSlot <
-          250
-            ? "RENDEZVOUS"
-            : "DISPATCHED";
 
-        interceptor.mode =
-          "AI INTERCEPT";
+        interceptor.guidanceLocked =
+          false;
+
+        interceptor.slotErrorMeters =
+          distanceBetween(
+            interceptor,
+            guidanceTarget,
+          );
+
+        const headingError =
+          headingAlignmentError(
+            interceptor,
+            simulation.intruder,
+          );
+
+        const speedDelta =
+          Math.abs(
+            interceptor.airspeed -
+              simulation.intruder
+                .airspeed,
+          );
+
+        const broken =
+          interceptor.slotErrorMeters >
+            SLOT_BREAK_TOLERANCE ||
+          headingError >
+            24 ||
+          speedDelta >
+            9;
+
+        interceptor.shadowBreakSeconds =
+          broken
+            ? interceptor.shadowBreakSeconds +
+              deltaSeconds
+            : Math.max(
+                0,
+                interceptor.shadowBreakSeconds -
+                  deltaSeconds,
+              );
+
+        if (
+          interceptor.shadowBreakSeconds >=
+          SHADOW_BREAK_HOLD_SECONDS
+        ) {
+          /*
+           * Do not send it directly back to aggressive pursuit.
+           * Re-enter the staging corridor instead.
+           */
+          interceptor.status =
+            "STAGING";
+
+          interceptor.mode =
+            "AI STAGING";
+
+          interceptor.stagingStableSeconds =
+            0;
+
+          interceptor.slotStableSeconds =
+            0;
+
+          interceptor.shadowBreakSeconds =
+            0;
+        }
       }
 
-      steerAircraft(
+      /* -----------------------------------------------------
+         Resolve current target after possible phase changes
+         ----------------------------------------------------- */
+
+      if (
+        interceptor.status ===
+        "PURSUIT"
+      ) {
+        guidanceTarget =
+          interceptor.lockedInterceptPoint ??
+          pursuitCapturePoint(
+            simulation,
+            interceptor,
+            12,
+          );
+      } else if (
+        interceptor.status ===
+        "STAGING"
+      ) {
+        guidanceTarget =
+          stagingSlotAt(
+            simulation,
+            interceptor,
+            0.6,
+          );
+      } else if (
+        interceptor.status ===
+        "RENDEZVOUS"
+      ) {
+        guidanceTarget =
+          finalShadowSlotAt(
+            simulation,
+            interceptor,
+            0.35,
+          );
+      } else {
+        guidanceTarget =
+          finalShadowSlotAt(
+            simulation,
+            interceptor,
+            0,
+          );
+      }
+
+      const safeGuidanceTarget =
+        applyFleetAvoidance(
+          interceptor,
+          simulation.interceptors,
+          guidanceTarget,
+        );
+
+      targets[
+        interceptor.id
+      ] =
+        safeGuidanceTarget;
+
+      /* -----------------------------------------------------
+         Execute phase-specific guidance
+         ----------------------------------------------------- */
+
+      if (
+        interceptor.status ===
+        "PURSUIT"
+      ) {
+        interceptor.targetAirspeed =
+          pursuitSpeedCommand(
+            simulation,
+            interceptor,
+            safeGuidanceTarget,
+          );
+
+        stepFixedWingToPoint(
+          interceptor,
+          safeGuidanceTarget,
+          interceptor.targetAirspeed,
+          interceptor.speedLimitMps,
+          deltaSeconds,
+          42,
+        );
+      } else if (
+        interceptor.status ===
+        "STAGING"
+      ) {
+        stepMovingSlotTracking(
+          simulation,
+          interceptor,
+          safeGuidanceTarget,
+          deltaSeconds,
+          "STAGING",
+        );
+      } else if (
+        interceptor.status ===
+        "RENDEZVOUS"
+      ) {
+        stepMovingSlotTracking(
+          simulation,
+          interceptor,
+          safeGuidanceTarget,
+          deltaSeconds,
+          "RENDEZVOUS",
+        );
+      } else {
+        stepMovingSlotTracking(
+          simulation,
+          interceptor,
+          safeGuidanceTarget,
+          deltaSeconds,
+          "SHADOW",
+        );
+      }
+
+      updateEta(
+        simulation,
         interceptor,
-        safeTarget,
-        interceptor.targetAirspeed,
-        interceptor.speedLimitMps,
-        deltaSeconds,
-        12,
+        safeGuidanceTarget,
+      );
+
+      enforceHardTargetSeparation(
+        simulation,
+        interceptor,
       );
     },
   );
+
+  enforceFleetHardSeparation(
+    simulation,
+  );
+
+  simulation.formationTargets =
+    targets;
 }
 
 /* =========================================================
-   Containment Evaluation
+   Fleet State
    ========================================================= */
 
-function updateContainmentState(
+function updateFleetPhase(
   simulation:
     InternalSimulation,
+
+  deltaSeconds:
+    number,
 ) {
   if (
-    !simulation.interceptAuthorized
+    simulation.mode ===
+      "RTL" ||
+    simulation.mode ===
+      "ABORT"
   ) {
+    simulation.fleetPhase =
+      "RTL";
+
+    simulation.fleetStableSeconds =
+      0;
+
     return;
   }
 
-  const allInFormation =
-    simulation.interceptors.every(
+  if (
+    !simulation.interceptAuthorized
+  ) {
+    simulation.fleetPhase =
+      "STANDBY";
+
+    simulation.fleetStableSeconds =
+      0;
+
+    return;
+  }
+
+  const statuses =
+    simulation.interceptors.map(
       (
         interceptor,
-      ) => {
-        const target =
-          simulation.formationTargets[
-            interceptor.id
-          ];
-
-        if (
-          !target
-        ) {
-          return false;
-        }
-
-        return (
-          distanceBetween(
-            interceptor,
-            target,
-          ) <
-          90
-        );
-      },
+      ) =>
+        interceptor.status,
     );
 
   if (
-    allInFormation
+    statuses.some(
+      (
+        status,
+      ) =>
+        status ===
+        "RECOVERY",
+    )
   ) {
-    simulation.mode =
-      "SHADOW";
+    simulation.fleetPhase =
+      "RECOVERY";
 
-    simulation.alert = {
-      active:
-        true,
+    simulation.fleetStableSeconds =
+      0;
 
-      latched:
-        true,
-
-      phase:
-        "CONTAINED",
-
-      title:
-        "NON-CONTACT CONTAINMENT ESTABLISHED",
-
-      message:
-        "All four interceptors are established in predictive shadow formation.",
-    };
+    return;
   }
+
+  if (
+    statuses.every(
+      (
+        status,
+      ) =>
+        status ===
+        "SHADOW",
+    )
+  ) {
+    simulation.fleetPhase =
+      "FORMATION";
+
+    simulation.fleetStableSeconds +=
+      deltaSeconds;
+
+    if (
+      simulation.fleetStableSeconds >=
+      FLEET_STABLE_HOLD_SECONDS
+    ) {
+      simulation.fleetPhase =
+        "SHADOW";
+
+      simulation.mode =
+        "SHADOW";
+
+      simulation.alert = {
+        active:
+          true,
+
+        latched:
+          true,
+
+        phase:
+          "CONTAINED",
+
+        title:
+          "NON-CONTACT INTERCEPT ESTABLISHED",
+
+        message:
+          "All four interceptor UAVs remained stable in their assigned shadow slots.",
+      };
+    }
+
+    return;
+  }
+
+  simulation.fleetStableSeconds =
+    0;
+
+  if (
+    statuses.some(
+      (
+        status,
+      ) =>
+        status ===
+        "PURSUIT",
+    )
+  ) {
+    simulation.fleetPhase =
+      "PURSUIT";
+
+    return;
+  }
+
+  if (
+    statuses.some(
+      (
+        status,
+      ) =>
+        status ===
+        "STAGING",
+    )
+  ) {
+    simulation.fleetPhase =
+      "STAGING";
+
+    return;
+  }
+
+  if (
+    statuses.some(
+      (
+        status,
+      ) =>
+        status ===
+        "RENDEZVOUS",
+    )
+  ) {
+    simulation.fleetPhase =
+      "RENDEZVOUS";
+
+    return;
+  }
+
+  simulation.fleetPhase =
+    "FORMATION";
 }
 
 /* =========================================================
@@ -3455,13 +6252,15 @@ function sampleTrails(
   simulation.lastTrailSample =
     now;
 
-  simulation.intruderTrail.push({
-    x:
-      simulation.intruder.x,
+  simulation.intruderTrail.push(
+    {
+      x:
+        simulation.intruder.x,
 
-    y:
-      simulation.intruder.y,
-  });
+      y:
+        simulation.intruder.y,
+    },
+  );
 
   simulation.intruderTrail =
     simulation.intruderTrail.slice(
@@ -3478,13 +6277,15 @@ function sampleTrails(
         ] ??
         [];
 
-      trail.push({
-        x:
-          interceptor.x,
+      trail.push(
+        {
+          x:
+            interceptor.x,
 
-        y:
-          interceptor.y,
-      });
+          y:
+            interceptor.y,
+        },
+      );
 
       simulation.interceptorTrails[
         interceptor.id
@@ -3494,6 +6295,249 @@ function sampleTrails(
         );
     },
   );
+}
+
+/* =========================================================
+   AI Module Telemetry
+   ========================================================= */
+
+function buildAiModules(
+  simulation:
+    InternalSimulation,
+
+  cvError:
+    number | null,
+
+  ctrvError:
+    number | null,
+
+  learnedError:
+    number | null,
+
+  weights:
+    PredictorWeights,
+
+  validation:
+    MlValidationState,
+): AiModuleState[] {
+  const mlState:
+    AiModuleState["state"] =
+    validation.status ===
+    "VALIDATED"
+      ? "ACTIVE"
+      : validation.status ===
+          "REJECTED"
+        ? "REJECTED"
+        : simulation.neuralModel
+              .sampleCount >
+            0
+          ? "LEARNING"
+          : "WARMING";
+
+  return [
+    {
+      id:
+        "estimator",
+
+      label:
+        "State Estimator",
+
+      category:
+        "ALGORITHM",
+
+      state:
+        "ACTIVE",
+
+      detail:
+        "Position · airspeed · heading · bank · coordinated-turn state",
+    },
+
+    {
+      id:
+        "cv",
+
+      label:
+        "CV Baseline",
+
+      category:
+        "ALGORITHM",
+
+      state:
+        "ACTIVE",
+
+      detail:
+        cvError ===
+        null
+          ? "Collecting validation samples"
+          : `${cvError.toFixed(
+              1,
+            )} m rolling error`,
+    },
+
+    {
+      id:
+        "ctrv",
+
+      label:
+        "CTRV Turn Predictor",
+
+      category:
+        "ALGORITHM",
+
+      state:
+        "ACTIVE",
+
+      detail:
+        ctrvError ===
+        null
+          ? "Turn-aware predictor warming"
+          : `${ctrvError.toFixed(
+              1,
+            )} m rolling error`,
+    },
+
+    {
+      id:
+        "mlp",
+
+      label:
+        "Online Residual MLP",
+
+      category:
+        "ML",
+
+      state:
+        mlState,
+
+      detail:
+        learnedError ===
+        null
+          ? `8→10→2 residual network · ${simulation.neuralModel.sampleCount} trained samples`
+          : `8→10→2 residual network · ${simulation.neuralModel.sampleCount} samples · ${learnedError.toFixed(
+              1,
+            )} m rolling error`,
+    },
+
+    {
+      id:
+        "gate",
+
+      label:
+        "ML Validation Gate",
+
+      category:
+        "ML",
+
+      state:
+        mlState,
+
+      detail:
+        validation.reason,
+    },
+
+    {
+      id:
+        "ensemble",
+
+      label:
+        "Bounded Predictor Ensemble",
+
+      category:
+        "ML",
+
+      state:
+        validation.status ===
+        "VALIDATED"
+          ? "ACTIVE"
+          : "WARMING",
+
+      detail:
+        `CV ${Math.round(
+          weights.cv *
+            100,
+        )}% · CTRV ${Math.round(
+          weights.ctrv *
+            100,
+        )}% · MLP ${Math.round(
+          weights.learned *
+            100,
+        )}%`,
+    },
+
+    {
+      id:
+        "lead",
+
+      label:
+        "Locked Lead Planner",
+
+      category:
+        "ALGORITHM",
+
+      state:
+        simulation.interceptAuthorized
+          ? "ACTIVE"
+          : "STANDBY",
+
+      detail:
+        "Searches feasible future capture points and locks the solution between replans.",
+    },
+
+    {
+      id:
+        "curvature",
+
+      label:
+        "Turn-Feasibility Planner",
+
+      category:
+        "ALGORITHM",
+
+      state:
+        simulation.interceptAuthorized
+          ? "ACTIVE"
+          : "STANDBY",
+
+      detail:
+        "Uses bank, airspeed and minimum turn radius before commanding approach geometry.",
+    },
+
+    {
+      id:
+        "staging",
+
+      label:
+        "Aft Staging Gate",
+
+      category:
+        "ALGORITHM",
+
+      state:
+        simulation.interceptAuthorized
+          ? "ACTIVE"
+          : "STANDBY",
+
+      detail:
+        `Requires aft position, correct lane, ≤${STAGING_HEADING_TOLERANCE}° heading error and ≤${STAGING_SPEED_TOLERANCE} m/s speed delta before rendezvous.`,
+    },
+
+    {
+      id:
+        "safety",
+
+      label:
+        "Deterministic Safety Barrier",
+
+      category:
+        "ALGORITHM",
+
+      state:
+        "ACTIVE",
+
+      detail:
+        `${simulation.minimumSeparationMeters + HARD_SAFETY_MARGIN} m hard non-contact barrier`,
+    },
+  ];
 }
 
 /* =========================================================
@@ -3515,25 +6559,32 @@ function createSnapshot(
         ),
     );
 
-  const nearestSeparationMeters =
-    simulation.interceptAuthorized
+  const nearest =
+    separations.length >
+    0
       ? Math.min(
           ...separations,
         )
       : null;
 
+  const nearestIndex =
+    nearest ===
+    null
+      ? -1
+      : separations.indexOf(
+          nearest,
+        );
+
   const nearestInterceptor =
-    simulation.interceptAuthorized
+    nearestIndex >=
+    0
       ? simulation.interceptors[
-          separations.indexOf(
-            Math.min(
-              ...separations,
-            ),
-          )
+          nearestIndex
         ]
       : undefined;
 
-  const closingRateMps =
+  const closingRate =
+    simulation.interceptAuthorized &&
     nearestInterceptor
       ? calculateClosingRate(
           simulation.intruder,
@@ -3541,7 +6592,7 @@ function createSnapshot(
         )
       : null;
 
-  const closestPredictions =
+  const closestApproaches =
     simulation.interceptAuthorized
       ? simulation.interceptors.map(
           (
@@ -3550,69 +6601,16 @@ function createSnapshot(
             predictClosestApproach(
               simulation.intruder,
               interceptor,
+              6,
             ),
         )
       : [];
 
-  const predictedClosestSeparationMeters =
-    closestPredictions.length >
+  const predictedClosest =
+    closestApproaches.length >
     0
       ? Math.min(
-          ...closestPredictions,
-        )
-      : null;
-
-  const anticipatorySafetyGate =
-    predictedClosestSeparationMeters !==
-      null &&
-    predictedClosestSeparationMeters <
-      simulation.minimumSeparationMeters +
-        15;
-
-  const formationEtas =
-    simulation.interceptAuthorized
-      ? simulation.interceptors.map(
-          (
-            interceptor,
-          ) => {
-            const target =
-              simulation.formationTargets[
-                interceptor.id
-              ];
-
-            if (
-              !target
-            ) {
-              return 0;
-            }
-
-            const remaining =
-              distanceBetween(
-                interceptor,
-                target,
-              );
-
-            const excessSpeed =
-              Math.max(
-                6,
-                interceptor.targetAirspeed -
-                  simulation.intruder
-                    .airspeed,
-              );
-
-            return (
-              remaining /
-              excessSpeed
-            );
-          },
-        )
-      : [];
-
-  const etaSeconds =
-    formationEtas.length >
-    0
-      ? Math.max(
-          ...formationEtas,
+          ...closestApproaches,
         )
       : null;
 
@@ -3636,7 +6634,25 @@ function createSnapshot(
       simulation.errors.adaptive,
     );
 
-  const improvementPercent =
+  const validation =
+    evaluateMlValidation(
+      simulation.errors,
+      simulation.neuralModel
+        .sampleCount,
+    );
+
+  const weights =
+    predictorWeights(
+      simulation.errors,
+      simulation.neuralModel
+        .sampleCount,
+    );
+
+  const validationSamples =
+    simulation.errors.adaptive
+      .length;
+
+  const adaptiveImprovement =
     cvError !==
         null &&
       adaptiveError !==
@@ -3653,64 +6669,71 @@ function createSnapshot(
         100
       : null;
 
-  const weights =
-    predictorWeights(
-      simulation.errors,
-    );
-
-  const maximumWeight =
-    Math.max(
-      weights.cv,
-      weights.ctrv,
-      weights.learned,
-    );
-
   const selectedPredictor:
     | "CV"
     | "CTRV"
     | "ADAPTIVE" =
-    maximumWeight ===
-    weights.cv
+    simulation.predictorMode ===
+    "baseline"
       ? "CV"
-      : maximumWeight ===
-          weights.ctrv
-        ? "CTRV"
-        : "ADAPTIVE";
-
-  const validationSamples =
-    simulation.errors.adaptive
-      .length;
-
-  const sampleConfidence =
-    clamp(
-      validationSamples /
-        20,
-      0,
-      1,
-    );
-
-  const qualityConfidence =
-    adaptiveError ===
-    null
-      ? 0.35
-      : clamp(
-          1 -
-            adaptiveError /
-              120,
-          0.25,
-          1,
-        );
+      : weights.learned >
+          0
+        ? "ADAPTIVE"
+        : weights.ctrv >=
+            weights.cv
+          ? "CTRV"
+          : "CV";
 
   const confidence =
-    clamp(
-      0.4 +
-        sampleConfidence *
-          0.3 +
-        qualityConfidence *
-          0.3,
-      0.4,
-      0.97,
-    );
+    validation.status ===
+      "VALIDATED" &&
+    validation.improvementPercent !==
+      null
+      ? clamp(
+          0.55 +
+            clamp(
+              validation.improvementPercent /
+                30,
+              0,
+              1,
+            ) *
+              0.2 +
+            clamp(
+              validationSamples /
+                40,
+              0,
+              1,
+            ) *
+              0.15,
+          0,
+          0.9,
+        )
+      : 0;
+
+  const etaValues =
+    simulation.interceptors
+      .filter(
+        (
+          interceptor,
+        ) =>
+          interceptor.assigned &&
+          interceptor.etaSeconds !==
+            null,
+      )
+      .map(
+        (
+          interceptor,
+        ) =>
+          interceptor.etaSeconds as number,
+      );
+
+  const eta =
+    etaValues.length >
+    0
+      ? Math.max(
+          ...etaValues,
+        )
+      : null;
 
   return {
     running:
@@ -3718,6 +6741,12 @@ function createSnapshot(
 
     mode:
       simulation.mode,
+
+    fleetPhase:
+      simulation.fleetPhase,
+
+    fleetStableSeconds:
+      simulation.fleetStableSeconds,
 
     predictorMode:
       simulation.predictorMode,
@@ -3855,11 +6884,16 @@ function createSnapshot(
         ),
       ),
 
-    nearestSeparationMeters,
+    nearestSeparationMeters:
+      simulation.interceptAuthorized
+        ? nearest
+        : null,
 
-    closingRateMps,
+    closingRateMps:
+      closingRate,
 
-    etaSeconds,
+    etaSeconds:
+      eta,
 
     desiredSeparationMeters:
       simulation.desiredSeparationMeters,
@@ -3868,18 +6902,30 @@ function createSnapshot(
       simulation.minimumSeparationMeters,
 
     separationSafe:
-      nearestSeparationMeters ===
+      nearest ===
         null ||
-      nearestSeparationMeters >=
-        simulation.minimumSeparationMeters,
+      nearest >=
+        simulation.minimumSeparationMeters +
+          HARD_SAFETY_MARGIN,
 
-    predictedClosestSeparationMeters,
+    predictedClosestSeparationMeters:
+      predictedClosest,
 
-    anticipatorySafetyGate,
+    anticipatorySafetyGate:
+      simulation.interceptors.some(
+        (
+          interceptor,
+        ) =>
+          interceptor.status ===
+          "RECOVERY",
+      ),
+
+    mlValidation:
+      validation,
 
     ai: {
       model:
-        "CV + CTRV + Online Residual Ensemble",
+        "CV + CTRV + Validation-Gated Online Residual MLP",
 
       selectedPredictor,
 
@@ -3893,14 +6939,24 @@ function createSnapshot(
         0,
 
       ready:
-        validationSamples >=
-        5,
+        validation.status ===
+        "VALIDATED",
 
       trainingSamples:
-        simulation.residualModel
+        simulation.neuralModel
           .sampleCount,
 
       weights,
+
+      modules:
+        buildAiModules(
+          simulation,
+          cvError,
+          ctrvError,
+          learnedError,
+          weights,
+          validation,
+        ),
     },
 
     performance: {
@@ -3916,7 +6972,8 @@ function createSnapshot(
       mlErrorMeters:
         adaptiveError,
 
-      improvementPercent,
+      improvementPercent:
+        adaptiveImprovement,
 
       validationSamples,
     },
@@ -3940,10 +6997,6 @@ function createSnapshot(
    ========================================================= */
 
 export function useInterceptSimulation() {
-  /*
-   * Important for randomized mission plans:
-   * create the simulation only once per component mount.
-   */
   const simulationRef =
     useRef<
       InternalSimulation |
@@ -4057,8 +7110,9 @@ export function useInterceptSimulation() {
             deltaSeconds,
           );
 
-          updateContainmentState(
+          updateFleetPhase(
             simulation,
+            deltaSeconds,
           );
 
           sampleTrails(
@@ -4089,11 +7143,10 @@ export function useInterceptSimulation() {
           frame,
         );
 
-      return () => {
+      return () =>
         cancelAnimationFrame(
           frameId,
         );
-      };
     },
     [
       publish,
@@ -4242,8 +7295,8 @@ export function useInterceptSimulation() {
         simulationRef.current.desiredSeparationMeters =
           clamp(
             value,
-            140,
-            350,
+            220,
+            420,
           );
 
         publish();
@@ -4294,6 +7347,12 @@ export function useInterceptSimulation() {
         simulation.mode =
           "INTERCEPT";
 
+        simulation.fleetPhase =
+          "PURSUIT";
+
+        simulation.fleetStableSeconds =
+          0;
+
         simulation.interceptors.forEach(
           (
             interceptor,
@@ -4302,10 +7361,34 @@ export function useInterceptSimulation() {
               true;
 
             interceptor.status =
-              "DISPATCHED";
+              "PURSUIT";
 
             interceptor.mode =
-              "AI INTERCEPT";
+              "AI PURSUIT · ACQUIRING LOCK";
+
+            interceptor.guidanceLocked =
+              false;
+
+            interceptor.lockedInterceptPoint =
+              null;
+
+            interceptor.pursuitStableSeconds =
+              0;
+
+            interceptor.stagingStableSeconds =
+              0;
+
+            interceptor.slotStableSeconds =
+              0;
+
+            interceptor.shadowBreakSeconds =
+              0;
+
+            interceptor.recoveryClearSeconds =
+              0;
+
+            interceptor.etaSeconds =
+              null;
           },
         );
 
@@ -4323,7 +7406,7 @@ export function useInterceptSimulation() {
             "FOUR-UAV RESPONSE ACTIVE",
 
           message:
-            "Operator authorized all four interceptors for predictive non-contact rendezvous.",
+            "Locked predictive interception authorized. Pursuit and curvature-safe staging are active.",
         };
 
         publish();
@@ -4367,6 +7450,9 @@ export function useInterceptSimulation() {
         simulationRef.current.interceptAuthorized =
           false;
 
+        simulationRef.current.fleetPhase =
+          "RTL";
+
         publish();
       },
       [
@@ -4388,6 +7474,9 @@ export function useInterceptSimulation() {
 
         simulationRef.current.interceptAuthorized =
           false;
+
+        simulationRef.current.fleetPhase =
+          "RTL";
 
         publish();
       },
@@ -4420,24 +7509,50 @@ export function useInterceptSimulation() {
 
         startTracking: () => {
           if (
-            simulationRef.current
+            !simulationRef.current
           ) {
-            simulationRef.current.mode =
-              "TRACK";
-
-            publish();
+            return;
           }
+
+          simulationRef.current.mode =
+            "TRACK";
+
+          publish();
         },
 
         shadow: () => {
-          if (
-            simulationRef.current
-          ) {
-            simulationRef.current.mode =
-              "SHADOW";
+          const simulation =
+            simulationRef.current;
 
-            publish();
+          if (
+            !simulation ||
+            !simulation.interceptAuthorized
+          ) {
+            return;
           }
+
+          const allShadow =
+            simulation.interceptors.every(
+              (
+                interceptor,
+              ) =>
+                interceptor.status ===
+                "SHADOW",
+            );
+
+          if (
+            !allShadow
+          ) {
+            return;
+          }
+
+          simulation.mode =
+            "SHADOW";
+
+          simulation.fleetPhase =
+            "SHADOW";
+
+          publish();
         },
 
         hold,
@@ -4448,13 +7563,15 @@ export function useInterceptSimulation() {
 
         idle: () => {
           if (
-            simulationRef.current
+            !simulationRef.current
           ) {
-            simulationRef.current.mode =
-              "IDLE";
-
-            publish();
+            return;
           }
+
+          simulationRef.current.mode =
+            "IDLE";
+
+          publish();
         },
       }),
       [
