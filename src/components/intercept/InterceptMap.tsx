@@ -21,15 +21,10 @@ import L, {
 import "leaflet/dist/leaflet.css";
 
 import type {
-  DefenseSector,
   InterceptorState,
   InterceptSnapshot,
   Vector2,
 } from "../../hooks/useInterceptSimulation";
-
-/* =========================================================
-   Types
-   ========================================================= */
 
 type InterceptMapProps = {
   snapshot:
@@ -43,18 +38,13 @@ type InterceptMapProps = {
 
 type BaseMapMode =
   | "satellite"
-  | "osm"
-  | "hot";
+  | "osm";
 
 type FollowMode =
   | "network"
-  | "intruder"
-  | "assigned"
+  | "target"
+  | "response"
   | "free";
-
-/* =========================================================
-   Map Configuration
-   ========================================================= */
 
 const DEFAULT_ORIGIN = {
   lat:
@@ -66,10 +56,7 @@ const DEFAULT_ORIGIN = {
 
 const colors = {
   intruder:
-    "#FF375F",
-
-  interceptor:
-    "#00D9FF",
+    "#FF315A",
 
   cv:
     "#FFFFFF",
@@ -78,22 +65,22 @@ const colors = {
     "#D77DFF",
 
   adaptive:
-    "#A7FF4F",
+    "#A8FF4F",
 
   guidance:
-    "#FFD166",
+    "#FFE66D",
+
+  perimeter:
+    "#5BFF8A",
+
+  critical:
+    "#FF315A",
 
   safety:
-    "#FF4D9D",
+    "#FF42A1",
 
   shadow:
     "#FFB84D",
-
-  nominal:
-    "#59D99A",
-
-  background:
-    "#030405",
 };
 
 const baseMaps:
@@ -119,18 +106,10 @@ const baseMaps:
     attribution:
       "© OpenStreetMap contributors",
   },
-
-  hot: {
-    url:
-      "https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png",
-
-    attribution:
-      "© OpenStreetMap contributors · HOT",
-  },
 };
 
 /* =========================================================
-   Geographic Conversion
+   Coordinate Conversion
    ========================================================= */
 
 function enuToLatLng(
@@ -172,7 +151,7 @@ function enuToLatLng(
   ];
 }
 
-function toLatLngArray(
+function convertPoints(
   points:
     Vector2[],
 
@@ -180,7 +159,7 @@ function toLatLngArray(
     lat: number;
     lng: number;
   },
-): L.LatLngTuple[] {
+) {
   return points.map(
     (
       point,
@@ -193,52 +172,51 @@ function toLatLngArray(
 }
 
 /* =========================================================
-   Aircraft Marker
+   Aircraft Icon
    ========================================================= */
 
-function createAircraftIcon(
+function aircraftIcon(
+  aircraft:
+    InterceptorState |
+    InterceptSnapshot["intruder"],
+
   kind:
     | "intruder"
     | "interceptor",
 
-  heading:
-    number,
-
-  label:
+  color:
     string,
 
-  accent:
-    string,
-
-  assigned =
+  emphasized =
     false,
 ) {
-  const markerSize =
+  const label =
     kind ===
     "intruder"
-      ? 46
-      : 42;
+      ? "INTRUDER"
+      : aircraft.callsign;
 
-  const ringColor =
+  const size =
     kind ===
     "intruder"
-      ? colors.intruder
-      : accent;
+      ? 48
+      : emphasized
+        ? 46
+        : 40;
 
   return L.divIcon({
     className:
       "",
 
     iconSize: [
-      markerSize,
-      markerSize,
+      size,
+      size,
     ],
 
     iconAnchor: [
-      markerSize /
+      size /
         2,
-
-      markerSize /
+      size /
         2,
     ],
 
@@ -246,8 +224,8 @@ function createAircraftIcon(
       <div
         style="
           position:relative;
-          width:${markerSize}px;
-          height:${markerSize}px;
+          width:${size}px;
+          height:${size}px;
           display:flex;
           align-items:center;
           justify-content:center;
@@ -259,32 +237,30 @@ function createAircraftIcon(
             position:absolute;
             inset:1px;
             border-radius:999px;
-            border:${assigned ? 2 : 1}px solid ${ringColor};
-            background:rgba(3,4,5,0.94);
+            border:${emphasized ? 2.5 : 2}px solid ${color};
+            background:rgba(3,4,5,0.96);
             box-shadow:
-              0 0 0 ${assigned ? 5 : 3}px ${ringColor}18,
-              0 0 ${assigned ? 24 : 16}px ${ringColor}aa;
+              0 0 0 5px ${color}18,
+              0 0 ${emphasized ? 28 : 20}px ${color}cc;
           "
         ></div>
 
         <div
           style="
             position:relative;
-            width:25px;
-            height:25px;
-            transform:rotate(${heading}deg);
+            width:26px;
+            height:26px;
+            transform:rotate(${aircraft.heading}deg);
           "
         >
           <div
             style="
               position:absolute;
-              left:9px;
               top:0;
-              width:0;
-              height:0;
-              border-left:3.5px solid transparent;
-              border-right:3.5px solid transparent;
-              border-bottom:17px solid ${ringColor};
+              left:9px;
+              border-left:4px solid transparent;
+              border-right:4px solid transparent;
+              border-bottom:18px solid ${color};
             "
           ></div>
 
@@ -292,11 +268,11 @@ function createAircraftIcon(
             style="
               position:absolute;
               left:0;
-              top:11px;
-              width:25px;
+              top:12px;
+              width:26px;
               height:3px;
               border-radius:999px;
-              background:${ringColor};
+              background:${color};
             "
           ></div>
         </div>
@@ -304,17 +280,17 @@ function createAircraftIcon(
         <div
           style="
             position:absolute;
+            top:${size + 3}px;
             left:50%;
-            top:${markerSize + 3}px;
             transform:translateX(-50%);
             white-space:nowrap;
-            padding:2px 5px;
+            border:1px solid ${color}88;
             border-radius:3px;
-            background:rgba(3,4,5,0.90);
-            border:1px solid ${ringColor}66;
-            color:${ringColor};
+            background:rgba(3,4,5,0.95);
+            padding:2px 5px;
+            color:${color};
             font:700 10px 'JetBrains Mono',monospace;
-            box-shadow:0 3px 8px rgba(0,0,0,0.65);
+            box-shadow:0 4px 10px rgba(0,0,0,0.7);
           "
         >
           ${label}
@@ -324,56 +300,48 @@ function createAircraftIcon(
   });
 }
 
-/* =========================================================
-   Station Marker
-   ========================================================= */
-
-function createStationIcon(
-  sector:
-    DefenseSector,
+function stationIcon(
+  interceptor:
+    InterceptorState,
 ) {
   return L.divIcon({
     className:
       "",
 
     iconSize: [
-      30,
-      30,
+      28,
+      28,
     ],
 
     iconAnchor: [
-      15,
-      15,
+      14,
+      14,
     ],
 
     html: `
       <div
         style="
-          width:30px;
-          height:30px;
+          width:28px;
+          height:28px;
           display:flex;
           align-items:center;
           justify-content:center;
-          border-radius:5px;
-          border:2px solid ${sector.active ? "#FF375F" : sector.color};
-          background:rgba(3,4,5,0.94);
-          box-shadow:0 0 14px ${
-            sector.active
-              ? "#FF375F"
-              : sector.color
-          }66;
-          color:${sector.active ? "#FF375F" : sector.color};
+          border:2px solid ${interceptor.color};
+          border-radius:4px;
+          background:rgba(3,4,5,0.95);
+          color:${interceptor.color};
+          box-shadow:0 0 13px ${interceptor.color}77;
           font:700 10px 'JetBrains Mono',monospace;
         "
       >
-        D${sector.interceptorId}
+        ${interceptor.id}
       </div>
     `,
   });
 }
 
 /* =========================================================
-   Compact Control Button
+   UI Button
    ========================================================= */
 
 function MapButton({
@@ -381,14 +349,9 @@ function MapButton({
   active = false,
   onClick,
 }: {
-  label:
-    string;
-
-  active?:
-    boolean;
-
-  onClick:
-    () => void;
+  label: string;
+  active?: boolean;
+  onClick: () => void;
 }) {
   return (
     <button
@@ -398,14 +361,12 @@ function MapButton({
       }
       className={[
         "h-8 rounded-[4px] border px-2.5",
-
-        "font-mono text-[13px] font-medium",
-
+        "font-mono text-[12px] font-medium",
         "transition-colors",
 
         active
           ? "border-[rgba(90,169,255,0.38)] bg-[rgba(90,169,255,0.08)] text-[#8FC7FF]"
-          : "border-white/[0.08] bg-[#030405] text-white/58 hover:border-white/[0.16] hover:text-white",
+          : "border-white/[0.08] bg-[#030405] text-white/56 hover:border-white/[0.16] hover:text-white",
       ].join(" ")}
     >
       {label}
@@ -414,7 +375,7 @@ function MapButton({
 }
 
 /* =========================================================
-   Main
+   Component
    ========================================================= */
 
 export function InterceptMap({
@@ -446,7 +407,7 @@ export function InterceptMap({
       null
     >(null);
 
-  const interceptorMarkerRefs =
+  const interceptorMarkersRef =
     useRef<
       Record<
         number,
@@ -454,21 +415,33 @@ export function InterceptMap({
       >
     >({});
 
-  const stationMarkerRefs =
+  const stationMarkersRef =
     useRef<
       Record<
-        string,
+        number,
         L.Marker
       >
     >({});
 
-  const sectorCircleRefs =
+  const perimeterRef =
+    useRef<
+      L.Polygon |
+      null
+    >(null);
+
+  const criticalZoneRefs =
     useRef<
       Record<
         string,
-        L.Circle
+        L.Polygon
       >
     >({});
+
+  const flightPlanRef =
+    useRef<
+      L.Polyline |
+      null
+    >(null);
 
   const intruderTrailRef =
     useRef<
@@ -484,43 +457,47 @@ export function InterceptMap({
       >
     >({});
 
-  const baselinePathRef =
+  const cvRef =
     useRef<
       L.Polyline |
       null
     >(null);
 
-  const ctrvPathRef =
+  const ctrvRef =
     useRef<
       L.Polyline |
       null
     >(null);
 
-  const adaptivePathRef =
+  const aiRef =
     useRef<
       L.Polyline |
       null
     >(null);
 
-  const guidanceLineRef =
+  const formationTargetRefs =
     useRef<
-      L.Polyline |
-      null
-    >(null);
+      Record<
+        number,
+        L.CircleMarker
+      >
+    >({});
 
-  const guidanceTargetRef =
+  const guidanceLineRefs =
     useRef<
-      L.CircleMarker |
-      null
-    >(null);
+      Record<
+        number,
+        L.Polyline
+      >
+    >({});
 
-  const desiredSeparationRef =
+  const safetyCircleRef =
     useRef<
       L.Circle |
       null
     >(null);
 
-  const safetySeparationRef =
+  const shadowCircleRef =
     useRef<
       L.Circle |
       null
@@ -543,48 +520,16 @@ export function InterceptMap({
     );
 
   const [
-    showZones,
-    setShowZones,
+    showFlightPlan,
+    setShowFlightPlan,
   ] =
     useState(
       true,
     );
 
   const [
-    showStations,
-    setShowStations,
-  ] =
-    useState(
-      true,
-    );
-
-  const [
-    showTrails,
-    setShowTrails,
-  ] =
-    useState(
-      true,
-    );
-
-  const [
-    showCv,
-    setShowCv,
-  ] =
-    useState(
-      true,
-    );
-
-  const [
-    showCtrv,
-    setShowCtrv,
-  ] =
-    useState(
-      true,
-    );
-
-  const [
-    showAdaptive,
-    setShowAdaptive,
+    showPrediction,
+    setShowPrediction,
   ] =
     useState(
       true,
@@ -622,39 +567,46 @@ export function InterceptMap({
 
         const stations =
           Object.fromEntries(
-            snapshot.sectors.map(
+            snapshot.interceptors.map(
               (
-                sector,
+                interceptor,
               ) => [
-                sector.id,
+                interceptor.id,
 
                 enuToLatLng(
-                  sector.station,
+                  interceptor.station,
                   origin,
                 ),
               ],
             ),
           ) as Record<
-            string,
+            number,
             L.LatLngTuple
           >;
 
-        const centers =
+        const formationTargets =
           Object.fromEntries(
-            snapshot.sectors.map(
+            Object.entries(
+              snapshot.formationTargets,
+            ).map(
               (
-                sector,
+                [
+                  key,
+                  target,
+                ],
               ) => [
-                sector.id,
+                Number(
+                  key,
+                ),
 
                 enuToLatLng(
-                  sector.center,
+                  target,
                   origin,
                 ),
               ],
             ),
           ) as Record<
-            string,
+            number,
             L.LatLngTuple
           >;
 
@@ -669,10 +621,22 @@ export function InterceptMap({
 
           stations,
 
-          centers,
+          formationTargets,
+
+          perimeter:
+            convertPoints(
+              snapshot.perimeter,
+              origin,
+            ),
+
+          flightPlan:
+            convertPoints(
+              snapshot.intruderFlightPlan,
+              origin,
+            ),
 
           intruderTrail:
-            toLatLngArray(
+            convertPoints(
               snapshot.intruderTrail,
               origin,
             ),
@@ -692,7 +656,7 @@ export function InterceptMap({
                     key,
                   ),
 
-                  toLatLngArray(
+                  convertPoints(
                     trail,
                     origin,
                   ),
@@ -704,27 +668,36 @@ export function InterceptMap({
             >,
 
           baseline:
-            toLatLngArray(
+            convertPoints(
               snapshot.baselinePath,
               origin,
             ),
 
           ctrv:
-            toLatLngArray(
+            convertPoints(
               snapshot.ctrvPath,
               origin,
             ),
 
           adaptive:
-            toLatLngArray(
+            convertPoints(
               snapshot.mlPath,
               origin,
             ),
 
-          guidance:
-            enuToLatLng(
-              snapshot.guidanceTarget,
-              origin,
+          criticalZones:
+            snapshot.criticalZones.map(
+              (
+                zone,
+              ) => ({
+                ...zone,
+
+                convertedPoints:
+                  convertPoints(
+                    zone.points,
+                    origin,
+                  ),
+              }),
             ),
         };
       },
@@ -736,7 +709,7 @@ export function InterceptMap({
     );
 
   /* =======================================================
-     Initialize
+     Initialization
      ======================================================= */
 
   useEffect(
@@ -774,9 +747,6 @@ export function InterceptMap({
 
             preferCanvas:
               true,
-
-            worldCopyJump:
-              false,
           },
         );
 
@@ -799,238 +769,139 @@ export function InterceptMap({
           map,
         );
 
-      /* ===============================================
-         Attribution
-         =============================================== */
+      /* Large monitored boundary */
 
-      const styleAttribution =
-        () => {
-          const element =
-            containerRef.current
-              ?.querySelector(
-                ".leaflet-control-attribution",
-              ) as
-              | HTMLElement
-              | null;
+      perimeterRef.current =
+        L.polygon(
+          positions.perimeter,
+          {
+            color:
+              colors.perimeter,
 
-          if (
-            !element
-          ) {
-            return;
-          }
+            weight:
+              3.5,
 
-          element.style.fontSize =
-            "13px";
+            opacity:
+              1,
 
-          element.style.lineHeight =
-            "1.35";
+            dashArray:
+              "10 9",
 
-          element.style.padding =
-            "4px 7px";
+            fillColor:
+              colors.perimeter,
 
-          element.style.background =
-            "rgba(5,6,13,0.86)";
+            fillOpacity:
+              0.025,
 
-          element.style.color =
-            "rgba(255,255,255,0.76)";
+            className:
+              "mn-perimeter-path",
+          },
+        )
+          .bindTooltip(
+            "MONITORED AIRSPACE",
+            {
+              sticky:
+                true,
+            },
+          )
+          .addTo(
+            map,
+          );
 
-          element
-            .querySelectorAll(
-              "a",
-            )
-            .forEach(
-              (
-                link,
-              ) => {
-                const anchor =
-                  link as HTMLElement;
+      /* Critical infrastructure zones */
 
-                anchor.style.color =
-                  "#9CCAFF";
+      positions.criticalZones.forEach(
+        (
+          zone,
+        ) => {
+          criticalZoneRefs.current[
+            zone.id
+          ] =
+            L.polygon(
+              zone.convertedPoints,
+              {
+                color:
+                  colors.critical,
 
-                anchor.style.fontSize =
-                  "13px";
+                weight:
+                  3.5,
+
+                opacity:
+                  1,
+
+                dashArray:
+                  "8 6",
+
+                fillColor:
+                  colors.critical,
+
+                fillOpacity:
+                  zone.active
+                    ? 0.18
+                    : 0.09,
+
+                className:
+                  "mn-critical-path",
               },
-            );
-        };
+            )
+              .bindTooltip(
+                `<strong>${zone.label}</strong><br/>${zone.subtitle}`,
+                {
+                  sticky:
+                    true,
+                },
+              )
+              .addTo(
+                map,
+              );
+        },
+      );
 
-      styleAttribution();
+      /* Planned intruder route */
 
-      const attributionTimer =
-        window.setTimeout(
-          styleAttribution,
-          120,
+      flightPlanRef.current =
+        L.polyline(
+          positions.flightPlan,
+          {
+            color:
+              "#FFD166",
+
+            weight:
+              2.5,
+
+            opacity:
+              0.6,
+
+            dashArray:
+              "9 8",
+
+            className:
+              "mn-glow-path",
+          },
+        ).addTo(
+          map,
         );
 
-      /* ===============================================
-         Intruder
-         =============================================== */
+      /* Intruder */
 
       intruderMarkerRef.current =
         L.marker(
           positions.intruder,
           {
             icon:
-              createAircraftIcon(
+              aircraftIcon(
+                snapshot.intruder,
                 "intruder",
-                snapshot.intruder
-                  .heading,
-                "INTRUDER",
                 colors.intruder,
+                true,
               ),
 
             zIndexOffset:
-              2000,
+              2200,
           },
         ).addTo(
           map,
         );
-
-      /* ===============================================
-         Interceptors
-         =============================================== */
-
-      snapshot.interceptors.forEach(
-        (
-          interceptor,
-        ) => {
-          const sector =
-            snapshot.sectors.find(
-              (
-                item,
-              ) =>
-                item.interceptorId ===
-                interceptor.id,
-            );
-
-          const accent =
-            sector?.color ??
-            colors.interceptor;
-
-          interceptorMarkerRefs.current[
-            interceptor.id
-          ] =
-            L.marker(
-              positions.interceptors[
-                interceptor.id
-              ],
-              {
-                icon:
-                  createAircraftIcon(
-                    "interceptor",
-                    interceptor.heading,
-                    `INT-${interceptor.id}`,
-                    accent,
-                    interceptor.assigned,
-                  ),
-
-                zIndexOffset:
-                  interceptor.assigned
-                    ? 1900
-                    : 1200,
-              },
-            ).addTo(
-              map,
-            );
-        },
-      );
-
-      /* ===============================================
-         Defence Sectors + Stations
-         =============================================== */
-
-      snapshot.sectors.forEach(
-        (
-          sector,
-        ) => {
-          sectorCircleRefs.current[
-            sector.id
-          ] =
-            L.circle(
-              positions.centers[
-                sector.id
-              ],
-              {
-                radius:
-                  sector.radiusMeters,
-
-                color:
-                  sector.active
-                    ? colors.intruder
-                    : sector.color,
-
-                weight:
-                  sector.active
-                    ? 3
-                    : 2,
-
-                opacity:
-                  sector.active
-                    ? 1
-                    : 0.82,
-
-                fillColor:
-                  sector.active
-                    ? colors.intruder
-                    : sector.color,
-
-                fillOpacity:
-                  sector.active
-                    ? 0.12
-                    : 0.045,
-
-                dashArray:
-                  sector.active
-                    ? "10 5"
-                    : "6 7",
-
-                className:
-                  "mn-zone-path",
-              },
-            )
-              .bindTooltip(
-                `DEFENCE ${sector.label}`,
-                {
-                  direction:
-                    "center",
-
-                  permanent:
-                    false,
-                },
-              )
-              .addTo(
-                map,
-              );
-
-          stationMarkerRefs.current[
-            sector.id
-          ] =
-            L.marker(
-              positions.stations[
-                sector.id
-              ],
-              {
-                icon:
-                  createStationIcon(
-                    sector,
-                  ),
-
-                zIndexOffset:
-                  1000,
-              },
-            )
-              .bindTooltip(
-                `Station ${sector.interceptorId} · ${sector.label}`,
-              )
-              .addTo(
-                map,
-              );
-        },
-      );
-
-      /* ===============================================
-         Trails
-         =============================================== */
 
       intruderTrailRef.current =
         L.polyline(
@@ -1040,30 +911,72 @@ export function InterceptMap({
               colors.intruder,
 
             weight:
-              4,
+              4.5,
 
             opacity:
-              0.98,
+              1,
 
             className:
-              "mn-glow-path",
+              "mn-strong-glow-path",
           },
         ).addTo(
           map,
         );
 
+      /* Interceptors */
+
       snapshot.interceptors.forEach(
         (
           interceptor,
         ) => {
-          const sector =
-            snapshot.sectors.find(
-              (
-                item,
-              ) =>
-                item.interceptorId ===
-                interceptor.id,
+          interceptorMarkersRef.current[
+            interceptor.id
+          ] =
+            L.marker(
+              positions.interceptors[
+                interceptor.id
+              ],
+              {
+                icon:
+                  aircraftIcon(
+                    interceptor,
+                    "interceptor",
+                    interceptor.color,
+                    interceptor.assigned,
+                  ),
+
+                zIndexOffset:
+                  interceptor.assigned
+                    ? 1900
+                    : 1300,
+              },
+            ).addTo(
+              map,
             );
+
+          stationMarkersRef.current[
+            interceptor.id
+          ] =
+            L.marker(
+              positions.stations[
+                interceptor.id
+              ],
+              {
+                icon:
+                  stationIcon(
+                    interceptor,
+                  ),
+
+                zIndexOffset:
+                  900,
+              },
+            )
+              .bindTooltip(
+                `${interceptor.stationId}`,
+              )
+              .addTo(
+                map,
+              );
 
           interceptorTrailRefs.current[
             interceptor.id
@@ -1075,21 +988,16 @@ export function InterceptMap({
                 [],
               {
                 color:
-                  sector?.color ??
-                  colors.interceptor,
+                  interceptor.color,
 
                 weight:
-                  interceptor.assigned
-                    ? 4
-                    : 2.5,
+                  3.5,
 
                 opacity:
-                  interceptor.assigned
-                    ? 1
-                    : 0.6,
+                  0.9,
 
                 className:
-                  "mn-glow-path",
+                  "mn-strong-glow-path",
               },
             ).addTo(
               map,
@@ -1097,11 +1005,9 @@ export function InterceptMap({
         },
       );
 
-      /* ===============================================
-         Prediction
-         =============================================== */
+      /* Predictors */
 
-      baselinePathRef.current =
+      cvRef.current =
         L.polyline(
           [
             positions.intruder,
@@ -1115,19 +1021,19 @@ export function InterceptMap({
               3,
 
             opacity:
-              0.92,
+              0.95,
 
             dashArray:
               "5 8",
 
             className:
-              "mn-glow-path",
+              "mn-strong-glow-path",
           },
         ).addTo(
           map,
         );
 
-      ctrvPathRef.current =
+      ctrvRef.current =
         L.polyline(
           [
             positions.intruder,
@@ -1141,19 +1047,19 @@ export function InterceptMap({
               3.5,
 
             opacity:
-              0.96,
+              1,
 
             dashArray:
-              "10 7",
+              "11 6",
 
             className:
-              "mn-glow-path",
+              "mn-strong-glow-path",
           },
         ).addTo(
           map,
         );
 
-      adaptivePathRef.current =
+      aiRef.current =
         L.polyline(
           [
             positions.intruder,
@@ -1170,93 +1076,15 @@ export function InterceptMap({
               1,
 
             className:
-              "mn-strong-glow-path",
+              "mn-ai-path",
           },
         ).addTo(
           map,
         );
 
-      /* ===============================================
-         Guidance
-         =============================================== */
+      /* Safety geometry */
 
-      const assigned =
-        snapshot.interceptors.find(
-          (
-            interceptor,
-          ) =>
-            interceptor.id ===
-            snapshot.assignedInterceptorId,
-        );
-
-      const assignedLatLng =
-        assigned
-          ? positions.interceptors[
-              assigned.id
-            ]
-          : positions.intruder;
-
-      guidanceLineRef.current =
-        L.polyline(
-          [
-            assignedLatLng,
-            positions.guidance,
-          ],
-          {
-            color:
-              colors.guidance,
-
-            weight:
-              4,
-
-            opacity:
-              1,
-
-            dashArray:
-              "7 5",
-
-            className:
-              "mn-strong-glow-path",
-          },
-        ).addTo(
-          map,
-        );
-
-      guidanceTargetRef.current =
-        L.circleMarker(
-          positions.guidance,
-          {
-            radius:
-              9,
-
-            color:
-              colors.guidance,
-
-            weight:
-              3,
-
-            fillColor:
-              colors.background,
-
-            fillOpacity:
-              0.85,
-
-            className:
-              "mn-strong-glow-path",
-          },
-        )
-          .bindTooltip(
-            "AI RENDEZVOUS TARGET",
-          )
-          .addTo(
-            map,
-          );
-
-      /* ===============================================
-         Separation Geometry
-         =============================================== */
-
-      desiredSeparationRef.current =
+      shadowCircleRef.current =
         L.circle(
           positions.intruder,
           {
@@ -1270,13 +1098,13 @@ export function InterceptMap({
               2.5,
 
             opacity:
-              0.95,
+              1,
+
+            dashArray:
+              "10 8",
 
             fillOpacity:
               0,
-
-            dashArray:
-              "9 7",
 
             className:
               "mn-glow-path",
@@ -1285,7 +1113,7 @@ export function InterceptMap({
           map,
         );
 
-      safetySeparationRef.current =
+      safetyCircleRef.current =
         L.circle(
           positions.intruder,
           {
@@ -1301,14 +1129,14 @@ export function InterceptMap({
             opacity:
               1,
 
+            dashArray:
+              "4 5",
+
             fillColor:
               colors.safety,
 
             fillOpacity:
-              0.09,
-
-            dashArray:
-              "4 5",
+              0.08,
 
             className:
               "mn-strong-glow-path",
@@ -1326,7 +1154,7 @@ export function InterceptMap({
         },
       );
 
-      const resizeTimers = [
+      const timers = [
         window.setTimeout(
           () =>
             map.invalidateSize(),
@@ -1336,24 +1164,14 @@ export function InterceptMap({
         window.setTimeout(
           () =>
             map.invalidateSize(),
-          300,
-        ),
-
-        window.setTimeout(
-          () =>
-            map.invalidateSize(),
-          800,
+          350,
         ),
       ];
 
       window.setTimeout(
         () => {
           const points = [
-            positions.intruder,
-
-            ...Object.values(
-              positions.interceptors,
-            ),
+            ...positions.perimeter,
 
             ...Object.values(
               positions.stations,
@@ -1366,8 +1184,8 @@ export function InterceptMap({
             ),
             {
               padding: [
-                70,
-                70,
+                60,
+                60,
               ],
 
               maxZoom:
@@ -1379,11 +1197,7 @@ export function InterceptMap({
       );
 
       return () => {
-        window.clearTimeout(
-          attributionTimer,
-        );
-
-        resizeTimers.forEach(
+        timers.forEach(
           (
             timer,
           ) =>
@@ -1397,19 +1211,22 @@ export function InterceptMap({
         mapRef.current =
           null;
 
-        baseTileRef.current =
-          null;
-
-        interceptorMarkerRefs.current =
+        interceptorMarkersRef.current =
           {};
 
-        stationMarkerRefs.current =
+        stationMarkersRef.current =
           {};
 
-        sectorCircleRefs.current =
+        criticalZoneRefs.current =
           {};
 
         interceptorTrailRefs.current =
+          {};
+
+        formationTargetRefs.current =
+          {};
+
+        guidanceLineRefs.current =
           {};
       };
     },
@@ -1444,13 +1261,10 @@ export function InterceptMap({
           baseMap
         ];
 
-      const layer =
+      const tile =
         L.tileLayer(
           config.url,
           {
-            minZoom:
-              3,
-
             maxZoom:
               19,
 
@@ -1459,14 +1273,14 @@ export function InterceptMap({
           },
         );
 
-      layer.addTo(
+      tile.addTo(
         map,
       );
 
-      layer.bringToBack();
+      tile.bringToBack();
 
       baseTileRef.current =
-        layer;
+        tile;
     },
     [
       baseMap,
@@ -1474,7 +1288,7 @@ export function InterceptMap({
   );
 
   /* =======================================================
-     Live Updates
+     Live Update
      ======================================================= */
 
   useEffect(
@@ -1495,30 +1309,149 @@ export function InterceptMap({
 
       intruderMarkerRef.current
         ?.setIcon(
-          createAircraftIcon(
+          aircraftIcon(
+            snapshot.intruder,
             "intruder",
-            snapshot.intruder
-              .heading,
-            "INTRUDER",
             colors.intruder,
+            true,
           ),
         );
+
+      intruderTrailRef.current
+        ?.setLatLngs(
+          positions.intruderTrail,
+        );
+
+      flightPlanRef.current
+        ?.setLatLngs(
+          positions.flightPlan,
+        );
+
+      flightPlanRef.current
+        ?.setStyle({
+          opacity:
+            showFlightPlan
+              ? 0.6
+              : 0,
+        });
+
+      cvRef.current
+        ?.setLatLngs([
+          positions.intruder,
+          ...positions.baseline,
+        ]);
+
+      ctrvRef.current
+        ?.setLatLngs([
+          positions.intruder,
+          ...positions.ctrv,
+        ]);
+
+      aiRef.current
+        ?.setLatLngs([
+          positions.intruder,
+          ...positions.adaptive,
+        ]);
+
+      cvRef.current
+        ?.setStyle({
+          opacity:
+            showPrediction
+              ? 0.95
+              : 0,
+        });
+
+      ctrvRef.current
+        ?.setStyle({
+          opacity:
+            showPrediction
+              ? 1
+              : 0,
+        });
+
+      aiRef.current
+        ?.setStyle({
+          opacity:
+            showPrediction
+              ? 1
+              : 0,
+        });
+
+      shadowCircleRef.current
+        ?.setLatLng(
+          positions.intruder,
+        );
+
+      shadowCircleRef.current
+        ?.setRadius(
+          snapshot.desiredSeparationMeters,
+        );
+
+      shadowCircleRef.current
+        ?.setStyle({
+          opacity:
+            showSafety
+              ? 1
+              : 0,
+        });
+
+      safetyCircleRef.current
+        ?.setLatLng(
+          positions.intruder,
+        );
+
+      safetyCircleRef.current
+        ?.setRadius(
+          snapshot.minimumSeparationMeters,
+        );
+
+      safetyCircleRef.current
+        ?.setStyle({
+          opacity:
+            showSafety
+              ? 1
+              : 0,
+
+          fillOpacity:
+            showSafety
+              ? 0.08
+              : 0,
+        });
+
+      snapshot.criticalZones.forEach(
+        (
+          zone,
+        ) => {
+          const polygon =
+            criticalZoneRefs.current[
+              zone.id
+            ];
+
+          polygon?.setStyle({
+            color:
+              zone.active
+                ? "#FF123F"
+                : colors.critical,
+
+            weight:
+              zone.active
+                ? 5
+                : 3.5,
+
+            fillOpacity:
+              zone.active
+                ? 0.2
+                : 0.09,
+          });
+        },
+      );
 
       snapshot.interceptors.forEach(
         (
           interceptor,
         ) => {
-          const sector =
-            snapshot.sectors.find(
-              (
-                item,
-              ) =>
-                item.interceptorId ===
-                interceptor.id,
-            );
-
           const marker =
-            interceptorMarkerRefs.current[
+            interceptorMarkersRef.current[
               interceptor.id
             ];
 
@@ -1529,20 +1462,12 @@ export function InterceptMap({
           );
 
           marker?.setIcon(
-            createAircraftIcon(
+            aircraftIcon(
+              interceptor,
               "interceptor",
-              interceptor.heading,
-              `INT-${interceptor.id}`,
-              sector?.color ??
-                colors.interceptor,
+              interceptor.color,
               interceptor.assigned,
             ),
-          );
-
-          marker?.setZIndexOffset(
-            interceptor.assigned
-              ? 1900
-              : 1200,
           );
 
           interceptorTrailRefs.current[
@@ -1554,370 +1479,202 @@ export function InterceptMap({
               [],
           );
 
-          interceptorTrailRefs.current[
-            interceptor.id
-          ]?.setStyle({
-            weight:
-              interceptor.assigned
-                ? 4
-                : 2.5,
-
-            opacity:
-              showTrails
-                ? interceptor.assigned
-                  ? 1
-                  : 0.62
-                : 0,
-          });
-        },
-      );
-
-      snapshot.sectors.forEach(
-        (
-          sector,
-        ) => {
-          const circle =
-            sectorCircleRefs.current[
-              sector.id
+          const formationTarget =
+            positions.formationTargets[
+              interceptor.id
             ];
-
-          circle?.setLatLng(
-            positions.centers[
-              sector.id
-            ],
-          );
-
-          circle?.setStyle({
-            color:
-              sector.active
-                ? colors.intruder
-                : sector.color,
-
-            weight:
-              sector.active
-                ? 3
-                : 2,
-
-            opacity:
-              showZones
-                ? sector.active
-                  ? 1
-                  : 0.82
-                : 0,
-
-            fillColor:
-              sector.active
-                ? colors.intruder
-                : sector.color,
-
-            fillOpacity:
-              showZones
-                ? sector.active
-                  ? 0.12
-                  : 0.045
-                : 0,
-
-            dashArray:
-              sector.active
-                ? "10 5"
-                : "6 7",
-          });
-
-          const stationMarker =
-            stationMarkerRefs.current[
-              sector.id
-            ];
-
-          stationMarker?.setLatLng(
-            positions.stations[
-              sector.id
-            ],
-          );
-
-          stationMarker?.setIcon(
-            createStationIcon(
-              sector,
-            ),
-          );
 
           if (
-            stationMarker
+            snapshot.interceptAuthorized &&
+            formationTarget
           ) {
-            if (
-              showStations &&
-              !map.hasLayer(
-                stationMarker,
-              )
-            ) {
-              stationMarker.addTo(
-                map,
-              );
-            }
+            let targetMarker =
+              formationTargetRefs.current[
+                interceptor.id
+              ];
 
             if (
-              !showStations &&
+              !targetMarker
+            ) {
+              targetMarker =
+                L.circleMarker(
+                  formationTarget,
+                  {
+                    radius:
+                      7,
+
+                    color:
+                      colors.guidance,
+
+                    weight:
+                      2.5,
+
+                    fillColor:
+                      interceptor.color,
+
+                    fillOpacity:
+                      0.65,
+                  },
+                ).addTo(
+                  map,
+                );
+
+              formationTargetRefs.current[
+                interceptor.id
+              ] =
+                targetMarker;
+            }
+
+            targetMarker.setLatLng(
+              formationTarget,
+            );
+
+            let guidanceLine =
+              guidanceLineRefs.current[
+                interceptor.id
+              ];
+
+            if (
+              !guidanceLine
+            ) {
+              guidanceLine =
+                L.polyline(
+                  [
+                    positions.interceptors[
+                      interceptor.id
+                    ],
+
+                    formationTarget,
+                  ],
+                  {
+                    color:
+                      colors.guidance,
+
+                    weight:
+                      2.5,
+
+                    opacity:
+                      0.9,
+
+                    dashArray:
+                      "7 6",
+
+                    className:
+                      "mn-glow-path",
+                  },
+                ).addTo(
+                  map,
+                );
+
+              guidanceLineRefs.current[
+                interceptor.id
+              ] =
+                guidanceLine;
+            }
+
+            guidanceLine.setLatLngs([
+              positions.interceptors[
+                interceptor.id
+              ],
+
+              formationTarget,
+            ]);
+          } else {
+            const targetMarker =
+              formationTargetRefs.current[
+                interceptor.id
+              ];
+
+            if (
+              targetMarker &&
               map.hasLayer(
-                stationMarker,
+                targetMarker,
               )
             ) {
               map.removeLayer(
-                stationMarker,
+                targetMarker,
               );
+
+              delete formationTargetRefs.current[
+                interceptor.id
+              ];
+            }
+
+            const guidance =
+              guidanceLineRefs.current[
+                interceptor.id
+              ];
+
+            if (
+              guidance &&
+              map.hasLayer(
+                guidance,
+              )
+            ) {
+              map.removeLayer(
+                guidance,
+              );
+
+              delete guidanceLineRefs.current[
+                interceptor.id
+              ];
             }
           }
         },
       );
 
-      intruderTrailRef.current
-        ?.setLatLngs(
-          positions.intruderTrail,
+      if (
+        followMode ===
+        "target"
+      ) {
+        map.panTo(
+          positions.intruder,
+          {
+            animate:
+              false,
+          },
         );
 
-      intruderTrailRef.current
-        ?.setStyle({
-          opacity:
-            showTrails
-              ? 0.98
-              : 0,
-        });
-
-      baselinePathRef.current
-        ?.setLatLngs([
-          positions.intruder,
-          ...positions.baseline,
-        ]);
-
-      baselinePathRef.current
-        ?.setStyle({
-          opacity:
-            showCv
-              ? 0.92
-              : 0,
-        });
-
-      ctrvPathRef.current
-        ?.setLatLngs([
-          positions.intruder,
-          ...positions.ctrv,
-        ]);
-
-      ctrvPathRef.current
-        ?.setStyle({
-          opacity:
-            showCtrv
-              ? 0.96
-              : 0,
-        });
-
-      adaptivePathRef.current
-        ?.setLatLngs([
-          positions.intruder,
-          ...positions.adaptive,
-        ]);
-
-      adaptivePathRef.current
-        ?.setStyle({
-          opacity:
-            showAdaptive
-              ? 1
-              : 0,
-        });
-
-      const assigned =
-        snapshot.interceptors.find(
-          (
-            interceptor,
-          ) =>
-            interceptor.id ===
-            snapshot.assignedInterceptorId,
-        );
+        return;
+      }
 
       if (
-        assigned
+        followMode ===
+        "response" &&
+        snapshot.interceptAuthorized
       ) {
-        guidanceLineRef.current
-          ?.setLatLngs([
-            positions.interceptors[
-              assigned.id
+        map.fitBounds(
+          L.latLngBounds([
+            positions.intruder,
+
+            ...Object.values(
+              positions.interceptors,
+            ),
+          ]),
+          {
+            padding: [
+              70,
+              70,
             ],
 
-            positions.guidance,
-          ]);
+            maxZoom:
+              16,
 
-        guidanceLineRef.current
-          ?.setStyle({
-            opacity:
-              1,
-          });
-      } else {
-        guidanceLineRef.current
-          ?.setStyle({
-            opacity:
-              0,
-          });
-      }
-
-      guidanceTargetRef.current
-        ?.setLatLng(
-          positions.guidance,
-        );
-
-      guidanceTargetRef.current
-        ?.setStyle({
-          opacity:
-            assigned
-              ? 1
-              : 0,
-
-          fillOpacity:
-            assigned
-              ? 0.85
-              : 0,
-        });
-
-      desiredSeparationRef.current
-        ?.setLatLng(
-          positions.intruder,
-        );
-
-      desiredSeparationRef.current
-        ?.setRadius(
-          snapshot.desiredSeparationMeters,
-        );
-
-      desiredSeparationRef.current
-        ?.setStyle({
-          opacity:
-            showSafety
-              ? 0.95
-              : 0,
-        });
-
-      safetySeparationRef.current
-        ?.setLatLng(
-          positions.intruder,
-        );
-
-      safetySeparationRef.current
-        ?.setRadius(
-          snapshot.minimumSeparationMeters,
-        );
-
-      safetySeparationRef.current
-        ?.setStyle({
-          opacity:
-            showSafety
-              ? 1
-              : 0,
-
-          fillOpacity:
-            showSafety
-              ? 0.09
-              : 0,
-        });
-
-      if (
-        followMode ===
-        "intruder"
-      ) {
-        map.panTo(
-          positions.intruder,
-          {
             animate:
               false,
           },
         );
-
-        return;
-      }
-
-      if (
-        followMode ===
-          "assigned" &&
-        assigned
-      ) {
-        map.panTo(
-          positions.interceptors[
-            assigned.id
-          ],
-          {
-            animate:
-              false,
-          },
-        );
-
-        return;
-      }
-
-      if (
-        followMode ===
-        "network"
-      ) {
-        const points = [
-          positions.intruder,
-
-          ...Object.values(
-            positions.interceptors,
-          ),
-        ];
-
-        const visibleBounds =
-          map
-            .getBounds()
-            .pad(
-              -0.12,
-            );
-
-        const allVisible =
-          points.every(
-            (
-              point,
-            ) =>
-              visibleBounds.contains(
-                point,
-              ),
-          );
-
-        if (
-          !allVisible
-        ) {
-          map.fitBounds(
-            L.latLngBounds(
-              points,
-            ),
-            {
-              padding: [
-                60,
-                60,
-              ],
-
-              maxZoom:
-                15,
-
-              animate:
-                false,
-            },
-          );
-        }
       }
     },
     [
       positions,
       snapshot,
       followMode,
-      showZones,
-      showStations,
-      showTrails,
-      showCv,
-      showCtrv,
-      showAdaptive,
+      showFlightPlan,
+      showPrediction,
       showSafety,
     ],
   );
-
-  /* =======================================================
-     Camera Commands
-     ======================================================= */
 
   function focusNetwork() {
     const map =
@@ -1933,22 +1690,13 @@ export function InterceptMap({
       "network",
     );
 
-    const points = [
-      positions.intruder,
-
-      ...Object.values(
-        positions.interceptors,
-      ),
-
-      ...Object.values(
-        positions.stations,
-      ),
-    ];
-
     map.fitBounds(
-      L.latLngBounds(
-        points,
-      ),
+      L.latLngBounds([
+        ...positions.perimeter,
+        ...Object.values(
+          positions.stations,
+        ),
+      ]),
       {
         padding: [
           60,
@@ -1961,7 +1709,7 @@ export function InterceptMap({
     );
   }
 
-  function focusIntruder() {
+  function focusTarget() {
     const map =
       mapRef.current;
 
@@ -1972,7 +1720,7 @@ export function InterceptMap({
     }
 
     setFollowMode(
-      "intruder",
+      "target",
     );
 
     map.flyTo(
@@ -1980,126 +1728,73 @@ export function InterceptMap({
       16,
       {
         duration:
-          0.8,
+          0.7,
       },
     );
   }
 
-  function focusAssigned() {
+  function focusResponse() {
+    setFollowMode(
+      "response",
+    );
+
     const map =
       mapRef.current;
 
-    const assigned =
-      snapshot.interceptors.find(
-        (
-          interceptor,
-        ) =>
-          interceptor.id ===
-          snapshot.assignedInterceptorId,
-      );
-
     if (
-      !map ||
-      !assigned
+      !map
     ) {
       return;
     }
 
-    setFollowMode(
-      "assigned",
-    );
+    map.fitBounds(
+      L.latLngBounds([
+        positions.intruder,
 
-    map.flyTo(
-      positions.interceptors[
-        assigned.id
-      ],
-      16,
+        ...Object.values(
+          positions.interceptors,
+        ),
+      ]),
       {
-        duration:
-          0.8,
+        padding: [
+          70,
+          70,
+        ],
+
+        maxZoom:
+          16,
       },
     );
   }
-
-  function cycleBaseMap() {
-    setBaseMap(
-      (
-        current,
-      ) => {
-        if (
-          current ===
-          "satellite"
-        ) {
-          return "osm";
-        }
-
-        if (
-          current ===
-          "osm"
-        ) {
-          return "hot";
-        }
-
-        return "satellite";
-      },
-    );
-  }
-
-  const activeSector =
-    snapshot.sectors.find(
-      (
-        sector,
-      ) =>
-        sector.active,
-    );
-
-  const assignedInterceptor =
-    snapshot.interceptors.find(
-      (
-        interceptor,
-      ) =>
-        interceptor.id ===
-        snapshot.assignedInterceptorId,
-    );
 
   return (
-    <div className="grid h-full min-h-[560px] grid-rows-[48px_minmax(0,1fr)_44px] overflow-hidden bg-[#020304] xl:min-h-0">
-      {/* ===============================================
-          Compact external command bar
-          =============================================== */}
+    <div className="grid h-full min-h-[560px] grid-rows-[46px_minmax(0,1fr)_44px] overflow-hidden bg-[#020304] xl:min-h-0">
+      {/* Controls outside map */}
 
-      <div className="flex min-w-0 items-center justify-between gap-3 border-b border-white/[0.08] bg-[#06080b] px-3">
+      <div className="flex items-center justify-between gap-3 border-b border-white/[0.08] bg-[#06080b] px-3">
         <div className="flex min-w-0 items-center gap-3">
-          <div className="truncate text-[14px] font-medium text-white/70">
-            Defence Network
-          </div>
-
-          <div
+          <span
             className={[
-              "hidden font-mono text-[13px] font-semibold md:block",
+              "font-mono text-[13px] font-semibold",
 
-              activeSector
-                ? "text-[#FF596D]"
+              snapshot.alert.active
+                ? "text-[#FF315A]"
                 : "text-[#59D99A]",
             ].join(" ")}
           >
-            {activeSector
-              ? `${activeSector.label} INTRUSION`
-              : "ALL SECTORS CLEAR"}
-          </div>
+            {snapshot.alert.active
+              ? snapshot.alert.title
+              : "AIRSPACE CLEAR"}
+          </span>
 
-          {assignedInterceptor ? (
-            <div className="hidden font-mono text-[13px] text-[#00D9FF] lg:block">
-              INT-
-              {
-                assignedInterceptor.id
-              }{" "}
-              ASSIGNED
-            </div>
-          ) : null}
+          <span className="hidden text-[12px] text-white/36 lg:block">
+            {
+              snapshot.missionId
+            }
+          </span>
         </div>
 
-        <div className="flex shrink-0 items-center gap-1.5">
+        <div className="flex items-center gap-1.5">
           <MapButton
             label="Satellite"
             active={
@@ -2113,25 +1808,18 @@ export function InterceptMap({
             }
           />
 
-          <button
-            type="button"
-            title="Cycle basemap"
-            onClick={
-              cycleBaseMap
+          <MapButton
+            label="Map"
+            active={
+              baseMap ===
+              "osm"
             }
-            className="flex h-8 w-8 items-center justify-center rounded-[4px] border border-white/[0.08] bg-[#030405] text-white/56 hover:text-white"
-          >
-            {baseMap ===
-            "satellite" ? (
-              <Satellite
-                size={14}
-              />
-            ) : (
-              <Layers3
-                size={14}
-              />
-            )}
-          </button>
+            onClick={() =>
+              setBaseMap(
+                "osm",
+              )
+            }
+          />
 
           <MapButton
             label="Network"
@@ -2148,32 +1836,30 @@ export function InterceptMap({
             label="Target"
             active={
               followMode ===
-              "intruder"
+              "target"
             }
             onClick={
-              focusIntruder
+              focusTarget
             }
           />
 
           <MapButton
-            label="Interceptor"
+            label="Response"
             active={
               followMode ===
-              "assigned"
+              "response"
             }
             onClick={
-              focusAssigned
+              focusResponse
             }
           />
 
           <button
             type="button"
-            title="Zoom out"
             onClick={() =>
-              mapRef.current
-                ?.zoomOut()
+              mapRef.current?.zoomOut()
             }
-            className="flex h-8 w-8 items-center justify-center rounded-[4px] border border-white/[0.08] bg-[#030405] text-white/56 hover:text-white"
+            className="flex h-8 w-8 items-center justify-center rounded-[4px] border border-white/[0.08] bg-[#030405] text-white/56"
           >
             <Minus
               size={14}
@@ -2182,12 +1868,10 @@ export function InterceptMap({
 
           <button
             type="button"
-            title="Zoom in"
             onClick={() =>
-              mapRef.current
-                ?.zoomIn()
+              mapRef.current?.zoomIn()
             }
-            className="flex h-8 w-8 items-center justify-center rounded-[4px] border border-white/[0.08] bg-[#030405] text-white/56 hover:text-white"
+            className="flex h-8 w-8 items-center justify-center rounded-[4px] border border-white/[0.08] bg-[#030405] text-white/56"
           >
             <Plus
               size={14}
@@ -2196,51 +1880,84 @@ export function InterceptMap({
 
           <button
             type="button"
-            title="Fit defence network"
             onClick={
               focusNetwork
             }
-            className="flex h-8 w-8 items-center justify-center rounded-[4px] border border-white/[0.08] bg-[#030405] text-white/56 hover:text-white"
+            className="flex h-8 w-8 items-center justify-center rounded-[4px] border border-white/[0.08] bg-[#030405] text-white/56"
           >
             <LocateFixed
               size={14}
             />
           </button>
+
+          {baseMap ===
+          "satellite" ? (
+            <Satellite
+              size={14}
+              className="text-[#F6B23C]"
+            />
+          ) : (
+            <Layers3
+              size={14}
+              className="text-[#5AA9FF]"
+            />
+          )}
         </div>
       </div>
 
-      {/* ===============================================
-          Clean map
-          =============================================== */}
+      {/* Map */}
 
       <div className="intercept-map relative min-h-0">
         <style>
           {`
             .intercept-map .mn-glow-path {
               filter:
-                drop-shadow(0 0 2px rgba(0,0,0,1))
-                drop-shadow(0 0 3px rgba(0,0,0,0.9));
+                drop-shadow(0 0 2px #000)
+                drop-shadow(0 0 4px rgba(0,0,0,.95));
             }
 
             .intercept-map .mn-strong-glow-path {
               filter:
-                drop-shadow(0 0 2px rgba(0,0,0,1))
-                drop-shadow(0 0 5px rgba(0,0,0,0.95));
+                drop-shadow(0 0 2px #000)
+                drop-shadow(0 0 6px rgba(0,0,0,1));
             }
 
-            .intercept-map .mn-zone-path {
+            .intercept-map .mn-ai-path {
               filter:
-                drop-shadow(0 0 2px rgba(0,0,0,0.9));
+                drop-shadow(0 0 2px #000)
+                drop-shadow(0 0 7px rgba(168,255,79,.75));
+            }
+
+            .intercept-map .mn-perimeter-path {
+              filter:
+                drop-shadow(0 0 2px #000)
+                drop-shadow(0 0 5px rgba(91,255,138,.60));
+            }
+
+            .intercept-map .mn-critical-path {
+              filter:
+                drop-shadow(0 0 2px #000)
+                drop-shadow(0 0 6px rgba(255,49,90,.70));
             }
 
             .intercept-map .leaflet-tooltip {
-              border: 1px solid rgba(255,255,255,0.14);
+              border: 1px solid rgba(255,255,255,.16);
               border-radius: 4px;
-              background: rgba(3,4,5,0.92);
-              color: rgba(255,255,255,0.86);
-              box-shadow: 0 5px 14px rgba(0,0,0,0.42);
-              font-family: "JetBrains Mono", monospace;
+              background: rgba(3,4,5,.95);
+              color: #fff;
               font-size: 12px;
+              box-shadow: 0 5px 16px rgba(0,0,0,.5);
+            }
+
+            .intercept-map .leaflet-control-attribution {
+              background: rgba(5,6,13,.86) !important;
+              color: rgba(255,255,255,.72) !important;
+              font-size: 13px !important;
+              padding: 4px 7px !important;
+            }
+
+            .intercept-map .leaflet-control-attribution a {
+              color: #9CCAFF !important;
             }
           `}
         </style>
@@ -2249,23 +1966,21 @@ export function InterceptMap({
           ref={
             containerRef
           }
-          className="missionnexus-map absolute inset-0 h-full w-full"
+          className="absolute inset-0 h-full w-full"
         />
       </div>
 
-      {/* ===============================================
-          Layer strip
-          =============================================== */}
+      {/* Layers */}
 
-      <div className="flex min-w-0 items-center justify-between gap-3 border-t border-white/[0.08] bg-[#06080b] px-3">
-        <div className="flex items-center gap-1.5">
+      <div className="flex items-center justify-between gap-3 border-t border-white/[0.08] bg-[#06080b] px-3">
+        <div className="flex gap-1.5">
           <MapButton
-            label="Zones"
+            label="Flight Plan"
             active={
-              showZones
+              showFlightPlan
             }
             onClick={() =>
-              setShowZones(
+              setShowFlightPlan(
                 (
                   value,
                 ) =>
@@ -2275,72 +1990,12 @@ export function InterceptMap({
           />
 
           <MapButton
-            label="Stations"
+            label="Predictors"
             active={
-              showStations
+              showPrediction
             }
             onClick={() =>
-              setShowStations(
-                (
-                  value,
-                ) =>
-                  !value,
-              )
-            }
-          />
-
-          <MapButton
-            label="Trails"
-            active={
-              showTrails
-            }
-            onClick={() =>
-              setShowTrails(
-                (
-                  value,
-                ) =>
-                  !value,
-              )
-            }
-          />
-
-          <MapButton
-            label="CV"
-            active={
-              showCv
-            }
-            onClick={() =>
-              setShowCv(
-                (
-                  value,
-                ) =>
-                  !value,
-              )
-            }
-          />
-
-          <MapButton
-            label="CTRV"
-            active={
-              showCtrv
-            }
-            onClick={() =>
-              setShowCtrv(
-                (
-                  value,
-                ) =>
-                  !value,
-              )
-            }
-          />
-
-          <MapButton
-            label="AI"
-            active={
-              showAdaptive
-            }
-            onClick={() =>
-              setShowAdaptive(
+              setShowPrediction(
                 (
                   value,
                 ) =>
@@ -2366,28 +2021,24 @@ export function InterceptMap({
         </div>
 
         <div className="hidden items-center gap-4 font-mono text-[12px] xl:flex">
-          <span className="text-[#FF375F]">
-            ● Intruder
+          <span className="text-[#5BFF8A]">
+            ┅ Monitored perimeter
           </span>
 
-          <span className="text-[#00D9FF]">
-            ● Interceptor
-          </span>
-
-          <span className="text-white">
-            ┅ CV
+          <span className="text-[#FF315A]">
+            ┅ Critical zone / Intruder
           </span>
 
           <span className="text-[#D77DFF]">
             ┅ CTRV
           </span>
 
-          <span className="text-[#A7FF4F]">
-            ━ AI
+          <span className="text-[#A8FF4F]">
+            ━ Adaptive AI
           </span>
 
-          <span className="text-[#FFD166]">
-            ┅ Guidance
+          <span className="text-[#FFE66D]">
+            ┅ Rendezvous
           </span>
         </div>
       </div>
