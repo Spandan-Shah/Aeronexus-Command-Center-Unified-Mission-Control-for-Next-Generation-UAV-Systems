@@ -32,6 +32,7 @@ import {
 } from "../hooks/useInterceptSimulation";
 
 import type {
+  InterceptorState,
   PredictorMode,
 } from "../hooks/useInterceptSimulation";
 
@@ -39,7 +40,7 @@ import type {
    Types
    ========================================================= */
 
-type MetricTone =
+type Tone =
   | "nominal"
   | "caution"
   | "critical"
@@ -47,22 +48,15 @@ type MetricTone =
   | "muted";
 
 type Metric = {
-  label:
-    string;
-
-  value:
-    string;
-
-  icon:
-    LucideIcon;
-
-  tone:
-    MetricTone;
+  label: string;
+  value: string;
+  icon: LucideIcon;
+  tone: Tone;
 };
 
 const toneClass:
   Record<
-    MetricTone,
+    Tone,
     string
   > = {
   nominal:
@@ -82,19 +76,26 @@ const toneClass:
 };
 
 /* =========================================================
-   Formatting
+   Helpers
    ========================================================= */
 
 function formatDistance(
-  meters:
-    number,
+  value:
+    number | null,
 ) {
   if (
-    meters >=
+    value ===
+    null
+  ) {
+    return "—";
+  }
+
+  if (
+    value >=
     1000
   ) {
     return `${(
-      meters /
+      value /
       1000
     ).toFixed(
       2,
@@ -102,27 +103,27 @@ function formatDistance(
   }
 
   return `${Math.round(
-    meters,
+    value,
   )} m`;
 }
 
 function formatEta(
-  seconds:
+  value:
     number | null,
 ) {
   if (
-    seconds ===
+    value ===
       null ||
     !Number.isFinite(
-      seconds,
+      value,
     ) ||
-    seconds >
+    value >
       999
   ) {
     return "—";
   }
 
-  return `${seconds.toFixed(
+  return `${value.toFixed(
     1,
   )} s`;
 }
@@ -131,19 +132,15 @@ function formatError(
   value:
     number | null,
 ) {
-  if (
-    value ===
+  return value ===
     null
-  ) {
-    return "WARMING";
-  }
-
-  return `${value.toFixed(
-    1,
-  )} m`;
+    ? "WARMING"
+    : `${value.toFixed(
+        1,
+      )} m`;
 }
 
-function formatPercent(
+function percentage(
   value:
     number,
 ) {
@@ -154,7 +151,7 @@ function formatPercent(
 }
 
 /* =========================================================
-   Metric Cell
+   Metric
    ========================================================= */
 
 function MetricCell({
@@ -167,15 +164,15 @@ function MetricCell({
     metric.icon;
 
   return (
-    <div className="flex min-w-0 items-center justify-between gap-3 border-r border-white/[0.07] px-4 last:border-r-0">
+    <div className="flex min-w-0 items-center justify-between gap-2 border-r border-white/[0.07] px-3 last:border-r-0">
       <div className="min-w-0">
-        <div className="truncate text-[14px] font-medium text-white/44">
+        <div className="truncate text-[12px] font-medium text-white/42">
           {metric.label}
         </div>
 
         <div
           className={[
-            "mt-1 truncate font-mono text-[14px] font-semibold",
+            "mt-0.5 truncate font-mono text-[14px] font-semibold",
 
             toneClass[
               metric.tone
@@ -187,8 +184,7 @@ function MetricCell({
       </div>
 
       <Icon
-        size={18}
-        strokeWidth={1.6}
+        size={16}
         className={[
           "shrink-0",
 
@@ -221,7 +217,7 @@ function StateRow({
     string;
 }) {
   return (
-    <div className="flex min-h-[38px] items-center justify-between gap-4 border-b border-white/[0.055] last:border-b-0">
+    <div className="flex min-h-[36px] items-center justify-between gap-4 border-b border-white/[0.055] last:border-b-0">
       <span className="text-[14px] text-white/46">
         {label}
       </span>
@@ -240,124 +236,7 @@ function StateRow({
 }
 
 /* =========================================================
-   Command Button
-   ========================================================= */
-
-function CommandButton({
-  label,
-  icon:
-    Icon,
-  onClick,
-  tone =
-    "normal",
-}: {
-  label:
-    string;
-
-  icon:
-    LucideIcon;
-
-  onClick:
-    () => void;
-
-  tone?:
-    | "normal"
-    | "primary"
-    | "danger";
-}) {
-  const style =
-    tone ===
-    "danger"
-      ? "border-[rgba(255,90,99,0.28)] bg-[rgba(255,90,99,0.045)] text-[#FF5A63] hover:bg-[rgba(255,90,99,0.10)]"
-      : tone ===
-          "primary"
-        ? "border-[rgba(246,178,60,0.30)] bg-[rgba(246,178,60,0.07)] text-[#F6B23C] hover:bg-[rgba(246,178,60,0.12)]"
-        : "border-white/[0.09] bg-[#05060d] text-white/68 hover:border-white/[0.18] hover:text-white";
-
-  return (
-    <button
-      type="button"
-      onClick={
-        onClick
-      }
-      className={[
-        "flex h-[44px] items-center justify-center gap-2",
-
-        "rounded-[5px] border px-3",
-
-        "font-mono text-[14px] font-medium",
-
-        "transition-colors",
-
-        style,
-      ].join(" ")}
-    >
-      <Icon
-        size={15}
-      />
-
-      {label}
-    </button>
-  );
-}
-
-/* =========================================================
-   Predictor Button
-   ========================================================= */
-
-function PredictorButton({
-  label,
-  description,
-  active,
-  onClick,
-}: {
-  label:
-    string;
-
-  description:
-    string;
-
-  active:
-    boolean;
-
-  onClick:
-    () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={
-        onClick
-      }
-      className={[
-        "min-h-[82px] rounded-[5px] border p-3 text-left transition-colors",
-
-        active
-          ? "border-[rgba(246,178,60,0.32)] bg-[rgba(246,178,60,0.06)]"
-          : "border-white/[0.08] bg-[#05060d] hover:border-white/[0.15]",
-      ].join(" ")}
-    >
-      <div
-        className={[
-          "font-mono text-[14px] font-semibold",
-
-          active
-            ? "text-[#F6B23C]"
-            : "text-white/66",
-        ].join(" ")}
-      >
-        {label}
-      </div>
-
-      <div className="mt-1.5 text-[14px] leading-[1.45] text-white/40">
-        {description}
-      </div>
-    </button>
-  );
-}
-
-/* =========================================================
-   Range Control
+   Range
    ========================================================= */
 
 function RangeControl({
@@ -396,7 +275,7 @@ function RangeControl({
   return (
     <div className="rounded-[5px] border border-white/[0.07] bg-[#05060d] p-3">
       <div className="flex items-center justify-between gap-3">
-        <span className="text-[14px] font-medium text-white/62">
+        <span className="text-[14px] font-medium text-white/60">
           {label}
         </span>
 
@@ -434,48 +313,273 @@ function RangeControl({
             ),
           )
         }
-        className="mt-4 w-full accent-[#F6B23C]"
+        className="mt-3 w-full accent-[#F6B23C]"
       />
     </div>
   );
 }
 
 /* =========================================================
-   Predictor Evidence
+   Command
    ========================================================= */
 
-function PredictorEvidence({
+function CommandButton({
   label,
-  value,
+  icon:
+    Icon,
+  onClick,
   tone =
-    "muted",
+    "normal",
 }: {
   label:
     string;
 
-  value:
-    string;
+  icon:
+    LucideIcon;
+
+  onClick:
+    () => void;
 
   tone?:
-    MetricTone;
+    | "normal"
+    | "primary"
+    | "danger";
+}) {
+  const style =
+    tone ===
+    "danger"
+      ? "border-[rgba(255,90,99,0.28)] bg-[rgba(255,90,99,0.045)] text-[#FF5A63]"
+      : tone ===
+          "primary"
+        ? "border-[rgba(246,178,60,0.30)] bg-[rgba(246,178,60,0.07)] text-[#F6B23C]"
+        : "border-white/[0.09] bg-[#05060d] text-white/68";
+
+  return (
+    <button
+      type="button"
+      onClick={
+        onClick
+      }
+      className={[
+        "flex h-10 items-center justify-center gap-2 rounded-[5px] border px-2",
+
+        "text-[14px] font-medium",
+
+        "transition-colors hover:bg-white/[0.03]",
+
+        style,
+      ].join(" ")}
+    >
+      <Icon
+        size={14}
+      />
+
+      {label}
+    </button>
+  );
+}
+
+/* =========================================================
+   Predictor
+   ========================================================= */
+
+function PredictorButton({
+  label,
+  description,
+  active,
+  onClick,
+}: {
+  label:
+    string;
+
+  description:
+    string;
+
+  active:
+    boolean;
+
+  onClick:
+    () => void;
 }) {
   return (
-    <div className="rounded-[5px] border border-white/[0.07] bg-[#05060d] p-3">
-      <div className="text-[14px] text-white/42">
+    <button
+      type="button"
+      onClick={
+        onClick
+      }
+      className={[
+        "rounded-[5px] border p-3 text-left",
+
+        active
+          ? "border-[rgba(89,217,154,0.28)] bg-[rgba(89,217,154,0.045)]"
+          : "border-white/[0.08] bg-[#05060d]",
+      ].join(" ")}
+    >
+      <div
+        className={[
+          "text-[14px] font-semibold",
+
+          active
+            ? "text-[#59D99A]"
+            : "text-white/68",
+        ].join(" ")}
+      >
         {label}
       </div>
 
-      <div
-        className={[
-          "mt-2 font-mono text-[16px] font-semibold",
-
-          toneClass[
-            tone
-          ],
-        ].join(" ")}
-      >
-        {value}
+      <div className="mt-1 text-[13px] leading-[1.4] text-white/38">
+        {description}
       </div>
+    </button>
+  );
+}
+
+/* =========================================================
+   Interceptor Card
+   ========================================================= */
+
+function InterceptorCard({
+  interceptor,
+  color,
+  onSpeedChange,
+  onDispatch,
+}: {
+  interceptor:
+    InterceptorState;
+
+  color:
+    string;
+
+  onSpeedChange:
+    (
+      value:
+        number,
+    ) => void;
+
+  onDispatch:
+    () => void;
+}) {
+  return (
+    <div
+      className={[
+        "rounded-[5px] border p-3",
+
+        interceptor.assigned
+          ? "border-[rgba(0,217,255,0.32)] bg-[rgba(0,217,255,0.035)]"
+          : "border-white/[0.07] bg-[#05060d]",
+      ].join(" ")}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2">
+            <span
+              className="h-2.5 w-2.5 rounded-full"
+              style={{
+                backgroundColor:
+                  color,
+              }}
+            />
+
+            <span className="text-[14px] font-semibold text-white/80">
+              INT-
+              {
+                interceptor.id
+              }
+            </span>
+          </div>
+
+          <div
+            className={[
+              "mt-1 font-mono text-[12px] font-semibold",
+
+              interceptor.assigned
+                ? "text-[#00D9FF]"
+                : "text-white/38",
+            ].join(" ")}
+          >
+            {
+              interceptor.status
+            }
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={
+            onDispatch
+          }
+          className="h-8 rounded-[4px] border border-[rgba(90,169,255,0.24)] bg-[rgba(90,169,255,0.04)] px-2.5 text-[12px] font-medium text-[#5AA9FF]"
+        >
+          Dispatch
+        </button>
+      </div>
+
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <div>
+          <div className="text-[12px] text-white/36">
+            Current
+          </div>
+
+          <div className="mt-0.5 font-mono text-[14px] text-white/72">
+            {
+              interceptor.airspeed.toFixed(
+                1,
+              )
+            }{" "}
+            m/s
+          </div>
+        </div>
+
+        <div>
+          <div className="text-[12px] text-white/36">
+            Target
+          </div>
+
+          <div className="mt-0.5 font-mono text-[14px] text-[#00D9FF]">
+            {
+              interceptor.targetAirspeed.toFixed(
+                1,
+              )
+            }{" "}
+            m/s
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-3 flex items-center justify-between gap-3">
+        <span className="text-[13px] text-white/44">
+          Speed Limit
+        </span>
+
+        <span className="font-mono text-[13px] font-semibold text-[#F6B23C]">
+          {
+            interceptor.speedLimitMps.toFixed(
+              0,
+            )
+          }{" "}
+          m/s
+        </span>
+      </div>
+
+      <input
+        type="range"
+        min="25"
+        max="80"
+        step="1"
+        value={
+          interceptor.speedLimitMps
+        }
+        onChange={(
+          event,
+        ) =>
+          onSpeedChange(
+            Number(
+              event.target.value,
+            ),
+          )
+        }
+        className="mt-2 w-full accent-[#00D9FF]"
+      />
     </div>
   );
 }
@@ -490,6 +594,23 @@ export function AutonomousIntercept() {
     actions,
   } =
     useInterceptSimulation();
+
+  const activeSector =
+    snapshot.sectors.find(
+      (
+        sector,
+      ) =>
+        sector.active,
+    );
+
+  const assignedInterceptor =
+    snapshot.interceptors.find(
+      (
+        interceptor,
+      ) =>
+        interceptor.id ===
+        snapshot.assignedInterceptorId,
+    );
 
   const confidence =
     Math.round(
@@ -507,51 +628,60 @@ export function AutonomousIntercept() {
       .validationSamples >=
     5;
 
-  const adaptiveWinning =
-    evidenceReady &&
-    improvement !==
-      null &&
-    improvement >
-      0;
-
   const metrics:
     Metric[] = [
       {
         label:
-          "Leader Link",
+          "Defence Zone",
 
         value:
-          snapshot.gamepad
-            .connected
-            ? "USB MANUAL"
-            : "SIM AUTO",
+          activeSector
+            ? activeSector.label
+            : "CLEAR",
 
         icon:
-          Radio,
+          ShieldCheck,
 
         tone:
-          snapshot.gamepad
-            .connected
-            ? "nominal"
-            : "info",
+          activeSector
+            ? "critical"
+            : "nominal",
       },
 
       {
         label:
-          "Follower",
+          "Intruder Speed",
 
         value:
-          snapshot.follower
-            .mode,
+          `${snapshot.intruder.airspeed.toFixed(
+            1,
+          )} m/s`,
 
         icon:
           Plane,
 
         tone:
-          snapshot.mode ===
-            "ABORT"
+          activeSector
             ? "critical"
-            : "nominal",
+            : "caution",
+      },
+
+      {
+        label:
+          "Assigned",
+
+        value:
+          assignedInterceptor
+            ? `INT-${assignedInterceptor.id}`
+            : "STANDBY",
+
+        icon:
+          Radio,
+
+        tone:
+          assignedInterceptor
+            ? "info"
+            : "muted",
       },
 
       {
@@ -570,25 +700,6 @@ export function AutonomousIntercept() {
           snapshot.separationSafe
             ? "nominal"
             : "critical",
-      },
-
-      {
-        label:
-          "Closing Rate",
-
-        value:
-          `${snapshot.closingRateMps.toFixed(
-            1,
-          )} m/s`,
-
-        icon:
-          Gauge,
-
-        tone:
-          snapshot.closingRateMps >
-          0
-            ? "info"
-            : "caution",
       },
 
       {
@@ -615,8 +726,7 @@ export function AutonomousIntercept() {
           "AI Confidence",
 
         value:
-          snapshot.ai
-            .ready
+          snapshot.ai.ready
             ? `${confidence}%`
             : "TRAINING",
 
@@ -624,8 +734,7 @@ export function AutonomousIntercept() {
           BrainCircuit,
 
         tone:
-          snapshot.ai
-            .ready
+          snapshot.ai.ready
             ? "nominal"
             : "caution",
       },
@@ -643,62 +752,42 @@ export function AutonomousIntercept() {
   return (
     <div className="bg-[#05060d] text-white">
       {/* ===================================================
-          PRIMARY VIEWPORT
+          Compact primary viewport
           =================================================== */}
 
       <section className="xl:h-[calc(100vh-70px)] xl:overflow-hidden">
-        <div
-          className={[
-            "mx-auto w-full max-w-[1600px]",
-
-            "px-4 pb-3 pt-2",
-
-            "sm:px-6",
-
-            "lg:px-8",
-
-            "xl:grid xl:h-full",
-
-            "xl:grid-rows-[58px_82px_minmax(0,1fr)]",
-
-            "xl:gap-2",
-
-            "xl:px-10",
-
-            "2xl:px-14",
-          ].join(" ")}
-        >
+        <div className="mx-auto grid w-full max-w-[1600px] gap-2 px-4 pb-3 pt-2 sm:px-6 lg:px-8 xl:h-full xl:grid-rows-[44px_58px_minmax(0,1fr)] xl:px-10 2xl:px-14">
           {/* ===============================================
-              Header
+              Compact header
               =============================================== */}
 
           <header className="flex min-w-0 items-center justify-between gap-4 border-b border-white/[0.08]">
-            <div className="min-w-0">
-              <h1 className="text-[18px] font-semibold tracking-[-0.02em] text-white">
+            <div className="flex min-w-0 items-center gap-3">
+              <h1 className="shrink-0 text-[18px] font-semibold text-white">
                 Autonomous Intercept
               </h1>
 
-              <p className="mt-1 hidden truncate text-[14px] text-white/46 sm:block">
-                Predictive leader–follower guidance · adaptive airspeed control · non-contact rendezvous and shadow
-              </p>
+              <span className="hidden truncate text-[13px] text-white/40 lg:block">
+                Multi-sector predictive defence · non-contact autonomous shadowing
+              </span>
             </div>
 
             <div className="flex shrink-0 items-center gap-2">
-              <div className="rounded-[4px] border border-[rgba(89,217,154,0.22)] bg-[rgba(89,217,154,0.04)] px-3 py-2 font-mono text-[14px] font-medium text-[#59D99A]">
-                ● Simulation Active
-              </div>
+              <span className="rounded-[4px] border border-[rgba(89,217,154,0.22)] bg-[rgba(89,217,154,0.04)] px-2 py-1 font-mono text-[12px] font-semibold text-[#59D99A]">
+                ● SIM ACTIVE
+              </span>
 
-              <div className="hidden rounded-[4px] border border-[rgba(90,169,255,0.22)] bg-[rgba(90,169,255,0.04)] px-3 py-2 font-mono text-[14px] font-medium text-[#5AA9FF] lg:block">
-                Human-in-loop
-              </div>
+              <span className="hidden rounded-[4px] border border-[rgba(90,169,255,0.22)] bg-[rgba(90,169,255,0.04)] px-2 py-1 font-mono text-[12px] font-semibold text-[#5AA9FF] md:block">
+                HUMAN-IN-LOOP
+              </span>
             </div>
           </header>
 
           {/* ===============================================
-              Metrics
+              Compact metric strip
               =============================================== */}
 
-          <section className="grid grid-cols-2 overflow-hidden rounded-[6px] border border-white/[0.08] bg-[#07090d] md:grid-cols-3 xl:grid-cols-6">
+          <section className="grid grid-cols-2 overflow-hidden rounded-[5px] border border-white/[0.08] bg-[#07090d] md:grid-cols-3 xl:grid-cols-6">
             {metrics.map(
               (
                 metric,
@@ -716,42 +805,33 @@ export function AutonomousIntercept() {
           </section>
 
           {/* ===============================================
-              Workspace
+              Main workspace
               =============================================== */}
 
-          <section
-            className={[
-              "mt-3 grid min-h-[850px] overflow-hidden",
+          <section className="grid min-h-[900px] overflow-hidden rounded-[6px] border border-white/[0.09] bg-[#020304] xl:min-h-0 xl:grid-cols-[minmax(0,1fr)_445px]">
+            {/* Map */}
 
-              "rounded-[6px] border border-white/[0.09]",
-
-              "bg-[#020304]",
-
-              "xl:mt-0 xl:min-h-0",
-
-              "xl:grid-cols-[minmax(0,1fr)_470px]",
-            ].join(" ")}
-          >
-            {/* =============================================
-                MAP
-                ============================================= */}
-
-            <div className="grid min-h-0 grid-rows-[42px_minmax(0,1fr)]">
-              <div className="flex min-w-0 items-center justify-between border-b border-white/[0.08] bg-[#06080b] px-3">
-                <div className="flex min-w-0 items-center gap-2">
+            <div className="grid min-h-0 grid-rows-[40px_minmax(0,1fr)]">
+              <div className="flex items-center justify-between gap-3 border-b border-white/[0.08] bg-[#06080b] px-3">
+                <div className="flex items-center gap-2">
                   <MapPinned
                     size={15}
-                    strokeWidth={1.6}
-                    className="shrink-0 text-[#5AA9FF]"
+                    className="text-[#5AA9FF]"
                   />
 
-                  <span className="truncate text-[16px] font-semibold text-white/86">
-                    Geospatial Intercept Workspace
+                  <span className="text-[14px] font-semibold text-white/82">
+                    Ahmedabad Defence Simulation
                   </span>
+
+                  {activeSector ? (
+                    <span className="font-mono text-[12px] font-semibold text-[#FF375F]">
+                      {activeSector.label} INTRUSION
+                    </span>
+                  ) : null}
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <span className="font-mono text-[14px] text-white/42">
+                  <span className="font-mono text-[12px] text-white/38">
                     T+
                     {
                       snapshot.simTimeSeconds.toFixed(
@@ -766,15 +846,15 @@ export function AutonomousIntercept() {
                     onClick={
                       actions.toggleRunning
                     }
-                    className="flex h-[34px] items-center gap-2 rounded-[4px] border border-white/[0.08] bg-[#030405] px-3 font-mono text-[14px] text-white/60 hover:text-white"
+                    className="flex h-8 items-center gap-1.5 rounded-[4px] border border-white/[0.08] bg-[#030405] px-2.5 text-[12px] text-white/58"
                   >
                     {snapshot.running ? (
                       <Pause
-                        size={14}
+                        size={12}
                       />
                     ) : (
                       <Play
-                        size={14}
+                        size={12}
                       />
                     )}
 
@@ -788,10 +868,10 @@ export function AutonomousIntercept() {
                     onClick={
                       actions.reset
                     }
-                    className="flex h-[34px] items-center gap-2 rounded-[4px] border border-white/[0.08] bg-[#030405] px-3 font-mono text-[14px] text-white/60 hover:text-white"
+                    className="flex h-8 items-center gap-1.5 rounded-[4px] border border-white/[0.08] bg-[#030405] px-2.5 text-[12px] text-white/58"
                   >
                     <RotateCcw
-                      size={14}
+                      size={12}
                     />
 
                     Reset
@@ -799,201 +879,246 @@ export function AutonomousIntercept() {
                 </div>
               </div>
 
-              <div className="relative min-h-0">
-                <InterceptMap
-                  snapshot={
-                    snapshot
-                  }
-                />
-              </div>
+              <InterceptMap
+                snapshot={
+                  snapshot
+                }
+              />
             </div>
 
             {/* =============================================
-                RIGHT INSPECTOR
+                Inspector
                 ============================================= */}
 
             <aside className="min-h-0 overflow-y-auto border-t border-white/[0.08] bg-[#07090d] xl:border-l xl:border-t-0">
-              {/* Mission state */}
+              {/* Defence network */}
 
-              <section className="border-b border-white/[0.08] px-4 py-4">
-                <div className="flex items-center justify-between gap-3">
+              <section className="border-b border-white/[0.08] px-4 py-3">
+                <div className="mb-3 flex items-center justify-between">
                   <div>
                     <div className="text-[16px] font-semibold text-[#F6B23C]">
-                      Intercept State
+                      Defence Network
                     </div>
 
-                    <div className="mt-1 text-[14px] text-white/42">
-                      Autonomous mission state machine
+                    <div className="mt-1 text-[14px] text-white/40">
+                      Four simulated protected sectors
                     </div>
                   </div>
 
-                  <span
+                  <button
+                    type="button"
+                    onClick={() =>
+                      actions.setAutoDefenseEnabled(
+                        !snapshot.autoDefenseEnabled,
+                      )
+                    }
                     className={[
-                      "rounded-[4px] border px-3 py-1.5",
+                      "rounded-[4px] border px-2.5 py-1.5 font-mono text-[12px] font-semibold",
 
-                      "font-mono text-[14px] font-semibold",
-
-                      snapshot.mode ===
-                      "ABORT"
-                        ? "border-[rgba(255,90,99,0.28)] bg-[rgba(255,90,99,0.04)] text-[#FF5A63]"
-                        : "border-[rgba(90,169,255,0.24)] bg-[rgba(90,169,255,0.04)] text-[#5AA9FF]",
+                      snapshot.autoDefenseEnabled
+                        ? "border-[rgba(89,217,154,0.24)] bg-[rgba(89,217,154,0.04)] text-[#59D99A]"
+                        : "border-white/[0.08] text-white/40",
                     ].join(" ")}
                   >
-                    {
-                      snapshot.mode
-                    }
-                  </span>
+                    AUTO{" "}
+                    {snapshot.autoDefenseEnabled
+                      ? "ON"
+                      : "OFF"}
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  {snapshot.sectors.map(
+                    (
+                      sector,
+                    ) => (
+                      <div
+                        key={
+                          sector.id
+                        }
+                        className={[
+                          "rounded-[4px] border p-2.5",
+
+                          sector.active
+                            ? "border-[rgba(255,55,95,0.35)] bg-[rgba(255,55,95,0.055)]"
+                            : "border-white/[0.07] bg-[#05060d]",
+                        ].join(" ")}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span
+                            className="text-[14px] font-semibold"
+                            style={{
+                              color:
+                                sector.active
+                                  ? "#FF375F"
+                                  : sector.color,
+                            }}
+                          >
+                            {
+                              sector.label
+                            }
+                          </span>
+
+                          <span className="font-mono text-[11px] text-white/38">
+                            INT-
+                            {
+                              sector.interceptorId
+                            }
+                          </span>
+                        </div>
+
+                        <div className="mt-1 text-[12px] text-white/36">
+                          {sector.active
+                            ? "Restricted-zone intrusion"
+                            : "Sector clear"}
+                        </div>
+                      </div>
+                    ),
+                  )}
                 </div>
               </section>
 
-              {/* Aircraft */}
+              {/* Intruder */}
 
-              <section className="grid border-b border-white/[0.08] 2xl:grid-cols-2">
-                <div className="border-b border-white/[0.08] px-4 py-4 2xl:border-b-0 2xl:border-r">
-                  <div className="mb-3 flex items-center gap-2">
-                    <Plane
-                      size={17}
-                      className="text-[#F6B23C]"
-                    />
+              <section className="border-b border-white/[0.08] px-4 py-3">
+                <div className="mb-3 flex items-center gap-2">
+                  <Plane
+                    size={17}
+                    className="text-[#FF375F]"
+                  />
 
-                    <span className="text-[16px] font-semibold text-white/82">
-                      Leader · SYSID 1
-                    </span>
-                  </div>
+                  <span className="text-[16px] font-semibold text-white/82">
+                    Intruder UAV
+                  </span>
+                </div>
 
+                <RangeControl
+                  label="Intruder Target Speed"
+                  value={
+                    snapshot.speedControl
+                      .intruderCommandedAirspeed
+                  }
+                  suffix="m/s"
+                  min={12}
+                  max={50}
+                  step={0.5}
+                  onChange={
+                    actions.setIntruderCommandedAirspeed
+                  }
+                />
+
+                <div className="mt-2">
                   <StateRow
-                    label="Airspeed"
-                    value={`${snapshot.leader.airspeed.toFixed(
+                    label="Actual Speed"
+                    value={`${snapshot.intruder.airspeed.toFixed(
                       1,
                     )} m/s`}
+                    valueClass="text-[#FF657F]"
                   />
 
                   <StateRow
                     label="Heading"
-                    value={`${snapshot.leader.heading.toFixed(
+                    value={`${snapshot.intruder.heading.toFixed(
                       0,
                     )}°`}
                   />
 
                   <StateRow
                     label="Turn Rate"
-                    value={`${snapshot.leader.turnRate.toFixed(
+                    value={`${snapshot.intruder.turnRate.toFixed(
                       1,
                     )}°/s`}
                   />
 
                   <StateRow
-                    label="Bank"
-                    value={`${snapshot.leader.bank.toFixed(
-                      1,
-                    )}°`}
-                  />
-                </div>
-
-                <div className="px-4 py-4">
-                  <div className="mb-3 flex items-center gap-2">
-                    <Plane
-                      size={17}
-                      className="text-[#5AA9FF]"
-                    />
-
-                    <span className="text-[16px] font-semibold text-white/82">
-                      Follower · SYSID 2
-                    </span>
-                  </div>
-
-                  <StateRow
-                    label="Airspeed"
-                    value={`${snapshot.follower.airspeed.toFixed(
-                      1,
-                    )} m/s`}
-                  />
-
-                  <StateRow
-                    label="Target Speed"
-                    value={`${snapshot.speedControl.followerCommandedAirspeed.toFixed(
-                      1,
-                    )} m/s`}
-                    valueClass="text-[#5AA9FF]"
-                  />
-
-                  <StateRow
-                    label="Heading"
-                    value={`${snapshot.follower.heading.toFixed(
-                      0,
-                    )}°`}
-                  />
-
-                  <StateRow
-                    label="Speed Delta"
-                    value={`${snapshot.speedControl.airspeedDelta.toFixed(
-                      1,
-                    )} m/s`}
+                    label="Active Sector"
+                    value={
+                      activeSector?.label ??
+                      "None"
+                    }
+                    valueClass={
+                      activeSector
+                        ? "text-[#FF375F]"
+                        : "text-[#59D99A]"
+                    }
                   />
                 </div>
               </section>
 
-              {/* Airspeed Control */}
+              {/* Interceptor fleet */}
 
-              <section className="border-b border-white/[0.08] px-4 py-4">
+              <section className="border-b border-white/[0.08] px-4 py-3">
                 <div className="mb-3 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <SlidersHorizontal
                       size={17}
-                      className="text-[#F6B23C]"
+                      className="text-[#00D9FF]"
                     />
 
                     <span className="text-[16px] font-semibold text-white/82">
-                      Airspeed Control
+                      Interceptor Fleet
                     </span>
                   </div>
 
-                  <span className="font-mono text-[14px] text-[#59D99A]">
-                    {snapshot.speedControl.adaptiveSync
-                      ? "ADAPTIVE"
-                      : "BASIC"}
+                  <span className="font-mono text-[12px] text-white/38">
+                    25–80 m/s
                   </span>
                 </div>
 
-                <div className="grid gap-3">
-                  <RangeControl
-                    label="Leader Target Airspeed"
-                    value={
-                      snapshot.speedControl
-                        .leaderCommandedAirspeed
-                    }
-                    suffix="m/s"
-                    min={14}
-                    max={34}
-                    step={0.5}
-                    onChange={
-                      actions.setLeaderCommandedAirspeed
-                    }
-                  />
+                <div className="grid gap-2">
+                  {snapshot.interceptors.map(
+                    (
+                      interceptor,
+                    ) => {
+                      const sector =
+                        snapshot.sectors.find(
+                          (
+                            item,
+                          ) =>
+                            item.interceptorId ===
+                            interceptor.id,
+                        );
 
-                  <RangeControl
-                    label="Follower Maximum Airspeed"
-                    value={
-                      snapshot.speedControl
-                        .followerMaxAirspeed
-                    }
-                    suffix="m/s"
-                    min={18}
-                    max={38}
-                    step={0.5}
-                    onChange={
-                      actions.setFollowerMaxAirspeed
-                    }
-                  />
+                      return (
+                        <InterceptorCard
+                          key={
+                            interceptor.id
+                          }
+                          interceptor={
+                            interceptor
+                          }
+                          color={
+                            sector?.color ??
+                            "#00D9FF"
+                          }
+                          onDispatch={() =>
+                            actions.dispatchInterceptor(
+                              interceptor.id,
+                            )
+                          }
+                          onSpeedChange={(
+                            value,
+                          ) =>
+                            actions.setInterceptorSpeedLimit(
+                              interceptor.id,
+                              value,
+                            )
+                          }
+                        />
+                      );
+                    },
+                  )}
+                </div>
 
+                <div className="mt-3">
                   <RangeControl
                     label="Desired Shadow Distance"
                     value={
                       snapshot.desiredSeparationMeters
                     }
                     suffix="m"
-                    min={110}
-                    max={300}
+                    min={130}
+                    max={350}
                     step={10}
                     onChange={
                       actions.setDesiredSeparation
@@ -1010,34 +1135,25 @@ export function AutonomousIntercept() {
                     )
                   }
                   className={[
-                    "mt-3 flex min-h-[62px] w-full items-center justify-between",
+                    "mt-2 flex min-h-[52px] w-full items-center justify-between rounded-[5px] border px-3",
 
-                    "rounded-[5px] border px-3",
-
-                    snapshot.speedControl.adaptiveSync
+                    snapshot.speedControl
+                      .adaptiveSync
                       ? "border-[rgba(89,217,154,0.22)] bg-[rgba(89,217,154,0.035)]"
                       : "border-white/[0.08] bg-[#05060d]",
                   ].join(" ")}
                 >
                   <div className="text-left">
                     <div className="text-[14px] font-medium text-white/68">
-                      Adaptive Speed Synchronization
+                      Adaptive Speed Controller
                     </div>
 
-                    <div className="mt-1 text-[14px] text-white/38">
-                      Separation · closing rate · predicted turn demand
+                    <div className="text-[12px] text-white/34">
+                      Distance · closure · turn demand
                     </div>
                   </div>
 
-                  <span
-                    className={[
-                      "font-mono text-[14px] font-semibold",
-
-                      snapshot.speedControl.adaptiveSync
-                        ? "text-[#59D99A]"
-                        : "text-white/34",
-                    ].join(" ")}
-                  >
+                  <span className="font-mono text-[13px] font-semibold text-[#59D99A]">
                     {snapshot.speedControl.adaptiveSync
                       ? "ON"
                       : "OFF"}
@@ -1047,12 +1163,12 @@ export function AutonomousIntercept() {
 
               {/* AI */}
 
-              <section className="border-b border-white/[0.08] px-4 py-4">
-                <div className="mb-3 flex items-center justify-between gap-3">
+              <section className="border-b border-white/[0.08] px-4 py-3">
+                <div className="mb-3 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <BrainCircuit
                       size={17}
-                      className="text-[#59D99A]"
+                      className="text-[#A7FF4F]"
                     />
 
                     <span className="text-[16px] font-semibold text-white/82">
@@ -1060,17 +1176,17 @@ export function AutonomousIntercept() {
                     </span>
                   </div>
 
-                  <span className="font-mono text-[14px] font-semibold text-[#59D99A]">
+                  <span className="font-mono text-[13px] font-semibold text-[#A7FF4F]">
                     {snapshot.ai.ready
                       ? `${confidence}% CONF`
                       : "TRAINING"}
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-2">
                   <PredictorButton
                     label="CV Baseline"
-                    description="Straight-line constant velocity prediction"
+                    description="Straight-line prediction"
                     active={
                       snapshot.predictorMode ===
                       "baseline"
@@ -1084,7 +1200,7 @@ export function AutonomousIntercept() {
 
                   <PredictorButton
                     label="Adaptive AI"
-                    description="CV + CTRV + online residual ensemble"
+                    description="CV + CTRV + learned residual"
                     active={
                       snapshot.predictorMode ===
                       "ml"
@@ -1097,21 +1213,13 @@ export function AutonomousIntercept() {
                   />
                 </div>
 
-                <div className="mt-3">
+                <div className="mt-2">
                   <StateRow
-                    label="Model"
-                    value={
-                      snapshot.ai.model
-                    }
-                    valueClass="text-[#59D99A]"
-                  />
-
-                  <StateRow
-                    label="Selected Model"
+                    label="Selected"
                     value={
                       snapshot.ai.selectedPredictor
                     }
-                    valueClass="text-[#F6B23C]"
+                    valueClass="text-[#A7FF4F]"
                   />
 
                   <StateRow
@@ -1120,14 +1228,9 @@ export function AutonomousIntercept() {
                   />
 
                   <StateRow
-                    label="Prediction Horizon"
-                    value={`${snapshot.ai.predictionHorizonSeconds}s`}
-                  />
-
-                  <StateRow
                     label="CV Weight"
                     value={
-                      formatPercent(
+                      percentage(
                         snapshot.ai.weights.cv,
                       )
                     }
@@ -1136,54 +1239,42 @@ export function AutonomousIntercept() {
                   <StateRow
                     label="CTRV Weight"
                     value={
-                      formatPercent(
+                      percentage(
                         snapshot.ai.weights.ctrv,
                       )
                     }
+                    valueClass="text-[#D77DFF]"
                   />
 
                   <StateRow
                     label="Learned Weight"
                     value={
-                      formatPercent(
+                      percentage(
                         snapshot.ai.weights.learned,
                       )
                     }
+                    valueClass="text-[#A7FF4F]"
                   />
                 </div>
               </section>
 
               {/* Safety */}
 
-              <section className="border-b border-white/[0.08] px-4 py-4">
-                <div className="mb-3 flex items-center gap-2">
+              <section className="border-b border-white/[0.08] px-4 py-3">
+                <div className="mb-2 flex items-center gap-2">
                   <ShieldCheck
                     size={17}
                     className={
                       snapshot.anticipatorySafetyGate
-                        ? "text-[#FF5A63]"
+                        ? "text-[#FF4D9D]"
                         : "text-[#59D99A]"
                     }
                   />
 
                   <span className="text-[16px] font-semibold text-white/82">
-                    Safety Gate
+                    Non-Contact Safety
                   </span>
                 </div>
-
-                <StateRow
-                  label="Current Separation"
-                  value={
-                    formatDistance(
-                      snapshot.distanceMeters,
-                    )
-                  }
-                  valueClass={
-                    snapshot.separationSafe
-                      ? "text-[#59D99A]"
-                      : "text-[#FF5A63]"
-                  }
-                />
 
                 <StateRow
                   label="Protected Radius"
@@ -1192,26 +1283,31 @@ export function AutonomousIntercept() {
 
                 <StateRow
                   label="Predicted Closest"
-                  value={`${snapshot.predictedClosestSeparationMeters.toFixed(
-                    0,
-                  )} m`}
+                  value={
+                    snapshot.predictedClosestSeparationMeters ===
+                    null
+                      ? "—"
+                      : `${snapshot.predictedClosestSeparationMeters.toFixed(
+                          0,
+                        )} m`
+                  }
                   valueClass={
                     snapshot.anticipatorySafetyGate
-                      ? "text-[#FF5A63]"
+                      ? "text-[#FF4D9D]"
                       : "text-[#59D99A]"
                   }
                 />
 
                 <StateRow
-                  label="Gate State"
+                  label="Safety Gate"
                   value={
                     snapshot.anticipatorySafetyGate
-                      ? "RECOVERY ACTIVE"
+                      ? "RECOVERY"
                       : "CLEAR"
                   }
                   valueClass={
                     snapshot.anticipatorySafetyGate
-                      ? "text-[#FF5A63]"
+                      ? "text-[#FF4D9D]"
                       : "text-[#59D99A]"
                   }
                 />
@@ -1219,12 +1315,12 @@ export function AutonomousIntercept() {
 
               {/* Commands */}
 
-              <section className="border-b border-white/[0.08] px-4 py-4">
+              <section className="border-b border-white/[0.08] px-4 py-3">
                 <div className="mb-3 text-[16px] font-semibold text-white/82">
                   Mission Commands
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-2">
                   <CommandButton
                     label="Track"
                     icon={
@@ -1291,43 +1387,28 @@ export function AutonomousIntercept() {
 
               {/* RadioMaster */}
 
-              <section className="px-4 py-4">
-                <div className="mb-3 text-[16px] font-semibold text-white/82">
-                  RadioMaster Control
+              <section className="px-4 py-3">
+                <div className="mb-2 text-[16px] font-semibold text-white/82">
+                  RadioMaster Target Control
                 </div>
 
-                <div className="flex items-start gap-3 rounded-[5px] border border-white/[0.08] bg-[#05060d] p-4">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[4px] border border-white/[0.08] text-white/46">
-                    <Usb
-                      size={17}
-                    />
-                  </div>
+                <div className="flex items-start gap-3 rounded-[5px] border border-white/[0.08] bg-[#05060d] p-3">
+                  <Usb
+                    size={18}
+                    className="mt-0.5 shrink-0 text-white/42"
+                  />
 
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-[14px] font-semibold text-white/74">
-                        RadioMaster USB
-                      </span>
-
-                      <span
-                        className={[
-                          "font-mono text-[14px] font-semibold",
-
-                          snapshot.gamepad.connected
-                            ? "text-[#59D99A]"
-                            : "text-white/36",
-                        ].join(" ")}
-                      >
-                        {snapshot.gamepad.connected
-                          ? "CONNECTED"
-                          : "NOT DETECTED"}
-                      </span>
+                  <div className="min-w-0">
+                    <div className="font-mono text-[13px] font-semibold text-white/68">
+                      {snapshot.gamepad.connected
+                        ? "CONNECTED"
+                        : "NOT DETECTED"}
                     </div>
 
-                    <div className="mt-2 text-[14px] leading-[1.45] text-white/38">
+                    <div className="mt-1 text-[13px] text-white/36">
                       {snapshot.gamepad.connected
                         ? snapshot.gamepad.id
-                        : "Browser Gamepad API ready for manual leader control."}
+                        : "Gamepad API available for target-flight demonstration."}
                     </div>
                   </div>
                 </div>
@@ -1338,102 +1419,132 @@ export function AutonomousIntercept() {
       </section>
 
       {/* ===================================================
-          EVIDENCE
+          Evidence
           =================================================== */}
 
       <section className="border-t border-white/[0.08] bg-[#05060d]">
         <div className="mx-auto grid w-full max-w-[1600px] gap-4 px-4 py-5 sm:px-6 lg:px-8 xl:grid-cols-[1.3fr_0.7fr] xl:px-10 2xl:px-14">
-          {/* Prediction Evidence */}
-
           <section className="overflow-hidden rounded-[6px] border border-white/[0.08] bg-[#07090d]">
-            <div className="border-b border-white/[0.07] px-4 py-4">
+            <div className="border-b border-white/[0.07] px-4 py-3">
               <div className="text-[16px] font-semibold text-[#F6B23C]">
                 Prediction Evidence
               </div>
 
-              <div className="mt-1 text-[14px] text-white/54">
-                Constant velocity vs turn-aware and adaptive prediction
+              <div className="mt-1 text-[14px] text-white/46">
+                Live comparison against actual future target position
               </div>
             </div>
 
             <div className="grid gap-3 p-4 md:grid-cols-4">
-              <PredictorEvidence
-                label="CV Error"
-                value={
-                  formatError(
-                    snapshot.performance
-                      .baselineErrorMeters,
-                  )
-                }
-              />
+              {[
+                {
+                  label:
+                    "CV Error",
 
-              <PredictorEvidence
-                label="CTRV Error"
-                value={
-                  formatError(
-                    snapshot.performance
-                      .ctrvErrorMeters,
-                  )
-                }
-                tone="caution"
-              />
+                  value:
+                    formatError(
+                      snapshot.performance
+                        .baselineErrorMeters,
+                    ),
 
-              <PredictorEvidence
-                label="Adaptive Error"
-                value={
-                  formatError(
-                    snapshot.performance
-                      .mlErrorMeters,
-                  )
-                }
-                tone="nominal"
-              />
+                  color:
+                    "text-white",
+                },
 
-              <PredictorEvidence
-                label="vs CV"
-                value={
-                  !evidenceReady ||
-                  improvement ===
-                    null
-                    ? "TRAINING"
-                    : `${improvement >=
+                {
+                  label:
+                    "CTRV Error",
+
+                  value:
+                    formatError(
+                      snapshot.performance
+                        .ctrvErrorMeters,
+                    ),
+
+                  color:
+                    "text-[#D77DFF]",
+                },
+
+                {
+                  label:
+                    "Adaptive Error",
+
+                  value:
+                    formatError(
+                      snapshot.performance
+                        .mlErrorMeters,
+                    ),
+
+                  color:
+                    "text-[#A7FF4F]",
+                },
+
+                {
+                  label:
+                    "vs CV",
+
+                  value:
+                    !evidenceReady ||
+                    improvement ===
+                      null
+                      ? "TRAINING"
+                      : `${improvement >=
+                          0
+                          ? "+"
+                          : ""}${improvement.toFixed(
+                          1,
+                        )}%`,
+
+                  color:
+                    improvement !==
+                        null &&
+                      improvement >
                         0
-                        ? "+"
-                        : ""}${improvement.toFixed(
-                        1,
-                      )}%`
-                }
-                tone={
-                  !evidenceReady
-                    ? "caution"
-                    : adaptiveWinning
-                      ? "nominal"
-                      : "critical"
-                }
-              />
-            </div>
+                      ? "text-[#59D99A]"
+                      : "text-[#FF5A63]",
+                },
+              ].map(
+                (
+                  item,
+                ) => (
+                  <div
+                    key={
+                      item.label
+                    }
+                    className="rounded-[5px] border border-white/[0.07] bg-[#05060d] p-3"
+                  >
+                    <div className="text-[14px] text-white/42">
+                      {
+                        item.label
+                      }
+                    </div>
 
-            <div className="px-4 pb-4">
-              <div className="rounded-[5px] border border-white/[0.07] bg-[#05060d] p-4 text-[14px] leading-[1.6] text-white/42">
-                MissionNexus validates every predictor against the leader's
-                actual future position. Adaptive weighting automatically reduces
-                authority for predictors with larger rolling error, so the
-                learned component is not trusted merely because it is labelled AI.
-              </div>
+                    <div
+                      className={[
+                        "mt-2 font-mono text-[17px] font-semibold",
+
+                        item.color,
+                      ].join(" ")}
+                    >
+                      {
+                        item.value
+                      }
+                    </div>
+                  </div>
+                ),
+              )}
             </div>
           </section>
 
-          {/* Architecture */}
-
           <section className="overflow-hidden rounded-[6px] border border-white/[0.08] bg-[#07090d]">
-            <div className="flex items-center justify-between border-b border-white/[0.07] px-4 py-4">
+            <div className="flex items-center justify-between border-b border-white/[0.07] px-4 py-3">
               <div>
                 <div className="text-[16px] font-semibold text-[#F6B23C]">
-                  System Status
+                  Defence System Status
                 </div>
 
-                <div className="mt-1 text-[14px] text-white/54">
-                  Phase-1 predictive guidance architecture
+                <div className="mt-1 text-[14px] text-white/46">
+                  Four-sector autonomous response simulation
                 </div>
               </div>
 
@@ -1445,21 +1556,30 @@ export function AutonomousIntercept() {
 
             <div className="p-4">
               <StateRow
-                label="Leader"
-                value="SYSID 1 · controlled"
-                valueClass="text-[#F6B23C]"
+                label="Protected Sectors"
+                value="4"
               />
 
               <StateRow
-                label="Follower"
-                value="SYSID 2 · autonomous"
-                valueClass="text-[#5AA9FF]"
+                label="Interceptor Fleet"
+                value={`${snapshot.interceptors.length} UAV`}
+                valueClass="text-[#00D9FF]"
               />
 
               <StateRow
-                label="Prediction"
-                value="CV + CTRV + residual"
+                label="Automatic Dispatch"
+                value={
+                  snapshot.autoDefenseEnabled
+                    ? "ENABLED"
+                    : "DISABLED"
+                }
                 valueClass="text-[#59D99A]"
+              />
+
+              <StateRow
+                label="Predictor"
+                value="CV + CTRV + residual"
+                valueClass="text-[#A7FF4F]"
               />
 
               <StateRow
@@ -1468,23 +1588,13 @@ export function AutonomousIntercept() {
               />
 
               <StateRow
-                label="Adaptive Speed"
-                value={
-                  snapshot.speedControl.adaptiveSync
-                    ? "ENABLED"
-                    : "DISABLED"
-                }
-                valueClass="text-[#59D99A]"
-              />
-
-              <StateRow
                 label="Safety"
-                value="Anticipatory separation gate"
+                value="Non-contact separation"
                 valueClass="text-[#59D99A]"
               />
 
               <StateRow
-                label="Next Integration"
+                label="Next"
                 value="ArduPlane SITL + MAVLink"
                 valueClass="text-[#F6B23C]"
               />
