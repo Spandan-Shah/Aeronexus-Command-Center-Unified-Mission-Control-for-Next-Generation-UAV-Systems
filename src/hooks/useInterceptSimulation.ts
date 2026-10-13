@@ -6,6 +6,10 @@ import {
   useState,
 } from "react";
 
+/* =========================================================
+   Public Types
+   ========================================================= */
+
 export type InterceptMode =
   | "IDLE"
   | "ACQUIRE"
@@ -38,11 +42,47 @@ export type AircraftState =
     mode: string;
   };
 
+export type InterceptorStatus =
+  | "READY"
+  | "PATROL"
+  | "DISPATCHED"
+  | "SHADOW"
+  | "RECOVERY"
+  | "HOLD"
+  | "RTL";
+
+export type InterceptorState =
+  AircraftState & {
+    stationId: string;
+    sectorId: string;
+    status: InterceptorStatus;
+    speedLimitMps: number;
+    targetAirspeed: number;
+    assigned: boolean;
+  };
+
+export type DefenseSector = {
+  id: string;
+  label: string;
+  color: string;
+  center: Vector2;
+  station: Vector2;
+  radiusMeters: number;
+  interceptorId: number;
+  active: boolean;
+};
+
 export type GamepadState = {
   connected: boolean;
   id: string;
   steeringAxis: number;
   speedAxis: number;
+};
+
+export type PredictorWeights = {
+  cv: number;
+  ctrv: number;
+  learned: number;
 };
 
 export type PredictionPerformance = {
@@ -66,26 +106,11 @@ export type PredictionPerformance = {
 };
 
 export type SpeedControlState = {
-  leaderCommandedAirspeed:
-    number;
-
-  followerCommandedAirspeed:
-    number;
-
-  followerMaxAirspeed:
+  intruderCommandedAirspeed:
     number;
 
   adaptiveSync:
     boolean;
-
-  airspeedDelta:
-    number;
-};
-
-export type PredictorWeights = {
-  cv: number;
-  ctrv: number;
-  learned: number;
 };
 
 export type InterceptSnapshot = {
@@ -100,17 +125,32 @@ export type InterceptSnapshot = {
   simTimeSeconds:
     number;
 
-  leader:
+  intruder:
     AircraftState;
 
-  follower:
-    AircraftState;
+  interceptors:
+    InterceptorState[];
 
-  leaderTrail:
+  sectors:
+    DefenseSector[];
+
+  activeSectorId:
+    string | null;
+
+  assignedInterceptorId:
+    number | null;
+
+  autoDefenseEnabled:
+    boolean;
+
+  intruderTrail:
     Vector2[];
 
-  followerTrail:
-    Vector2[];
+  interceptorTrails:
+    Record<
+      number,
+      Vector2[]
+    >;
 
   baselinePath:
     Vector2[];
@@ -124,17 +164,11 @@ export type InterceptSnapshot = {
   guidanceTarget:
     Vector2;
 
-  home:
-    Vector2;
-
   distanceMeters:
-    number;
+    number | null;
 
   closingRateMps:
-    number;
-
-  relativeBearingDegrees:
-    number;
+    number | null;
 
   etaSeconds:
     number | null;
@@ -149,7 +183,7 @@ export type InterceptSnapshot = {
     boolean;
 
   predictedClosestSeparationMeters:
-    number;
+    number | null;
 
   anticipatorySafetyGate:
     boolean;
@@ -196,39 +230,21 @@ export type InterceptSnapshot = {
    ========================================================= */
 
 type ResidualModel = {
-  weightsX:
-    number[];
-
-  weightsY:
-    number[];
-
-  sampleCount:
-    number;
-
-  learningRate:
-    number;
+  weightsX: number[];
+  weightsY: number[];
+  sampleCount: number;
+  learningRate: number;
 };
 
 type PredictorErrorHistory = {
-  cv:
-    number[];
-
-  ctrv:
-    number[];
-
-  learned:
-    number[];
-
-  adaptive:
-    number[];
+  cv: number[];
+  ctrv: number[];
+  learned: number[];
+  adaptive: number[];
 };
 
 type PendingPrediction = {
-  dueAt:
-    number;
-
-  origin:
-    Vector2;
+  dueAt: number;
 
   features:
     number[];
@@ -246,6 +262,12 @@ type PendingPrediction = {
     Vector2;
 };
 
+type InternalInterceptor =
+  InterceptorState & {
+    patrolPhase:
+      number;
+  };
+
 type InternalSimulation = {
   running:
     boolean;
@@ -262,14 +284,29 @@ type InternalSimulation = {
   simTimeSeconds:
     number;
 
-  leader:
+  intruder:
     AircraftState;
 
-  follower:
-    AircraftState;
+  interceptors:
+    InternalInterceptor[];
 
-  home:
-    Vector2;
+  activeSectorId:
+    string | null;
+
+  assignedInterceptorId:
+    number | null;
+
+  manualDispatchInterceptorId:
+    number | null;
+
+  autoDefenseEnabled:
+    boolean;
+
+  intruderCommandedAirspeed:
+    number;
+
+  adaptiveSpeedSync:
+    boolean;
 
   desiredSeparationMeters:
     number;
@@ -277,23 +314,14 @@ type InternalSimulation = {
   minimumSeparationMeters:
     number;
 
-  leaderCommandedAirspeed:
-    number;
-
-  followerCommandedAirspeed:
-    number;
-
-  followerMaxAirspeed:
-    number;
-
-  adaptiveSpeedSync:
-    boolean;
-
-  leaderTrail:
+  intruderTrail:
     Vector2[];
 
-  followerTrail:
-    Vector2[];
+  interceptorTrails:
+    Record<
+      number,
+      Vector2[]
+    >;
 
   baselinePath:
     Vector2[];
@@ -319,6 +347,12 @@ type InternalSimulation = {
   residualModel:
     ResidualModel;
 
+  intruderTurnAcceleration:
+    number;
+
+  previousIntruderTurnRate:
+    number;
+
   lastTrailSample:
     number;
 
@@ -343,13 +377,153 @@ const TRAIL_INTERVAL_MS =
   160;
 
 const TRAIL_LIMIT =
-  150;
+  180;
 
 const ERROR_HISTORY_LIMIT =
-  36;
+  40;
 
 const RESIDUAL_SCALE_METERS =
-  60;
+  70;
+
+/*
+ * Fictional demonstration sectors.
+ *
+ * They are local ENU offsets around the map origin and do
+ * NOT represent real defence installations.
+ */
+const DEFENSE_SECTOR_DEFINITIONS = [
+  {
+    id:
+      "sector-alpha",
+
+    label:
+      "ALPHA",
+
+    color:
+      "#00E5FF",
+
+    center: {
+      x:
+        -650,
+
+      y:
+        520,
+    },
+
+    station: {
+      x:
+        -1030,
+
+      y:
+        820,
+    },
+
+    radiusMeters:
+      430,
+
+    interceptorId:
+      1,
+  },
+
+  {
+    id:
+      "sector-bravo",
+
+    label:
+      "BRAVO",
+
+    color:
+      "#B67CFF",
+
+    center: {
+      x:
+        650,
+
+      y:
+        520,
+    },
+
+    station: {
+      x:
+        1030,
+
+      y:
+        820,
+    },
+
+    radiusMeters:
+      430,
+
+    interceptorId:
+      2,
+  },
+
+  {
+    id:
+      "sector-charlie",
+
+    label:
+      "CHARLIE",
+
+    color:
+      "#FFB84D",
+
+    center: {
+      x:
+        -650,
+
+      y:
+        -520,
+    },
+
+    station: {
+      x:
+        -1030,
+
+      y:
+        -820,
+    },
+
+    radiusMeters:
+      430,
+
+    interceptorId:
+      3,
+  },
+
+  {
+    id:
+      "sector-delta",
+
+    label:
+      "DELTA",
+
+    color:
+      "#66FF99",
+
+    center: {
+      x:
+        650,
+
+      y:
+        -520,
+    },
+
+    station: {
+      x:
+        1030,
+
+      y:
+        -820,
+    },
+
+    radiusMeters:
+      430,
+
+    interceptorId:
+      4,
+  },
+] as const;
 
 const PREDICTION_HORIZONS = [
   0.75,
@@ -472,42 +646,49 @@ function velocityVector(
 }
 
 function distanceBetween(
-  a: Vector2,
-  b: Vector2,
+  first:
+    Vector2,
+
+  second:
+    Vector2,
 ) {
   return Math.hypot(
-    b.x -
-      a.x,
+    second.x -
+      first.x,
 
-    b.y -
-      a.y,
+    second.y -
+      first.y,
   );
 }
 
 function bearingBetween(
-  from: Vector2,
-  to: Vector2,
+  from:
+    Vector2,
+
+  to:
+    Vector2,
 ) {
-  const dx =
+  const east =
     to.x -
     from.x;
 
-  const dy =
+  const north =
     to.y -
     from.y;
 
   return normalizeHeading(
     toDegrees(
       Math.atan2(
-        dx,
-        dy,
+        east,
+        north,
       ),
     ),
   );
 }
 
 function average(
-  values: number[],
+  values:
+    number[],
 ) {
   if (
     values.length ===
@@ -519,10 +700,10 @@ function average(
   return (
     values.reduce(
       (
-        total,
+        sum,
         value,
       ) =>
-        total +
+        sum +
         value,
       0,
     ) /
@@ -531,10 +712,13 @@ function average(
 }
 
 function dot(
-  weights: number[],
-  features: number[],
+  weights:
+    number[],
+
+  features:
+    number[],
 ) {
-  let result =
+  let output =
     0;
 
   for (
@@ -545,7 +729,7 @@ function dot(
     index +=
       1
   ) {
-    result +=
+    output +=
       (
         weights[
           index
@@ -560,7 +744,7 @@ function dot(
       );
   }
 
-  return result;
+  return output;
 }
 
 function weightedPoint(
@@ -600,99 +784,101 @@ function weightedPoint(
    ========================================================= */
 
 function calculateClosingRate(
-  leader:
+  target:
     AircraftState,
 
-  follower:
+  interceptor:
     AircraftState,
 ) {
-  const leaderVelocity =
+  const targetVelocity =
     velocityVector(
-      leader,
+      target,
     );
 
-  const followerVelocity =
+  const interceptorVelocity =
     velocityVector(
-      follower,
+      interceptor,
     );
 
-  const relativeX =
-    leader.x -
-    follower.x;
+  const relativePosition = {
+    x:
+      target.x -
+      interceptor.x,
 
-  const relativeY =
-    leader.y -
-    follower.y;
+    y:
+      target.y -
+      interceptor.y,
+  };
 
   const distance =
     Math.max(
       1,
       Math.hypot(
-        relativeX,
-        relativeY,
+        relativePosition.x,
+        relativePosition.y,
       ),
     );
 
   const unitX =
-    relativeX /
+    relativePosition.x /
     distance;
 
   const unitY =
-    relativeY /
+    relativePosition.y /
     distance;
 
   return (
     (
-      followerVelocity.x -
-      leaderVelocity.x
+      interceptorVelocity.x -
+      targetVelocity.x
     ) *
       unitX +
     (
-      followerVelocity.y -
-      leaderVelocity.y
+      interceptorVelocity.y -
+      targetVelocity.y
     ) *
       unitY
   );
 }
 
 function predictClosestApproach(
-  leader:
+  target:
     AircraftState,
 
-  follower:
+  interceptor:
     AircraftState,
 
   horizonSeconds =
-    5,
+    6,
 ) {
-  const leaderVelocity =
+  const targetVelocity =
     velocityVector(
-      leader,
+      target,
     );
 
-  const followerVelocity =
+  const interceptorVelocity =
     velocityVector(
-      follower,
+      interceptor,
     );
 
   const relativePosition = {
     x:
-      leader.x -
-      follower.x,
+      target.x -
+      interceptor.x,
 
     y:
-      leader.y -
-      follower.y,
+      target.y -
+      interceptor.y,
   };
 
   const relativeVelocity = {
     x:
-      leaderVelocity.x -
-      followerVelocity.x,
+      targetVelocity.x -
+      interceptorVelocity.x,
 
     y:
-      leaderVelocity.y -
-      followerVelocity.y,
+      targetVelocity.y -
+      interceptorVelocity.y,
   };
 
   const velocitySquared =
@@ -706,8 +892,8 @@ function predictClosestApproach(
     0.0001
   ) {
     return distanceBetween(
-      leader,
-      follower,
+      target,
+      interceptor,
     );
   }
 
@@ -724,30 +910,23 @@ function predictClosestApproach(
       horizonSeconds,
     );
 
-  const futureRelative = {
-    x:
-      relativePosition.x +
+  return Math.hypot(
+    relativePosition.x +
       relativeVelocity.x *
         timeToClosest,
 
-    y:
-      relativePosition.y +
+    relativePosition.y +
       relativeVelocity.y *
         timeToClosest,
-  };
-
-  return Math.hypot(
-    futureRelative.x,
-    futureRelative.y,
   );
 }
 
 /* =========================================================
-   Predictor 1: Constant Velocity
+   Predictor 1 — Constant Velocity
    ========================================================= */
 
 function constantVelocityPrediction(
-  leader:
+  target:
     AircraftState,
 
   secondsAhead:
@@ -755,32 +934,29 @@ function constantVelocityPrediction(
 ): Vector2 {
   const velocity =
     velocityVector(
-      leader,
+      target,
     );
 
   return {
     x:
-      leader.x +
+      target.x +
       velocity.x *
         secondsAhead,
 
     y:
-      leader.y +
+      target.y +
       velocity.y *
         secondsAhead,
   };
 }
 
 /* =========================================================
-   Predictor 2: CTRV
-   Constant Turn Rate + Velocity
-
-   Heading convention:
-   0° north, 90° east.
+   Predictor 2 — CTRV
+   Constant Turn Rate and Velocity
    ========================================================= */
 
 function ctrvPrediction(
-  leader:
+  target:
     AircraftState,
 
   secondsAhead:
@@ -788,12 +964,12 @@ function ctrvPrediction(
 ): Vector2 {
   const heading =
     toRadians(
-      leader.heading,
+      target.heading,
     );
 
   const turnRate =
     toRadians(
-      leader.turnRate,
+      target.turnRate,
     );
 
   if (
@@ -803,7 +979,7 @@ function ctrvPrediction(
     0.0008
   ) {
     return constantVelocityPrediction(
-      leader,
+      target,
       secondsAhead,
     );
   }
@@ -813,48 +989,44 @@ function ctrvPrediction(
     turnRate *
       secondsAhead;
 
-  const x =
-    leader.x +
-    (
-      leader.airspeed /
-      turnRate
-    ) *
-      (
-        Math.cos(
-          heading,
-        ) -
-        Math.cos(
-          futureHeading,
-        )
-      );
-
-  const y =
-    leader.y +
-    (
-      leader.airspeed /
-      turnRate
-    ) *
-      (
-        Math.sin(
-          futureHeading,
-        ) -
-        Math.sin(
-          heading,
-        )
-      );
-
   return {
-    x,
-    y,
+    x:
+      target.x +
+      (
+        target.airspeed /
+        turnRate
+      ) *
+        (
+          Math.cos(
+            heading,
+          ) -
+          Math.cos(
+            futureHeading,
+          )
+        ),
+
+    y:
+      target.y +
+      (
+        target.airspeed /
+        turnRate
+      ) *
+        (
+          Math.sin(
+            futureHeading,
+          ) -
+          Math.sin(
+            heading,
+          )
+        ),
   };
 }
 
 /* =========================================================
-   Predictor 3: Online Residual Learner
+   Predictor 3 — Online Residual Model
 
-   Learns the residual error remaining after CTRV.
-   This means physics handles most motion and ML only learns
-   corrections rather than trying to learn flight from zero.
+   Physics predicts the majority of motion.
+   Online learning only predicts the remaining error.
    ========================================================= */
 
 function createResidualModel():
@@ -868,9 +1040,11 @@ function createResidualModel():
       0,
       0,
       0,
+      0,
     ],
 
     weightsY: [
+      0,
       0,
       0,
       0,
@@ -889,29 +1063,39 @@ function createResidualModel():
 }
 
 function buildResidualFeatures(
-  leader:
+  target:
     AircraftState,
+
+  turnAcceleration:
+    number,
 
   horizonSeconds:
     number,
 ) {
   const heading =
     toRadians(
-      leader.heading,
+      target.heading,
     );
 
   return [
     1,
 
     clamp(
-      leader.turnRate /
+      target.turnRate /
         10,
       -1.5,
       1.5,
     ),
 
     clamp(
-      leader.bank /
+      turnAcceleration /
+        6,
+      -1.5,
+      1.5,
+    ),
+
+    clamp(
+      target.bank /
         40,
       -1.5,
       1.5,
@@ -919,10 +1103,10 @@ function buildResidualFeatures(
 
     clamp(
       (
-        leader.airspeed -
-        22
+        target.airspeed -
+        28
       ) /
-        12,
+        20,
       -1.5,
       1.5,
     ),
@@ -945,8 +1129,11 @@ function buildResidualFeatures(
 }
 
 function learnedPrediction(
-  leader:
+  target:
     AircraftState,
+
+  turnAcceleration:
+    number,
 
   horizonSeconds:
     number,
@@ -954,40 +1141,35 @@ function learnedPrediction(
   model:
     ResidualModel,
 ): Vector2 {
-  const physicsPrediction =
+  const physics =
     ctrvPrediction(
-      leader,
+      target,
       horizonSeconds,
     );
 
   const features =
     buildResidualFeatures(
-      leader,
+      target,
+      turnAcceleration,
       horizonSeconds,
     );
 
-  const correctionX =
-    dot(
-      model.weightsX,
-      features,
-    ) *
-    RESIDUAL_SCALE_METERS;
-
-  const correctionY =
-    dot(
-      model.weightsY,
-      features,
-    ) *
-    RESIDUAL_SCALE_METERS;
-
   return {
     x:
-      physicsPrediction.x +
-      correctionX,
+      physics.x +
+      dot(
+        model.weightsX,
+        features,
+      ) *
+        RESIDUAL_SCALE_METERS,
 
     y:
-      physicsPrediction.y +
-      correctionY,
+      physics.y +
+      dot(
+        model.weightsY,
+        features,
+      ) *
+        RESIDUAL_SCALE_METERS,
   };
 }
 
@@ -998,7 +1180,7 @@ function trainResidualModel(
   features:
     number[],
 
-  ctrvPredictionPoint:
+  ctrvPoint:
     Vector2,
 
   actualPosition:
@@ -1007,24 +1189,24 @@ function trainResidualModel(
   const targetResidualX =
     (
       actualPosition.x -
-      ctrvPredictionPoint.x
+      ctrvPoint.x
     ) /
     RESIDUAL_SCALE_METERS;
 
   const targetResidualY =
     (
       actualPosition.y -
-      ctrvPredictionPoint.y
+      ctrvPoint.y
     ) /
     RESIDUAL_SCALE_METERS;
 
-  const predictedResidualX =
+  const predictionResidualX =
     dot(
       model.weightsX,
       features,
     );
 
-  const predictedResidualY =
+  const predictionResidualY =
     dot(
       model.weightsY,
       features,
@@ -1033,7 +1215,7 @@ function trainResidualModel(
   const errorX =
     clamp(
       targetResidualX -
-        predictedResidualX,
+        predictionResidualX,
       -1.5,
       1.5,
     );
@@ -1041,7 +1223,7 @@ function trainResidualModel(
   const errorY =
     clamp(
       targetResidualY -
-        predictedResidualY,
+        predictionResidualY,
       -1.5,
       1.5,
     );
@@ -1123,11 +1305,6 @@ function calculatePredictorWeights(
       errors.learned,
     );
 
-  /*
-   * Initial weighting before enough validation:
-   * favor CTRV because this mission specifically needs
-   * improved turn prediction.
-   */
   if (
     cvError ===
       null ||
@@ -1141,88 +1318,79 @@ function calculatePredictorWeights(
         0.15,
 
       ctrv:
-        0.5,
+        0.55,
 
       learned:
-        0.35,
+        0.3,
     };
   }
 
-  /*
-   * Inverse-error weighting.
-   * A poor model automatically loses authority.
-   */
-  const inverseCv =
+  const cvScore =
     1 /
     Math.max(
-      2,
       cvError,
+      2,
     );
 
-  const inverseCtrv =
+  const ctrvScore =
     1 /
     Math.max(
-      2,
       ctrvError,
+      2,
     );
 
-  const inverseLearned =
+  const learnedScore =
     1 /
     Math.max(
-      2,
       learnedError,
+      2,
     );
 
   const total =
-    inverseCv +
-    inverseCtrv +
-    inverseLearned;
+    cvScore +
+    ctrvScore +
+    learnedScore;
 
   return {
     cv:
-      inverseCv /
+      cvScore /
       total,
 
     ctrv:
-      inverseCtrv /
+      ctrvScore /
       total,
 
     learned:
-      inverseLearned /
+      learnedScore /
       total,
   };
 }
 
 function adaptivePrediction(
-  leader:
-    AircraftState,
+  simulation:
+    InternalSimulation,
 
   horizonSeconds:
     number,
-
-  model:
-    ResidualModel,
-
-  errors:
-    PredictorErrorHistory,
 ): Vector2 {
   const cv =
     constantVelocityPrediction(
-      leader,
+      simulation.intruder,
       horizonSeconds,
     );
 
   const ctrv =
     ctrvPrediction(
-      leader,
+      simulation.intruder,
       horizonSeconds,
     );
 
   const learned =
     learnedPrediction(
-      leader,
+      simulation.intruder,
+      simulation.intruderTurnAcceleration,
       horizonSeconds,
-      model,
+      simulation.residualModel,
     );
 
   return weightedPoint(
@@ -1230,9 +1398,146 @@ function adaptivePrediction(
     ctrv,
     learned,
     calculatePredictorWeights(
-      errors,
+      simulation.errors,
     ),
   );
+}
+
+/* =========================================================
+   Sector Helpers
+   ========================================================= */
+
+function getDefenseSectors(
+  activeSectorId:
+    string | null,
+): DefenseSector[] {
+  return DEFENSE_SECTOR_DEFINITIONS.map(
+    (
+      sector,
+    ) => ({
+      id:
+        sector.id,
+
+      label:
+        sector.label,
+
+      color:
+        sector.color,
+
+      center: {
+        ...sector.center,
+      },
+
+      station: {
+        ...sector.station,
+      },
+
+      radiusMeters:
+        sector.radiusMeters,
+
+      interceptorId:
+        sector.interceptorId,
+
+      active:
+        sector.id ===
+        activeSectorId,
+    }),
+  );
+}
+
+function findIntrudedSector(
+  intruder:
+    Vector2,
+) {
+  return DEFENSE_SECTOR_DEFINITIONS.find(
+    (
+      sector,
+    ) =>
+      distanceBetween(
+        intruder,
+        sector.center,
+      ) <=
+      sector.radiusMeters,
+  );
+}
+
+/* =========================================================
+   Interceptor Creation
+   ========================================================= */
+
+function createInterceptor(
+  id:
+    number,
+
+  station:
+    Vector2,
+
+  sectorId:
+    string,
+
+  speedLimitMps:
+    number,
+
+  patrolPhase:
+    number,
+): InternalInterceptor {
+  return {
+    id,
+
+    callsign:
+      `INT-${id
+        .toString()
+        .padStart(
+          2,
+          "0",
+        )}`,
+
+    x:
+      station.x,
+
+    y:
+      station.y,
+
+    heading:
+      id %
+        2 ===
+      0
+        ? 220
+        : 40,
+
+    airspeed:
+      22,
+
+    altitude:
+      118,
+
+    turnRate:
+      0,
+
+    bank:
+      0,
+
+    mode:
+      "PATROL",
+
+    stationId:
+      `STATION-${id}`,
+
+    sectorId,
+
+    status:
+      "READY",
+
+    speedLimitMps,
+
+    targetAirspeed:
+      22,
+
+    assigned:
+      false,
+
+    patrolPhase,
+  };
 }
 
 /* =========================================================
@@ -1243,6 +1548,41 @@ function createInitialSimulation():
   InternalSimulation {
   const now =
     performance.now();
+
+  const interceptors =
+    DEFENSE_SECTOR_DEFINITIONS.map(
+      (
+        sector,
+        index,
+      ) =>
+        createInterceptor(
+          sector.interceptorId,
+          sector.station,
+          sector.id,
+          58 +
+            index *
+              5,
+          index *
+            Math.PI /
+            2,
+        ),
+    );
+
+  const trails:
+    Record<
+      number,
+      Vector2[]
+    > = {};
+
+  interceptors.forEach(
+    (
+      interceptor,
+    ) => {
+      trails[
+        interceptor.id
+      ] = [];
+    },
+  );
 
   return {
     running:
@@ -1260,27 +1600,27 @@ function createInitialSimulation():
     simTimeSeconds:
       0,
 
-    leader: {
+    intruder: {
       id:
-        1,
+        99,
 
       callsign:
-        "LEADER-01",
+        "INTRUDER-UAV",
 
       x:
-        220,
+        -1450,
 
       y:
-        100,
+        -840,
 
       heading:
-        38,
+        58,
 
       airspeed:
-        22,
+        28,
 
       altitude:
-        120,
+        132,
 
       turnRate:
         0,
@@ -1289,72 +1629,40 @@ function createInitialSimulation():
         0,
 
       mode:
-        "AUTO DEMO",
+        "UNKNOWN",
     },
 
-    follower: {
-      id:
-        2,
+    interceptors,
 
-      callsign:
-        "FOLLOWER-02",
+    activeSectorId:
+      null,
 
-      x:
-        -460,
+    assignedInterceptorId:
+      null,
 
-      y:
-        -290,
+    manualDispatchInterceptorId:
+      null,
 
-      heading:
-        40,
+    autoDefenseEnabled:
+      true,
 
-      airspeed:
-        21,
-
-      altitude:
-        114,
-
-      turnRate:
-        0,
-
-      bank:
-        0,
-
-      mode:
-        "STANDBY",
-    },
-
-    home: {
-      x:
-        -460,
-
-      y:
-        -290,
-    },
-
-    desiredSeparationMeters:
-      160,
-
-    minimumSeparationMeters:
-      80,
-
-    leaderCommandedAirspeed:
-      22,
-
-    followerCommandedAirspeed:
-      21,
-
-    followerMaxAirspeed:
-      32,
+    intruderCommandedAirspeed:
+      28,
 
     adaptiveSpeedSync:
       true,
 
-    leaderTrail:
+    desiredSeparationMeters:
+      180,
+
+    minimumSeparationMeters:
+      95,
+
+    intruderTrail:
       [],
 
-    followerTrail:
-      [],
+    interceptorTrails:
+      trails,
 
     baselinePath:
       [],
@@ -1396,6 +1704,12 @@ function createInitialSimulation():
     residualModel:
       createResidualModel(),
 
+    intruderTurnAcceleration:
+      0,
+
+    previousIntruderTurnRate:
+      0,
+
     lastTrailSample:
       now,
 
@@ -1419,7 +1733,7 @@ function createInitialSimulation():
 }
 
 /* =========================================================
-   Browser Gamepad
+   Browser Controller
    ========================================================= */
 
 function getConnectedGamepad():
@@ -1459,10 +1773,10 @@ function getConnectedGamepad():
 }
 
 /* =========================================================
-   Leader Dynamics
+   Intruder Dynamics
    ========================================================= */
 
-function updateLeader(
+function updateIntruder(
   simulation:
     InternalSimulation,
 
@@ -1473,7 +1787,10 @@ function updateLeader(
     getConnectedGamepad();
 
   let targetAirspeed =
-    simulation.leaderCommandedAirspeed;
+    simulation.intruderCommandedAirspeed;
+
+  simulation.previousIntruderTurnRate =
+    simulation.intruder.turnRate;
 
   if (
     gamepad
@@ -1513,17 +1830,17 @@ function updateLeader(
       speedAxis,
     };
 
-    simulation.leader.mode =
+    simulation.intruder.mode =
       "USB MANUAL";
 
-    simulation.leader.turnRate =
+    simulation.intruder.turnRate =
       steering *
-      11;
+      12;
 
     targetAirspeed =
-      simulation.leaderCommandedAirspeed +
+      simulation.intruderCommandedAirspeed +
       speedAxis *
-        7;
+        10;
   } else {
     simulation.gamepad = {
       connected:
@@ -1539,44 +1856,50 @@ function updateLeader(
         0,
     };
 
-    simulation.leader.mode =
-      "AUTO DEMO";
+    simulation.intruder.mode =
+      "SIM AUTO";
 
     const time =
       simulation.simTimeSeconds;
 
-    /*
-     * Intentional changing-turn profile:
-     * useful for comparing CV against turn-aware prediction.
-     */
-    simulation.leader.turnRate =
+    simulation.intruder.turnRate =
       clamp(
         Math.sin(
           time /
-            4.8,
+            5.1,
         ) *
-          6.5 +
+          6.8 +
           Math.sin(
             time /
-              1.85,
+              1.9,
           ) *
-            2.1,
-        -9,
-        9,
+            2.4,
+        -10,
+        10,
       );
   }
+
+  simulation.intruderTurnAcceleration =
+    (
+      simulation.intruder.turnRate -
+      simulation.previousIntruderTurnRate
+    ) /
+    Math.max(
+      deltaSeconds,
+      0.01,
+    );
 
   targetAirspeed =
     clamp(
       targetAirspeed,
-      14,
-      34,
+      12,
+      50,
     );
 
-  simulation.leader.airspeed +=
+  simulation.intruder.airspeed +=
     (
       targetAirspeed -
-      simulation.leader
+      simulation.intruder
         .airspeed
     ) *
     Math.min(
@@ -1585,34 +1908,34 @@ function updateLeader(
         1.6,
     );
 
-  simulation.leader.heading =
+  simulation.intruder.heading =
     normalizeHeading(
-      simulation.leader
+      simulation.intruder
         .heading +
-        simulation.leader
+        simulation.intruder
           .turnRate *
           deltaSeconds,
     );
 
-  simulation.leader.bank =
+  simulation.intruder.bank =
     clamp(
-      simulation.leader
+      simulation.intruder
         .turnRate *
         3.2,
-      -38,
-      38,
+      -40,
+      40,
     );
 
   const velocity =
     velocityVector(
-      simulation.leader,
+      simulation.intruder,
     );
 
-  simulation.leader.x +=
+  simulation.intruder.x +=
     velocity.x *
     deltaSeconds;
 
-  simulation.leader.y +=
+  simulation.intruder.y +=
     velocity.y *
     deltaSeconds;
 }
@@ -1631,7 +1954,7 @@ function updatePredictionPaths(
         horizon,
       ) =>
         constantVelocityPrediction(
-          simulation.leader,
+          simulation.intruder,
           horizon,
         ),
     );
@@ -1642,7 +1965,7 @@ function updatePredictionPaths(
         horizon,
       ) =>
         ctrvPrediction(
-          simulation.leader,
+          simulation.intruder,
           horizon,
         ),
     );
@@ -1653,7 +1976,8 @@ function updatePredictionPaths(
         horizon,
       ) =>
         learnedPrediction(
-          simulation.leader,
+          simulation.intruder,
+          simulation.intruderTurnAcceleration,
           horizon,
           simulation.residualModel,
         ),
@@ -1665,10 +1989,8 @@ function updatePredictionPaths(
         horizon,
       ) =>
         adaptivePrediction(
-          simulation.leader,
+          simulation,
           horizon,
-          simulation.residualModel,
-          simulation.errors,
         ),
     );
 }
@@ -1708,38 +2030,38 @@ function evaluatePredictions(
         return;
       }
 
-      const actualPosition = {
+      const actual = {
         x:
-          simulation.leader.x,
+          simulation.intruder.x,
 
         y:
-          simulation.leader.y,
+          simulation.intruder.y,
       };
 
       simulation.errors.cv.push(
         distanceBetween(
-          actualPosition,
+          actual,
           pending.cv,
         ),
       );
 
       simulation.errors.ctrv.push(
         distanceBetween(
-          actualPosition,
+          actual,
           pending.ctrv,
         ),
       );
 
       simulation.errors.learned.push(
         distanceBetween(
-          actualPosition,
+          actual,
           pending.learned,
         ),
       );
 
       simulation.errors.adaptive.push(
         distanceBetween(
-          actualPosition,
+          actual,
           pending.adaptive,
         ),
       );
@@ -1748,7 +2070,7 @@ function evaluatePredictions(
         simulation.residualModel,
         pending.features,
         pending.ctrv,
-        actualPosition,
+        actual,
       );
     },
   );
@@ -1777,7 +2099,7 @@ function evaluatePredictions(
     );
 }
 
-function queuePredictionEvaluation(
+function queuePrediction(
   simulation:
     InternalSimulation,
 
@@ -1802,29 +2124,29 @@ function queuePredictionEvaluation(
 
   const cv =
     constantVelocityPrediction(
-      simulation.leader,
+      simulation.intruder,
       PREDICTION_HORIZON_SECONDS,
     );
 
   const ctrv =
     ctrvPrediction(
-      simulation.leader,
+      simulation.intruder,
+      PREDICTION_HORIZON_SECONDS,
+    );
+
+  const features =
+    buildResidualFeatures(
+      simulation.intruder,
+      simulation.intruderTurnAcceleration,
       PREDICTION_HORIZON_SECONDS,
     );
 
   const learned =
     learnedPrediction(
-      simulation.leader,
+      simulation.intruder,
+      simulation.intruderTurnAcceleration,
       PREDICTION_HORIZON_SECONDS,
       simulation.residualModel,
-    );
-
-  const adaptive =
-    weightedPoint(
-      cv,
-      ctrv,
-      learned,
-      weights,
     );
 
   simulation.pendingPredictions.push(
@@ -1834,19 +2156,7 @@ function queuePredictionEvaluation(
         PREDICTION_HORIZON_SECONDS *
           1000,
 
-      origin: {
-        x:
-          simulation.leader.x,
-
-        y:
-          simulation.leader.y,
-      },
-
-      features:
-        buildResidualFeatures(
-          simulation.leader,
-          PREDICTION_HORIZON_SECONDS,
-        ),
+      features,
 
       cv,
 
@@ -1854,7 +2164,13 @@ function queuePredictionEvaluation(
 
       learned,
 
-      adaptive,
+      adaptive:
+        weightedPoint(
+          cv,
+          ctrv,
+          learned,
+          weights,
+        ),
     },
   );
 }
@@ -1875,34 +2191,102 @@ function updatePredictionEngine(
     simulation,
   );
 
-  queuePredictionEvaluation(
+  queuePrediction(
     simulation,
     now,
   );
 }
 
 /* =========================================================
-   Guidance
+   Automatic Sector Detection / Dispatch
+   ========================================================= */
+
+function updateDefenseAssignment(
+  simulation:
+    InternalSimulation,
+
+  now:
+    number,
+) {
+  const intrudedSector =
+    findIntrudedSector(
+      simulation.intruder,
+    );
+
+  simulation.activeSectorId =
+    intrudedSector?.id ??
+    null;
+
+  let assignedId:
+    number | null =
+    null;
+
+  if (
+    simulation.autoDefenseEnabled &&
+    intrudedSector
+  ) {
+    assignedId =
+      intrudedSector.interceptorId;
+  } else if (
+    simulation.manualDispatchInterceptorId !==
+    null
+  ) {
+    assignedId =
+      simulation.manualDispatchInterceptorId;
+  }
+
+  if (
+    assignedId !==
+    simulation.assignedInterceptorId
+  ) {
+    simulation.assignedInterceptorId =
+      assignedId;
+
+    if (
+      assignedId !==
+      null
+    ) {
+      simulation.mode =
+        "RENDEZVOUS";
+
+      simulation.modeSince =
+        now;
+    }
+  }
+
+  simulation.interceptors.forEach(
+    (
+      interceptor,
+    ) => {
+      interceptor.assigned =
+        interceptor.id ===
+        simulation.assignedInterceptorId;
+    },
+  );
+}
+
+/* =========================================================
+   Guidance Target
    ========================================================= */
 
 function calculateGuidanceTarget(
   simulation:
     InternalSimulation,
-): Vector2 {
+) {
   const selectedPath =
     simulation.predictorMode ===
     "ml"
       ? simulation.mlPath
       : simulation.baselinePath;
 
-  const predictedPosition =
+  const predictedPoint =
     selectedPath[
       3
     ] ??
-    simulation.leader;
+    simulation.intruder;
 
   let predictedHeading =
-    simulation.leader
+    simulation.intruder
       .heading;
 
   if (
@@ -1923,33 +2307,6 @@ function calculateGuidanceTarget(
       );
   }
 
-  let desiredDistance =
-    simulation.desiredSeparationMeters;
-
-  if (
-    simulation.mode ===
-      "ACQUIRE" ||
-    simulation.mode ===
-      "TRACK"
-  ) {
-    desiredDistance +=
-      40;
-  }
-
-  if (
-    simulation.mode ===
-    "RENDEZVOUS"
-  ) {
-    desiredDistance =
-      Math.max(
-        simulation.minimumSeparationMeters +
-          35,
-
-        simulation.desiredSeparationMeters -
-          15,
-      );
-  }
-
   const direction =
     headingVector(
       predictedHeading,
@@ -1957,386 +2314,490 @@ function calculateGuidanceTarget(
 
   return {
     x:
-      predictedPosition.x -
+      predictedPoint.x -
       direction.x *
-        desiredDistance,
+        simulation.desiredSeparationMeters,
 
     y:
-      predictedPosition.y -
+      predictedPoint.y -
       direction.y *
-        desiredDistance,
+        simulation.desiredSeparationMeters,
   };
 }
 
 /* =========================================================
-   Follower Dynamics
+   Generic Fixed-Wing Steering
    ========================================================= */
 
-function updateFollower(
+function steerAircraftToward(
+  aircraft:
+    AircraftState,
+
+  target:
+    Vector2,
+
+  targetSpeed:
+    number,
+
+  speedLimit:
+    number,
+
+  deltaSeconds:
+    number,
+
+  maximumTurnRate:
+    number,
+) {
+  const desiredHeading =
+    bearingBetween(
+      aircraft,
+      target,
+    );
+
+  const headingError =
+    normalizeSignedAngle(
+      desiredHeading -
+      aircraft.heading,
+    );
+
+  aircraft.turnRate =
+    clamp(
+      headingError *
+        0.18,
+      -maximumTurnRate,
+      maximumTurnRate,
+    );
+
+  aircraft.heading =
+    normalizeHeading(
+      aircraft.heading +
+        aircraft.turnRate *
+          deltaSeconds,
+    );
+
+  aircraft.bank =
+    clamp(
+      aircraft.turnRate *
+        3.2,
+      -42,
+      42,
+    );
+
+  aircraft.airspeed +=
+    (
+      clamp(
+        targetSpeed,
+        16,
+        speedLimit,
+      ) -
+      aircraft.airspeed
+    ) *
+    Math.min(
+      1,
+      deltaSeconds *
+        1.8,
+    );
+
+  const velocity =
+    velocityVector(
+      aircraft,
+    );
+
+  aircraft.x +=
+    velocity.x *
+    deltaSeconds;
+
+  aircraft.y +=
+    velocity.y *
+    deltaSeconds;
+}
+
+/* =========================================================
+   Station Patrol
+   ========================================================= */
+
+function patrolPointFor(
+  simulation:
+    InternalSimulation,
+
+  interceptor:
+    InternalInterceptor,
+
+  station:
+    Vector2,
+) {
+  const radius =
+    125;
+
+  const angle =
+    simulation.simTimeSeconds *
+      0.22 +
+    interceptor.patrolPhase;
+
+  return {
+    x:
+      station.x +
+      Math.cos(
+        angle,
+      ) *
+        radius,
+
+    y:
+      station.y +
+      Math.sin(
+        angle,
+      ) *
+        radius,
+  };
+}
+
+/* =========================================================
+   Interceptor Update
+   ========================================================= */
+
+function updateInterceptors(
   simulation:
     InternalSimulation,
 
   deltaSeconds:
     number,
 ) {
-  const leader =
-    simulation.leader;
-
-  const follower =
-    simulation.follower;
-
-  const separation =
-    distanceBetween(
-      follower,
-      leader,
+  const guidanceTarget =
+    calculateGuidanceTarget(
+      simulation,
     );
 
-  const closingRate =
-    calculateClosingRate(
-      leader,
-      follower,
-    );
+  simulation.guidanceTarget =
+    guidanceTarget;
 
-  const closestApproach =
-    predictClosestApproach(
-      leader,
-      follower,
-    );
+  simulation.interceptors.forEach(
+    (
+      interceptor,
+    ) => {
+      const sector =
+        DEFENSE_SECTOR_DEFINITIONS.find(
+          (
+            item,
+          ) =>
+            item.interceptorId ===
+            interceptor.id,
+        );
 
-  const safetyGateActive =
-    closestApproach <
-    simulation.minimumSeparationMeters +
-      12;
+      if (
+        !sector
+      ) {
+        return;
+      }
 
-  let target: Vector2 = {
-    x:
-      follower.x,
+      const station =
+        sector.station;
 
-    y:
-      follower.y,
-  };
+      const assigned =
+        interceptor.id ===
+        simulation.assignedInterceptorId;
 
-  let targetSpeed =
-    leader.airspeed;
+      if (
+        simulation.mode ===
+        "ABORT" ||
+        simulation.mode ===
+        "RTL"
+      ) {
+        interceptor.status =
+          "RTL";
 
-  let maximumTurnRate =
-    9.5;
+        interceptor.mode =
+          "RTL";
 
-  if (
-    simulation.mode ===
-    "IDLE"
-  ) {
-    follower.mode =
-      "STANDBY";
+        interceptor.targetAirspeed =
+          Math.min(
+            interceptor.speedLimitMps,
+            32,
+          );
 
-    /*
-     * Fixed-wing standby behaves as a gentle loiter rather
-     * than magically stopping in the air.
-     */
-    follower.turnRate =
-      4;
+        steerAircraftToward(
+          interceptor,
+          station,
+          interceptor.targetAirspeed,
+          interceptor.speedLimitMps,
+          deltaSeconds,
+          11,
+        );
 
-    targetSpeed =
-      Math.min(
-        simulation.followerMaxAirspeed,
-        18,
-      );
-  } else if (
-    simulation.mode ===
-    "HOLD"
-  ) {
-    follower.mode =
-      "LOITER";
+        return;
+      }
 
-    follower.turnRate =
-      5;
+      if (
+        !assigned
+      ) {
+        const patrolTarget =
+          patrolPointFor(
+            simulation,
+            interceptor,
+            station,
+          );
 
-    targetSpeed =
-      Math.min(
-        simulation.followerMaxAirspeed,
-        20,
-      );
-  } else if (
-    simulation.mode ===
-    "ABORT"
-  ) {
-    follower.mode =
-      "ABORT";
+        interceptor.status =
+          distanceBetween(
+            interceptor,
+            station,
+          ) <
+          220
+            ? "PATROL"
+            : "RTL";
 
-    const awayHeading =
-      bearingBetween(
-        leader,
-        follower,
-      );
+        interceptor.mode =
+          interceptor.status;
 
-    const awayDirection =
-      headingVector(
-        awayHeading,
-      );
+        interceptor.targetAirspeed =
+          Math.min(
+            interceptor.speedLimitMps,
+            24,
+          );
 
-    target = {
-      x:
-        follower.x +
-        awayDirection.x *
-          450,
-
-      y:
-        follower.y +
-        awayDirection.y *
-          450,
-    };
-
-    targetSpeed =
-      Math.min(
-        simulation.followerMaxAirspeed,
-        25,
-      );
-
-    maximumTurnRate =
-      11;
-  } else if (
-    simulation.mode ===
-    "RTL"
-  ) {
-    follower.mode =
-      "RTL";
-
-    target = {
-      ...simulation.home,
-    };
-
-    targetSpeed =
-      Math.min(
-        simulation.followerMaxAirspeed,
-        22,
-      );
-
-    maximumTurnRate =
-      10;
-  } else {
-    follower.mode =
-      simulation.mode ===
-      "SHADOW"
-        ? "AI SHADOW"
-        : "AI GUIDED";
-
-    target =
-      calculateGuidanceTarget(
-        simulation,
-      );
-
-    const separationError =
-      separation -
-      simulation.desiredSeparationMeters;
-
-    const desiredHeading =
-      bearingBetween(
-        follower,
-        target,
-      );
-
-    const headingError =
-      Math.abs(
-        normalizeSignedAngle(
-          desiredHeading -
-          follower.heading,
-        ),
-      );
-
-    const turnDemand =
-      clamp(
-        headingError /
-          90,
-        0,
-        1,
-      );
-
-    if (
-      simulation.adaptiveSpeedSync
-    ) {
-      /*
-       * Catch-up speed is based on:
-       * - separation error
-       * - current closing rate
-       * - expected turn demand
-       *
-       * This avoids maximum-speed overshoot during turns.
-       */
-      const distanceCorrection =
-        clamp(
-          separationError *
-            0.028,
-          -4,
+        steerAircraftToward(
+          interceptor,
+          patrolTarget,
+          interceptor.targetAirspeed,
+          interceptor.speedLimitMps,
+          deltaSeconds,
           8,
         );
 
-      const closingDamping =
-        clamp(
-          closingRate *
-            0.48,
-          -3,
-          4,
-        );
+        return;
+      }
 
-      const turnPenalty =
-        turnDemand *
-        2.8;
+      if (
+        simulation.mode ===
+        "HOLD"
+      ) {
+        interceptor.status =
+          "HOLD";
 
-      targetSpeed =
-        leader.airspeed +
-        distanceCorrection -
-        closingDamping -
-        turnPenalty;
-    } else {
-      targetSpeed =
-        leader.airspeed +
-        clamp(
-          separationError *
-            0.02,
-          -3,
-          6,
-        );
-    }
-  }
+        interceptor.mode =
+          "HOLD";
 
-  /*
-   * Anticipatory safety gate.
-   *
-   * It reacts before the follower has already violated the
-   * protected radius.
-   */
-  if (
-    safetyGateActive &&
-    simulation.mode !==
-      "ABORT" &&
-    simulation.mode !==
-      "RTL"
-  ) {
-    const awayHeading =
-      bearingBetween(
-        leader,
-        follower,
-      );
+        const holdTarget = {
+          x:
+            interceptor.x +
+            Math.cos(
+              simulation.simTimeSeconds *
+                0.45,
+            ) *
+              120,
 
-    const awayDirection =
-      headingVector(
-        awayHeading,
-      );
+          y:
+            interceptor.y +
+            Math.sin(
+              simulation.simTimeSeconds *
+                0.45,
+            ) *
+              120,
+        };
 
-    target = {
-      x:
-        follower.x +
-        awayDirection.x *
-          340,
+        interceptor.targetAirspeed =
+          Math.min(
+            interceptor.speedLimitMps,
+            26,
+          );
 
-      y:
-        follower.y +
-        awayDirection.y *
-          340,
-    };
-
-    targetSpeed =
-      Math.max(
-        14,
-        leader.airspeed -
-          4.5,
-      );
-
-    maximumTurnRate =
-      12;
-  }
-
-  simulation.guidanceTarget =
-    target;
-
-  if (
-    simulation.mode !==
-      "IDLE" &&
-    simulation.mode !==
-      "HOLD"
-  ) {
-    const desiredHeading =
-      bearingBetween(
-        follower,
-        target,
-      );
-
-    const headingError =
-      normalizeSignedAngle(
-        desiredHeading -
-        follower.heading,
-      );
-
-    follower.turnRate =
-      clamp(
-        headingError *
-          0.18,
-        -maximumTurnRate,
-        maximumTurnRate,
-      );
-  }
-
-  follower.heading =
-    normalizeHeading(
-      follower.heading +
-        follower.turnRate *
+        steerAircraftToward(
+          interceptor,
+          holdTarget,
+          interceptor.targetAirspeed,
+          interceptor.speedLimitMps,
           deltaSeconds,
-    );
+          9,
+        );
 
-  follower.bank =
-    clamp(
-      follower.turnRate *
-        3.2,
-      -40,
-      40,
-    );
+        return;
+      }
 
-  targetSpeed =
-    clamp(
-      targetSpeed,
-      14,
-      simulation.followerMaxAirspeed,
-    );
+      const separation =
+        distanceBetween(
+          interceptor,
+          simulation.intruder,
+        );
 
-  simulation.followerCommandedAirspeed =
-    targetSpeed;
+      const closingRate =
+        calculateClosingRate(
+          simulation.intruder,
+          interceptor,
+        );
 
-  follower.airspeed +=
-    (
-      targetSpeed -
-      follower.airspeed
-    ) *
-    Math.min(
-      1,
-      deltaSeconds *
-        1.65,
-    );
+      const predictedClosest =
+        predictClosestApproach(
+          simulation.intruder,
+          interceptor,
+        );
 
-  follower.altitude +=
-    clamp(
-      leader.altitude -
-        follower.altitude,
-      -2.5,
-      2.5,
-    ) *
-    deltaSeconds;
+      const safetyRecovery =
+        predictedClosest <
+        simulation.minimumSeparationMeters +
+          18;
 
-  const followerVelocity =
-    velocityVector(
-      follower,
-    );
+      if (
+        safetyRecovery
+      ) {
+        interceptor.status =
+          "RECOVERY";
 
-  follower.x +=
-    followerVelocity.x *
-    deltaSeconds;
+        interceptor.mode =
+          "SAFETY RECOVERY";
 
-  follower.y +=
-    followerVelocity.y *
-    deltaSeconds;
+        const awayHeading =
+          bearingBetween(
+            simulation.intruder,
+            interceptor,
+          );
+
+        const awayDirection =
+          headingVector(
+            awayHeading,
+          );
+
+        const recoveryTarget = {
+          x:
+            interceptor.x +
+            awayDirection.x *
+              420,
+
+          y:
+            interceptor.y +
+            awayDirection.y *
+              420,
+        };
+
+        interceptor.targetAirspeed =
+          clamp(
+            simulation.intruder
+              .airspeed -
+              6,
+            18,
+            interceptor.speedLimitMps,
+          );
+
+        steerAircraftToward(
+          interceptor,
+          recoveryTarget,
+          interceptor.targetAirspeed,
+          interceptor.speedLimitMps,
+          deltaSeconds,
+          12,
+        );
+
+        return;
+      }
+
+      const separationError =
+        separation -
+        simulation.desiredSeparationMeters;
+
+      const desiredHeading =
+        bearingBetween(
+          interceptor,
+          guidanceTarget,
+        );
+
+      const headingError =
+        Math.abs(
+          normalizeSignedAngle(
+            desiredHeading -
+            interceptor.heading,
+          ),
+        );
+
+      const turnDemand =
+        clamp(
+          headingError /
+            90,
+          0,
+          1,
+        );
+
+      let targetSpeed =
+        simulation.intruder
+          .airspeed;
+
+      if (
+        simulation.adaptiveSpeedSync
+      ) {
+        const distanceBoost =
+          clamp(
+            separationError *
+              0.045,
+            -6,
+            28,
+          );
+
+        const closingDamping =
+          clamp(
+            closingRate *
+              0.52,
+            -4,
+            8,
+          );
+
+        const turnPenalty =
+          turnDemand *
+          5;
+
+        targetSpeed =
+          simulation.intruder
+            .airspeed +
+          distanceBoost -
+          closingDamping -
+          turnPenalty;
+      } else {
+        targetSpeed =
+          simulation.intruder
+            .airspeed +
+          clamp(
+            separationError *
+              0.03,
+            -4,
+            20,
+          );
+      }
+
+      interceptor.targetAirspeed =
+        clamp(
+          targetSpeed,
+          18,
+          interceptor.speedLimitMps,
+        );
+
+      if (
+        separation <=
+        simulation.desiredSeparationMeters +
+          35
+      ) {
+        interceptor.status =
+          "SHADOW";
+
+        interceptor.mode =
+          "AI SHADOW";
+      } else {
+        interceptor.status =
+          "DISPATCHED";
+
+        interceptor.mode =
+          "AI INTERCEPT";
+      }
+
+      steerAircraftToward(
+        interceptor,
+        guidanceTarget,
+        interceptor.targetAirspeed,
+        interceptor.speedLimitMps,
+        deltaSeconds,
+        12,
+      );
+    },
+  );
 }
 
 /* =========================================================
-   Mission State
+   Mode Transitions
    ========================================================= */
 
 function setInternalMode(
@@ -2363,7 +2824,7 @@ function updateAutomaticModeTransitions(
   now:
     number,
 ) {
-  const elapsedSeconds =
+  const elapsed =
     (
       now -
       simulation.modeSince
@@ -2373,8 +2834,8 @@ function updateAutomaticModeTransitions(
   if (
     simulation.mode ===
       "ACQUIRE" &&
-    elapsedSeconds >
-      1.2
+    elapsed >
+      1
   ) {
     setInternalMode(
       simulation,
@@ -2386,8 +2847,8 @@ function updateAutomaticModeTransitions(
   if (
     simulation.mode ===
       "PREDICT" &&
-    elapsedSeconds >
-      1
+    elapsed >
+      0.8
   ) {
     setInternalMode(
       simulation,
@@ -2396,20 +2857,30 @@ function updateAutomaticModeTransitions(
     );
   }
 
+  const assigned =
+    simulation.interceptors.find(
+      (
+        interceptor,
+      ) =>
+        interceptor.id ===
+        simulation.assignedInterceptorId,
+    );
+
   if (
     simulation.mode ===
-    "RENDEZVOUS"
+      "RENDEZVOUS" &&
+    assigned
   ) {
     const distance =
       distanceBetween(
-        simulation.leader,
-        simulation.follower,
+        simulation.intruder,
+        assigned,
       );
 
     if (
       distance <=
       simulation.desiredSeparationMeters +
-        40
+        35
     ) {
       setInternalMode(
         simulation,
@@ -2421,7 +2892,7 @@ function updateAutomaticModeTransitions(
 }
 
 /* =========================================================
-   Trails
+   Trail Sampling
    ========================================================= */
 
 function sampleTrails(
@@ -2442,31 +2913,45 @@ function sampleTrails(
   simulation.lastTrailSample =
     now;
 
-  simulation.leaderTrail.push({
+  simulation.intruderTrail.push({
     x:
-      simulation.leader.x,
+      simulation.intruder.x,
 
     y:
-      simulation.leader.y,
+      simulation.intruder.y,
   });
 
-  simulation.followerTrail.push({
-    x:
-      simulation.follower.x,
-
-    y:
-      simulation.follower.y,
-  });
-
-  simulation.leaderTrail =
-    simulation.leaderTrail.slice(
+  simulation.intruderTrail =
+    simulation.intruderTrail.slice(
       -TRAIL_LIMIT,
     );
 
-  simulation.followerTrail =
-    simulation.followerTrail.slice(
-      -TRAIL_LIMIT,
-    );
+  simulation.interceptors.forEach(
+    (
+      interceptor,
+    ) => {
+      const existing =
+        simulation.interceptorTrails[
+          interceptor.id
+        ] ??
+        [];
+
+      existing.push({
+        x:
+          interceptor.x,
+
+        y:
+          interceptor.y,
+      });
+
+      simulation.interceptorTrails[
+        interceptor.id
+      ] =
+        existing.slice(
+          -TRAIL_LIMIT,
+        );
+    },
+  );
 }
 
 /* =========================================================
@@ -2477,44 +2962,66 @@ function createSnapshot(
   simulation:
     InternalSimulation,
 ): InterceptSnapshot {
-  const distanceMeters =
-    distanceBetween(
-      simulation.leader,
-      simulation.follower,
+  const assigned =
+    simulation.interceptors.find(
+      (
+        interceptor,
+      ) =>
+        interceptor.id ===
+        simulation.assignedInterceptorId,
     );
+
+  const distanceMeters =
+    assigned
+      ? distanceBetween(
+          simulation.intruder,
+          assigned,
+        )
+      : null;
 
   const closingRateMps =
-    calculateClosingRate(
-      simulation.leader,
-      simulation.follower,
-    );
+    assigned
+      ? calculateClosingRate(
+          simulation.intruder,
+          assigned,
+        )
+      : null;
 
   const predictedClosestSeparationMeters =
-    predictClosestApproach(
-      simulation.leader,
-      simulation.follower,
-    );
+    assigned
+      ? predictClosestApproach(
+          simulation.intruder,
+          assigned,
+        )
+      : null;
 
   const anticipatorySafetyGate =
+    predictedClosestSeparationMeters !==
+      null &&
     predictedClosestSeparationMeters <
-    simulation.minimumSeparationMeters +
-      12;
+      simulation.minimumSeparationMeters +
+        18;
 
   const remainingDistance =
-    Math.max(
-      0,
-      distanceMeters -
-        simulation.desiredSeparationMeters,
-    );
+    distanceMeters !==
+    null
+      ? Math.max(
+          0,
+          distanceMeters -
+            simulation.desiredSeparationMeters,
+        )
+      : 0;
 
   const etaSeconds =
+    closingRateMps !==
+      null &&
     closingRateMps >
       0.25
       ? remainingDistance /
         closingRateMps
       : null;
 
-  const baselineError =
+  const cvError =
     average(
       simulation.errors.cv,
     );
@@ -2535,18 +3042,18 @@ function createSnapshot(
     );
 
   const improvementPercent =
-    baselineError !==
+    cvError !==
         null &&
       adaptiveError !==
         null &&
-      baselineError >
+      cvError >
         0
       ? (
           (
-            baselineError -
+            cvError -
             adaptiveError
           ) /
-          baselineError
+          cvError
         ) *
         100
       : null;
@@ -2556,7 +3063,7 @@ function createSnapshot(
       simulation.errors,
     );
 
-  const largestWeight =
+  const highestWeight =
     Math.max(
       weights.cv,
       weights.ctrv,
@@ -2567,10 +3074,10 @@ function createSnapshot(
     "CV" |
     "CTRV" |
     "ADAPTIVE" =
-    largestWeight ===
+    highestWeight ===
     weights.cv
       ? "CV"
-      : largestWeight ===
+      : highestWeight ===
           weights.ctrv
         ? "CTRV"
         : "ADAPTIVE";
@@ -2582,7 +3089,7 @@ function createSnapshot(
   const sampleConfidence =
     clamp(
       validationSamples /
-        18,
+        20,
       0,
       1,
     );
@@ -2590,11 +3097,11 @@ function createSnapshot(
   const qualityConfidence =
     adaptiveError ===
     null
-      ? 0.4
+      ? 0.35
       : clamp(
           1 -
             adaptiveError /
-              100,
+              120,
           0.25,
           1,
         );
@@ -2623,21 +3130,58 @@ function createSnapshot(
     simTimeSeconds:
       simulation.simTimeSeconds,
 
-    leader: {
-      ...simulation.leader,
+    intruder: {
+      ...simulation.intruder,
     },
 
-    follower: {
-      ...simulation.follower,
-    },
+    interceptors:
+      simulation.interceptors.map(
+        (
+          interceptor,
+        ) => ({
+          ...interceptor,
+        }),
+      ),
 
-    leaderTrail: [
-      ...simulation.leaderTrail,
+    sectors:
+      getDefenseSectors(
+        simulation.activeSectorId,
+      ),
+
+    activeSectorId:
+      simulation.activeSectorId,
+
+    assignedInterceptorId:
+      simulation.assignedInterceptorId,
+
+    autoDefenseEnabled:
+      simulation.autoDefenseEnabled,
+
+    intruderTrail: [
+      ...simulation.intruderTrail,
     ],
 
-    followerTrail: [
-      ...simulation.followerTrail,
-    ],
+    interceptorTrails:
+      Object.fromEntries(
+        Object.entries(
+          simulation.interceptorTrails,
+        ).map(
+          (
+            [
+              key,
+              trail,
+            ],
+          ) => [
+            Number(
+              key,
+            ),
+
+            [
+              ...trail,
+            ],
+          ],
+        ),
+      ),
 
     baselinePath: [
       ...simulation.baselinePath,
@@ -2655,19 +3199,9 @@ function createSnapshot(
       ...simulation.guidanceTarget,
     },
 
-    home: {
-      ...simulation.home,
-    },
-
     distanceMeters,
 
     closingRateMps,
-
-    relativeBearingDegrees:
-      bearingBetween(
-        simulation.follower,
-        simulation.leader,
-      ),
 
     etaSeconds,
 
@@ -2678,8 +3212,10 @@ function createSnapshot(
       simulation.minimumSeparationMeters,
 
     separationSafe:
+      distanceMeters ===
+        null ||
       distanceMeters >=
-      simulation.minimumSeparationMeters,
+        simulation.minimumSeparationMeters,
 
     predictedClosestSeparationMeters,
 
@@ -2687,7 +3223,7 @@ function createSnapshot(
 
     ai: {
       model:
-        "Adaptive CV / CTRV / Residual Ensemble",
+        "Adaptive CV / CTRV / Online Residual Ensemble",
 
       selectedPredictor,
 
@@ -2713,7 +3249,7 @@ function createSnapshot(
 
     performance: {
       baselineErrorMeters:
-        baselineError,
+        cvError,
 
       ctrvErrorMeters:
         ctrvError,
@@ -2730,23 +3266,11 @@ function createSnapshot(
     },
 
     speedControl: {
-      leaderCommandedAirspeed:
-        simulation.leaderCommandedAirspeed,
-
-      followerCommandedAirspeed:
-        simulation.followerCommandedAirspeed,
-
-      followerMaxAirspeed:
-        simulation.followerMaxAirspeed,
+      intruderCommandedAirspeed:
+        simulation.intruderCommandedAirspeed,
 
       adaptiveSync:
         simulation.adaptiveSpeedSync,
-
-      airspeedDelta:
-        simulation.follower
-          .airspeed -
-        simulation.leader
-          .airspeed,
     },
 
     gamepad: {
@@ -2830,7 +3354,7 @@ export function useInterceptSimulation() {
           simulation.simTimeSeconds +=
             deltaSeconds;
 
-          updateLeader(
+          updateIntruder(
             simulation,
             deltaSeconds,
           );
@@ -2840,12 +3364,17 @@ export function useInterceptSimulation() {
             now,
           );
 
+          updateDefenseAssignment(
+            simulation,
+            now,
+          );
+
           updateAutomaticModeTransitions(
             simulation,
             now,
           );
 
-          updateFollower(
+          updateInterceptors(
             simulation,
             deltaSeconds,
           );
@@ -2955,6 +3484,64 @@ export function useInterceptSimulation() {
       ],
     );
 
+  const setIntruderCommandedAirspeed =
+    useCallback(
+      (
+        value:
+          number,
+      ) => {
+        simulationRef.current.intruderCommandedAirspeed =
+          clamp(
+            value,
+            12,
+            50,
+          );
+
+        publish();
+      },
+      [
+        publish,
+      ],
+    );
+
+  const setInterceptorSpeedLimit =
+    useCallback(
+      (
+        interceptorId:
+          number,
+
+        value:
+          number,
+      ) => {
+        const interceptor =
+          simulationRef.current.interceptors.find(
+            (
+              item,
+            ) =>
+              item.id ===
+              interceptorId,
+          );
+
+        if (
+          !interceptor
+        ) {
+          return;
+        }
+
+        interceptor.speedLimitMps =
+          clamp(
+            value,
+            25,
+            80,
+          );
+
+        publish();
+      },
+      [
+        publish,
+      ],
+    );
+
   const setDesiredSeparation =
     useCallback(
       (
@@ -2964,48 +3551,8 @@ export function useInterceptSimulation() {
         simulationRef.current.desiredSeparationMeters =
           clamp(
             value,
-            110,
-            300,
-          );
-
-        publish();
-      },
-      [
-        publish,
-      ],
-    );
-
-  const setLeaderCommandedAirspeed =
-    useCallback(
-      (
-        value:
-          number,
-      ) => {
-        simulationRef.current.leaderCommandedAirspeed =
-          clamp(
-            value,
-            14,
-            34,
-          );
-
-        publish();
-      },
-      [
-        publish,
-      ],
-    );
-
-  const setFollowerMaxAirspeed =
-    useCallback(
-      (
-        value:
-          number,
-      ) => {
-        simulationRef.current.followerMaxAirspeed =
-          clamp(
-            value,
-            18,
-            38,
+            130,
+            350,
           );
 
         publish();
@@ -3031,6 +3578,98 @@ export function useInterceptSimulation() {
       ],
     );
 
+  const setAutoDefenseEnabled =
+    useCallback(
+      (
+        enabled:
+          boolean,
+      ) => {
+        simulationRef.current.autoDefenseEnabled =
+          enabled;
+
+        publish();
+      },
+      [
+        publish,
+      ],
+    );
+
+  const dispatchInterceptor =
+    useCallback(
+      (
+        interceptorId:
+          number,
+      ) => {
+        const simulation =
+          simulationRef.current;
+
+        simulation.manualDispatchInterceptorId =
+          interceptorId;
+
+        simulation.assignedInterceptorId =
+          interceptorId;
+
+        setInternalMode(
+          simulation,
+          "RENDEZVOUS",
+        );
+
+        publish();
+      },
+      [
+        publish,
+      ],
+    );
+
+  const startIntercept =
+    useCallback(
+      () => {
+        const simulation =
+          simulationRef.current;
+
+        if (
+          simulation.assignedInterceptorId ===
+          null
+        ) {
+          const nearest =
+            [...simulation.interceptors].sort(
+              (
+                first,
+                second,
+              ) =>
+                distanceBetween(
+                  first,
+                  simulation.intruder,
+                ) -
+                distanceBetween(
+                  second,
+                  simulation.intruder,
+                ),
+            )[0];
+
+          if (
+            nearest
+          ) {
+            simulation.manualDispatchInterceptorId =
+              nearest.id;
+
+            simulation.assignedInterceptorId =
+              nearest.id;
+          }
+        }
+
+        setInternalMode(
+          simulation,
+          "PREDICT",
+        );
+
+        publish();
+      },
+      [
+        publish,
+      ],
+    );
+
   const actions =
     useMemo(
       () => ({
@@ -3040,23 +3679,24 @@ export function useInterceptSimulation() {
 
         setPredictorMode,
 
+        setIntruderCommandedAirspeed,
+
+        setInterceptorSpeedLimit,
+
         setDesiredSeparation,
 
-        setLeaderCommandedAirspeed,
-
-        setFollowerMaxAirspeed,
-
         setAdaptiveSpeedSync,
+
+        setAutoDefenseEnabled,
+
+        dispatchInterceptor,
 
         startTracking: () =>
           setMode(
             "ACQUIRE",
           ),
 
-        startIntercept: () =>
-          setMode(
-            "PREDICT",
-          ),
+        startIntercept,
 
         shadow: () =>
           setMode(
@@ -3084,13 +3724,16 @@ export function useInterceptSimulation() {
           ),
       }),
       [
+        dispatchInterceptor,
         reset,
         setAdaptiveSpeedSync,
+        setAutoDefenseEnabled,
         setDesiredSeparation,
-        setFollowerMaxAirspeed,
-        setLeaderCommandedAirspeed,
+        setInterceptorSpeedLimit,
+        setIntruderCommandedAirspeed,
         setMode,
         setPredictorMode,
+        startIntercept,
         toggleRunning,
       ],
     );
