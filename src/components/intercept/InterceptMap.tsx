@@ -67,8 +67,17 @@ const colors = {
   adaptive:
     "#A8FF4F",
 
-  guidance:
+  pursuit:
     "#FFE66D",
+
+  rendezvous:
+    "#5AA9FF",
+
+  shadow:
+    "#59D99A",
+
+  recovery:
+    "#FF42A1",
 
   perimeter:
     "#5BFF8A",
@@ -79,7 +88,7 @@ const colors = {
   safety:
     "#FF42A1",
 
-  shadow:
+  standoff:
     "#FFB84D",
 };
 
@@ -107,10 +116,6 @@ const baseMaps:
       "© OpenStreetMap contributors",
   },
 };
-
-/* =========================================================
-   Coordinate Conversion
-   ========================================================= */
 
 function enuToLatLng(
   point:
@@ -171,10 +176,6 @@ function convertPoints(
   );
 }
 
-/* =========================================================
-   Aircraft Icon
-   ========================================================= */
-
 function aircraftIcon(
   aircraft:
     InterceptorState |
@@ -199,10 +200,10 @@ function aircraftIcon(
   const size =
     kind ===
     "intruder"
-      ? 48
+      ? 50
       : emphasized
         ? 46
-        : 40;
+        : 41;
 
   return L.divIcon({
     className:
@@ -238,18 +239,18 @@ function aircraftIcon(
             inset:1px;
             border-radius:999px;
             border:${emphasized ? 2.5 : 2}px solid ${color};
-            background:rgba(3,4,5,0.96);
+            background:rgba(3,4,5,.96);
             box-shadow:
               0 0 0 5px ${color}18,
-              0 0 ${emphasized ? 28 : 20}px ${color}cc;
+              0 0 ${emphasized ? 30 : 22}px ${color}cc;
           "
         ></div>
 
         <div
           style="
             position:relative;
-            width:26px;
-            height:26px;
+            width:27px;
+            height:27px;
             transform:rotate(${aircraft.heading}deg);
           "
         >
@@ -258,9 +259,9 @@ function aircraftIcon(
               position:absolute;
               top:0;
               left:9px;
-              border-left:4px solid transparent;
-              border-right:4px solid transparent;
-              border-bottom:18px solid ${color};
+              border-left:4.5px solid transparent;
+              border-right:4.5px solid transparent;
+              border-bottom:19px solid ${color};
             "
           ></div>
 
@@ -269,7 +270,7 @@ function aircraftIcon(
               position:absolute;
               left:0;
               top:12px;
-              width:26px;
+              width:27px;
               height:3px;
               border-radius:999px;
               background:${color};
@@ -284,13 +285,13 @@ function aircraftIcon(
             left:50%;
             transform:translateX(-50%);
             white-space:nowrap;
-            border:1px solid ${color}88;
+            border:1px solid ${color}99;
             border-radius:3px;
-            background:rgba(3,4,5,0.95);
-            padding:2px 5px;
+            background:rgba(3,4,5,.96);
+            padding:3px 6px;
             color:${color};
-            font:700 10px 'JetBrains Mono',monospace;
-            box-shadow:0 4px 10px rgba(0,0,0,0.7);
+            font:700 11px 'JetBrains Mono',monospace;
+            box-shadow:0 4px 12px rgba(0,0,0,.72);
           "
         >
           ${label}
@@ -328,7 +329,7 @@ function stationIcon(
           justify-content:center;
           border:2px solid ${interceptor.color};
           border-radius:4px;
-          background:rgba(3,4,5,0.95);
+          background:rgba(3,4,5,.95);
           color:${interceptor.color};
           box-shadow:0 0 13px ${interceptor.color}77;
           font:700 10px 'JetBrains Mono',monospace;
@@ -340,13 +341,38 @@ function stationIcon(
   });
 }
 
-/* =========================================================
-   UI Button
-   ========================================================= */
+function guidanceColor(
+  interceptor:
+    InterceptorState,
+) {
+  if (
+    interceptor.status ===
+    "RECOVERY"
+  ) {
+    return colors.recovery;
+  }
+
+  if (
+    interceptor.status ===
+    "SHADOW"
+  ) {
+    return colors.shadow;
+  }
+
+  if (
+    interceptor.status ===
+    "RENDEZVOUS"
+  ) {
+    return colors.rendezvous;
+  }
+
+  return colors.pursuit;
+}
 
 function MapButton({
   label,
-  active = false,
+  active =
+    false,
   onClick,
 }: {
   label: string;
@@ -361,8 +387,7 @@ function MapButton({
       }
       className={[
         "h-8 rounded-[4px] border px-2.5",
-        "font-mono text-[12px] font-medium",
-        "transition-colors",
+        "font-mono text-[14px] font-medium transition-colors",
 
         active
           ? "border-[rgba(90,169,255,0.38)] bg-[rgba(90,169,255,0.08)] text-[#8FC7FF]"
@@ -373,10 +398,6 @@ function MapButton({
     </button>
   );
 }
-
-/* =========================================================
-   Component
-   ========================================================= */
 
 export function InterceptMap({
   snapshot,
@@ -497,11 +518,16 @@ export function InterceptMap({
       null
     >(null);
 
-  const shadowCircleRef =
+  const standoffCircleRef =
     useRef<
       L.Circle |
       null
     >(null);
+
+  const lastResponseFitRef =
+    useRef(
+      0,
+    );
 
   const [
     baseMap,
@@ -708,10 +734,6 @@ export function InterceptMap({
       ],
     );
 
-  /* =======================================================
-     Initialization
-     ======================================================= */
-
   useEffect(
     () => {
       if (
@@ -769,8 +791,6 @@ export function InterceptMap({
           map,
         );
 
-      /* Large monitored boundary */
-
       perimeterRef.current =
         L.polygon(
           positions.perimeter,
@@ -779,13 +799,13 @@ export function InterceptMap({
               colors.perimeter,
 
             weight:
-              3.5,
+              4,
 
             opacity:
               1,
 
             dashArray:
-              "10 9",
+              "12 9",
 
             fillColor:
               colors.perimeter,
@@ -798,7 +818,7 @@ export function InterceptMap({
           },
         )
           .bindTooltip(
-            "MONITORED AIRSPACE",
+            "MONITORED AIRSPACE · SIMULATION",
             {
               sticky:
                 true,
@@ -807,8 +827,6 @@ export function InterceptMap({
           .addTo(
             map,
           );
-
-      /* Critical infrastructure zones */
 
       positions.criticalZones.forEach(
         (
@@ -824,7 +842,7 @@ export function InterceptMap({
                   colors.critical,
 
                 weight:
-                  3.5,
+                  4,
 
                 opacity:
                   1,
@@ -857,8 +875,6 @@ export function InterceptMap({
         },
       );
 
-      /* Planned intruder route */
-
       flightPlanRef.current =
         L.polyline(
           positions.flightPlan,
@@ -881,8 +897,6 @@ export function InterceptMap({
         ).addTo(
           map,
         );
-
-      /* Intruder */
 
       intruderMarkerRef.current =
         L.marker(
@@ -922,8 +936,6 @@ export function InterceptMap({
         ).addTo(
           map,
         );
-
-      /* Interceptors */
 
       snapshot.interceptors.forEach(
         (
@@ -972,7 +984,7 @@ export function InterceptMap({
               },
             )
               .bindTooltip(
-                `${interceptor.stationId}`,
+                interceptor.stationId,
               )
               .addTo(
                 map,
@@ -994,7 +1006,7 @@ export function InterceptMap({
                   3.5,
 
                 opacity:
-                  0.9,
+                  0.95,
 
                 className:
                   "mn-strong-glow-path",
@@ -1004,8 +1016,6 @@ export function InterceptMap({
             );
         },
       );
-
-      /* Predictors */
 
       cvRef.current =
         L.polyline(
@@ -1082,9 +1092,7 @@ export function InterceptMap({
           map,
         );
 
-      /* Safety geometry */
-
-      shadowCircleRef.current =
+      standoffCircleRef.current =
         L.circle(
           positions.intruder,
           {
@@ -1092,7 +1100,7 @@ export function InterceptMap({
               snapshot.desiredSeparationMeters,
 
             color:
-              colors.shadow,
+              colors.standoff,
 
             weight:
               2.5,
@@ -1147,11 +1155,10 @@ export function InterceptMap({
 
       map.on(
         "dragstart",
-        () => {
+        () =>
           setFollowMode(
             "free",
-          );
-        },
+          ),
       );
 
       const timers = [
@@ -1166,35 +1173,31 @@ export function InterceptMap({
             map.invalidateSize(),
           350,
         ),
+
+        window.setTimeout(
+          () => {
+            map.fitBounds(
+              L.latLngBounds([
+                ...positions.perimeter,
+
+                ...Object.values(
+                  positions.stations,
+                ),
+              ]),
+              {
+                padding: [
+                  60,
+                  60,
+                ],
+
+                maxZoom:
+                  14,
+              },
+            );
+          },
+          120,
+        ),
       ];
-
-      window.setTimeout(
-        () => {
-          const points = [
-            ...positions.perimeter,
-
-            ...Object.values(
-              positions.stations,
-            ),
-          ];
-
-          map.fitBounds(
-            L.latLngBounds(
-              points,
-            ),
-            {
-              padding: [
-                60,
-                60,
-              ],
-
-              maxZoom:
-                14,
-            },
-          );
-        },
-        120,
-      );
 
       return () => {
         timers.forEach(
@@ -1232,10 +1235,6 @@ export function InterceptMap({
     },
     [],
   );
-
-  /* =======================================================
-     Basemap
-     ======================================================= */
 
   useEffect(
     () => {
@@ -1287,10 +1286,6 @@ export function InterceptMap({
     ],
   );
 
-  /* =======================================================
-     Live Update
-     ======================================================= */
-
   useEffect(
     () => {
       const map =
@@ -1302,111 +1297,115 @@ export function InterceptMap({
         return;
       }
 
-      intruderMarkerRef.current
-        ?.setLatLng(
-          positions.intruder,
-        );
+      perimeterRef.current?.setLatLngs(
+        positions.perimeter,
+      );
 
-      intruderMarkerRef.current
-        ?.setIcon(
-          aircraftIcon(
-            snapshot.intruder,
-            "intruder",
-            colors.intruder,
-            true,
-          ),
-        );
+      intruderMarkerRef.current?.setLatLng(
+        positions.intruder,
+      );
 
-      intruderTrailRef.current
-        ?.setLatLngs(
-          positions.intruderTrail,
-        );
+      intruderMarkerRef.current?.setIcon(
+        aircraftIcon(
+          snapshot.intruder,
+          "intruder",
+          colors.intruder,
+          true,
+        ),
+      );
 
-      flightPlanRef.current
-        ?.setLatLngs(
-          positions.flightPlan,
-        );
+      intruderTrailRef.current?.setLatLngs(
+        positions.intruderTrail,
+      );
 
-      flightPlanRef.current
-        ?.setStyle({
+      flightPlanRef.current?.setLatLngs(
+        positions.flightPlan,
+      );
+
+      flightPlanRef.current?.setStyle(
+        {
           opacity:
             showFlightPlan
               ? 0.6
               : 0,
-        });
+        },
+      );
 
-      cvRef.current
-        ?.setLatLngs([
+      cvRef.current?.setLatLngs(
+        [
           positions.intruder,
           ...positions.baseline,
-        ]);
+        ],
+      );
 
-      ctrvRef.current
-        ?.setLatLngs([
+      ctrvRef.current?.setLatLngs(
+        [
           positions.intruder,
           ...positions.ctrv,
-        ]);
+        ],
+      );
 
-      aiRef.current
-        ?.setLatLngs([
+      aiRef.current?.setLatLngs(
+        [
           positions.intruder,
           ...positions.adaptive,
-        ]);
+        ],
+      );
 
-      cvRef.current
-        ?.setStyle({
+      cvRef.current?.setStyle(
+        {
           opacity:
             showPrediction
               ? 0.95
               : 0,
-        });
+        },
+      );
 
-      ctrvRef.current
-        ?.setStyle({
+      ctrvRef.current?.setStyle(
+        {
           opacity:
             showPrediction
               ? 1
               : 0,
-        });
+        },
+      );
 
-      aiRef.current
-        ?.setStyle({
+      aiRef.current?.setStyle(
+        {
           opacity:
             showPrediction
               ? 1
               : 0,
-        });
+        },
+      );
 
-      shadowCircleRef.current
-        ?.setLatLng(
-          positions.intruder,
-        );
+      standoffCircleRef.current?.setLatLng(
+        positions.intruder,
+      );
 
-      shadowCircleRef.current
-        ?.setRadius(
-          snapshot.desiredSeparationMeters,
-        );
+      standoffCircleRef.current?.setRadius(
+        snapshot.desiredSeparationMeters,
+      );
 
-      shadowCircleRef.current
-        ?.setStyle({
+      standoffCircleRef.current?.setStyle(
+        {
           opacity:
             showSafety
               ? 1
               : 0,
-        });
+        },
+      );
 
-      safetyCircleRef.current
-        ?.setLatLng(
-          positions.intruder,
-        );
+      safetyCircleRef.current?.setLatLng(
+        positions.intruder,
+      );
 
-      safetyCircleRef.current
-        ?.setRadius(
-          snapshot.minimumSeparationMeters,
-        );
+      safetyCircleRef.current?.setRadius(
+        snapshot.minimumSeparationMeters,
+      );
 
-      safetyCircleRef.current
-        ?.setStyle({
+      safetyCircleRef.current?.setStyle(
+        {
           opacity:
             showSafety
               ? 1
@@ -1416,7 +1415,8 @@ export function InterceptMap({
             showSafety
               ? 0.08
               : 0,
-        });
+        },
+      );
 
       snapshot.criticalZones.forEach(
         (
@@ -1427,22 +1427,35 @@ export function InterceptMap({
               zone.id
             ];
 
-          polygon?.setStyle({
-            color:
-              zone.active
-                ? "#FF123F"
-                : colors.critical,
+          polygon?.setLatLngs(
+            positions.criticalZones.find(
+              (
+                item,
+              ) =>
+                item.id ===
+                zone.id,
+            )?.convertedPoints ??
+              [],
+          );
 
-            weight:
-              zone.active
-                ? 5
-                : 3.5,
+          polygon?.setStyle(
+            {
+              color:
+                zone.active
+                  ? "#FF123F"
+                  : colors.critical,
 
-            fillOpacity:
-              zone.active
-                ? 0.2
-                : 0.09,
-          });
+              weight:
+                zone.active
+                  ? 5
+                  : 4,
+
+              fillOpacity:
+                zone.active
+                  ? 0.2
+                  : 0.09,
+            },
+          );
         },
       );
 
@@ -1479,15 +1492,20 @@ export function InterceptMap({
               [],
           );
 
-          const formationTarget =
+          const target =
             positions.formationTargets[
               interceptor.id
             ];
 
           if (
             snapshot.interceptAuthorized &&
-            formationTarget
+            target
           ) {
+            const lineColor =
+              guidanceColor(
+                interceptor,
+              );
+
             let targetMarker =
               formationTargetRefs.current[
                 interceptor.id
@@ -1498,22 +1516,22 @@ export function InterceptMap({
             ) {
               targetMarker =
                 L.circleMarker(
-                  formationTarget,
+                  target,
                   {
                     radius:
-                      7,
+                      8,
 
                     color:
-                      colors.guidance,
+                      lineColor,
 
                     weight:
-                      2.5,
+                      3,
 
                     fillColor:
                       interceptor.color,
 
                     fillOpacity:
-                      0.65,
+                      0.72,
                   },
                 ).addTo(
                   map,
@@ -1526,7 +1544,17 @@ export function InterceptMap({
             }
 
             targetMarker.setLatLng(
-              formationTarget,
+              target,
+            );
+
+            targetMarker.setStyle(
+              {
+                color:
+                  lineColor,
+
+                fillColor:
+                  interceptor.color,
+              },
             );
 
             let guidanceLine =
@@ -1544,20 +1572,22 @@ export function InterceptMap({
                       interceptor.id
                     ],
 
-                    formationTarget,
+                    target,
                   ],
                   {
                     color:
-                      colors.guidance,
+                      lineColor,
 
                     weight:
-                      2.5,
+                      3,
 
                     opacity:
-                      0.9,
+                      0.92,
 
                     dashArray:
-                      "7 6",
+                      interceptor.guidanceLocked
+                        ? "12 7"
+                        : "7 6",
 
                     className:
                       "mn-glow-path",
@@ -1572,13 +1602,27 @@ export function InterceptMap({
                 guidanceLine;
             }
 
-            guidanceLine.setLatLngs([
-              positions.interceptors[
-                interceptor.id
-              ],
+            guidanceLine.setLatLngs(
+              [
+                positions.interceptors[
+                  interceptor.id
+                ],
 
-              formationTarget,
-            ]);
+                target,
+              ],
+            );
+
+            guidanceLine.setStyle(
+              {
+                color:
+                  lineColor,
+
+                dashArray:
+                  interceptor.guidanceLocked
+                    ? "12 7"
+                    : "7 6",
+              },
+            );
           } else {
             const targetMarker =
               formationTargetRefs.current[
@@ -1640,30 +1684,42 @@ export function InterceptMap({
 
       if (
         followMode ===
-        "response" &&
+          "response" &&
         snapshot.interceptAuthorized
       ) {
-        map.fitBounds(
-          L.latLngBounds([
-            positions.intruder,
+        const now =
+          performance.now();
 
-            ...Object.values(
-              positions.interceptors,
-            ),
-          ]),
-          {
-            padding: [
-              70,
-              70,
-            ],
+        if (
+          now -
+            lastResponseFitRef.current >=
+          800
+        ) {
+          lastResponseFitRef.current =
+            now;
 
-            maxZoom:
-              16,
+          map.fitBounds(
+            L.latLngBounds([
+              positions.intruder,
 
-            animate:
-              false,
-          },
-        );
+              ...Object.values(
+                positions.interceptors,
+              ),
+            ]),
+            {
+              padding: [
+                70,
+                70,
+              ],
+
+              maxZoom:
+                16,
+
+              animate:
+                false,
+            },
+          );
+        }
       }
     },
     [
@@ -1693,6 +1749,7 @@ export function InterceptMap({
     map.fitBounds(
       L.latLngBounds([
         ...positions.perimeter,
+
         ...Object.values(
           positions.stations,
         ),
@@ -1734,10 +1791,6 @@ export function InterceptMap({
   }
 
   function focusResponse() {
-    setFollowMode(
-      "response",
-    );
-
     const map =
       mapRef.current;
 
@@ -1746,6 +1799,13 @@ export function InterceptMap({
     ) {
       return;
     }
+
+    setFollowMode(
+      "response",
+    );
+
+    lastResponseFitRef.current =
+      performance.now();
 
     map.fitBounds(
       L.latLngBounds([
@@ -1769,13 +1829,11 @@ export function InterceptMap({
 
   return (
     <div className="grid h-full min-h-[560px] grid-rows-[46px_minmax(0,1fr)_44px] overflow-hidden bg-[#020304] xl:min-h-0">
-      {/* Controls outside map */}
-
       <div className="flex items-center justify-between gap-3 border-b border-white/[0.08] bg-[#06080b] px-3">
         <div className="flex min-w-0 items-center gap-3">
           <span
             className={[
-              "font-mono text-[13px] font-semibold",
+              "font-mono text-[14px] font-semibold",
 
               snapshot.alert.active
                 ? "text-[#FF315A]"
@@ -1787,7 +1845,7 @@ export function InterceptMap({
               : "AIRSPACE CLEAR"}
           </span>
 
-          <span className="hidden text-[12px] text-white/36 lg:block">
+          <span className="hidden text-[14px] text-white/36 lg:block">
             {
               snapshot.missionId
             }
@@ -1905,59 +1963,57 @@ export function InterceptMap({
         </div>
       </div>
 
-      {/* Map */}
-
       <div className="intercept-map relative min-h-0">
         <style>
           {`
             .intercept-map .mn-glow-path {
               filter:
                 drop-shadow(0 0 2px #000)
-                drop-shadow(0 0 4px rgba(0,0,0,.95));
+                drop-shadow(0 0 5px rgba(0,0,0,.98));
             }
 
             .intercept-map .mn-strong-glow-path {
               filter:
                 drop-shadow(0 0 2px #000)
-                drop-shadow(0 0 6px rgba(0,0,0,1));
+                drop-shadow(0 0 7px rgba(0,0,0,1));
             }
 
             .intercept-map .mn-ai-path {
               filter:
                 drop-shadow(0 0 2px #000)
-                drop-shadow(0 0 7px rgba(168,255,79,.75));
+                drop-shadow(0 0 8px rgba(168,255,79,.78));
             }
 
             .intercept-map .mn-perimeter-path {
               filter:
                 drop-shadow(0 0 2px #000)
-                drop-shadow(0 0 5px rgba(91,255,138,.60));
+                drop-shadow(0 0 6px rgba(91,255,138,.70));
             }
 
             .intercept-map .mn-critical-path {
               filter:
                 drop-shadow(0 0 2px #000)
-                drop-shadow(0 0 6px rgba(255,49,90,.70));
+                drop-shadow(0 0 7px rgba(255,49,90,.75));
             }
 
             .intercept-map .leaflet-tooltip {
-              border: 1px solid rgba(255,255,255,.16);
-              border-radius: 4px;
-              background: rgba(3,4,5,.95);
-              color: #fff;
-              font-size: 12px;
-              box-shadow: 0 5px 16px rgba(0,0,0,.5);
+              border:1px solid rgba(255,255,255,.16);
+              border-radius:4px;
+              background:rgba(3,4,5,.96);
+              color:#fff;
+              font-size:12px;
+              box-shadow:0 5px 16px rgba(0,0,0,.5);
             }
 
             .intercept-map .leaflet-control-attribution {
-              background: rgba(5,6,13,.86) !important;
-              color: rgba(255,255,255,.72) !important;
-              font-size: 13px !important;
-              padding: 4px 7px !important;
+              background:rgba(5,6,13,.88)!important;
+              color:rgba(255,255,255,.72)!important;
+              font-size:12px!important;
+              padding:4px 7px!important;
             }
 
             .intercept-map .leaflet-control-attribution a {
-              color: #9CCAFF !important;
+              color:#9CCAFF!important;
             }
           `}
         </style>
@@ -1969,8 +2025,6 @@ export function InterceptMap({
           className="absolute inset-0 h-full w-full"
         />
       </div>
-
-      {/* Layers */}
 
       <div className="flex items-center justify-between gap-3 border-t border-white/[0.08] bg-[#06080b] px-3">
         <div className="flex gap-1.5">
@@ -2022,11 +2076,11 @@ export function InterceptMap({
 
         <div className="hidden items-center gap-4 font-mono text-[12px] xl:flex">
           <span className="text-[#5BFF8A]">
-            ┅ Monitored perimeter
+            ┅ Perimeter
           </span>
 
           <span className="text-[#FF315A]">
-            ┅ Critical zone / Intruder
+            ┅ Intruder / Critical
           </span>
 
           <span className="text-[#D77DFF]">
@@ -2034,11 +2088,19 @@ export function InterceptMap({
           </span>
 
           <span className="text-[#A8FF4F]">
-            ━ Adaptive AI
+            ━ Validated Ensemble
           </span>
 
           <span className="text-[#FFE66D]">
+            ┅ Locked Pursuit
+          </span>
+
+          <span className="text-[#5AA9FF]">
             ┅ Rendezvous
+          </span>
+
+          <span className="text-[#59D99A]">
+            ┅ Shadow
           </span>
         </div>
       </div>
