@@ -87,10 +87,11 @@ import {
   useUnifiedTelemetry,
 } from "../hooks/useUnifiedTelemetry";
 
+
 /* =========================================================
-   MissionNexus V2
-   Vision Intelligence
+   Configuration
    ========================================================= */
+
 
 const BACKEND_URL =
   "http://127.0.0.1:8000";
@@ -98,9 +99,11 @@ const BACKEND_URL =
 const STREAM_CONFIDENCE_THRESHOLD =
   0.3;
 
+
 /* =========================================================
    Video Sources
    ========================================================= */
+
 
 const defaultVideoSource:
   CameraVideoSource = {
@@ -125,6 +128,7 @@ const defaultVideoSource:
   src:
     "/videos/drone-city-surveillance.mp4",
 };
+
 
 const videoSources:
   CameraVideoSource[] = [
@@ -283,9 +287,11 @@ const videoSources:
   },
 ];
 
+
 /* =========================================================
    Types
    ========================================================= */
+
 
 type Tone =
   | "nominal"
@@ -294,109 +300,134 @@ type Tone =
   | "info"
   | "muted";
 
+
 type DashboardAlert = {
-  title: string;
-  message: string;
+  title:
+    string;
+
+  message:
+    string;
 
   severity:
     | "high"
     | "critical";
 
-  source: string;
-  time: string;
+  source:
+    string;
+
+  time:
+    string;
 };
 
+
 type VisionMetric = {
-  label: string;
-  value: string;
-  icon: LucideIcon;
-  tone: Tone;
+  label:
+    string;
+
+  value:
+    string;
+
+  icon:
+    LucideIcon;
+
+  tone:
+    Tone;
 };
+
 
 /* =========================================================
    Tone System
    ========================================================= */
 
+
 const toneClass:
   Record<
     Tone,
     {
-      text: string;
-      border: string;
-      bg: string;
-      dot: string;
+      text:
+        string;
+
+      border:
+        string;
+
+      bg:
+        string;
+
+      dot:
+        string;
     }
   > = {
   nominal: {
     text:
-      "text-[#59D99A]",
+      "text-[#507A65]",
 
     border:
-      "border-[rgba(89,217,154,0.25)]",
+      "border-[rgba(80,122,101,0.25)]",
 
     bg:
-      "bg-[rgba(89,217,154,0.05)]",
+      "bg-[#DDEBE4]",
 
     dot:
-      "bg-[#59D99A]",
+      "bg-[#507A65]",
   },
 
   caution: {
     text:
-      "text-[#F6B23C]",
+      "text-[#8C642D]",
 
     border:
-      "border-[rgba(246,178,60,0.28)]",
+      "border-[rgba(165,122,59,0.26)]",
 
     bg:
-      "bg-[rgba(246,178,60,0.055)]",
+      "bg-[#F2E7D5]",
 
     dot:
-      "bg-[#F6B23C]",
+      "bg-[#A57A3B]",
   },
 
   critical: {
     text:
-      "text-[#FF5A63]",
+      "text-[#AC5C64]",
 
     border:
-      "border-[rgba(255,90,99,0.28)]",
+      "border-[rgba(172,92,100,0.26)]",
 
     bg:
-      "bg-[rgba(255,90,99,0.055)]",
+      "bg-[#F2DFE2]",
 
     dot:
-      "bg-[#FF5A63]",
+      "bg-[#AC5C64]",
   },
 
   info: {
     text:
-      "text-[#5AA9FF]",
+      "text-[#3F6E8C]",
 
     border:
-      "border-[rgba(90,169,255,0.26)]",
+      "border-[rgba(63,110,140,0.25)]",
 
     bg:
-      "bg-[rgba(90,169,255,0.055)]",
+      "bg-[#DCE8EF]",
 
     dot:
-      "bg-[#5AA9FF]",
+      "bg-[#3F6E8C]",
   },
 
   muted: {
     text:
-      "text-white/38",
+      "text-[#6E7B86]",
 
     border:
-      "border-white/[0.08]",
+      "border-[#C7D0D7]",
 
     bg:
-      "bg-white/[0.015]",
+      "bg-[#E4E9ED]",
 
     dot:
-      "bg-white/28",
+      "bg-[#929EA7]",
   },
 };
+
 
 const sourceToneClass:
   Record<
@@ -404,51 +435,59 @@ const sourceToneClass:
     string
   > = {
   surveillance:
-    "border-[rgba(90,169,255,0.28)] bg-[rgba(90,169,255,0.055)] text-[#5AA9FF]",
+    "border-[rgba(63,110,140,0.25)] bg-[#DCE8EF] text-[#3F6E8C]",
 
   disaster:
-    "border-[rgba(255,90,99,0.28)] bg-[rgba(255,90,99,0.055)] text-[#FF5A63]",
+    "border-[rgba(172,92,100,0.25)] bg-[#F2DFE2] text-[#AC5C64]",
 
   patrol:
-    "border-[rgba(89,217,154,0.25)] bg-[rgba(89,217,154,0.05)] text-[#59D99A]",
+    "border-[rgba(80,122,101,0.25)] bg-[#DDEBE4] text-[#507A65]",
 
   simulation:
-    "border-[rgba(246,178,60,0.28)] bg-[rgba(246,178,60,0.055)] text-[#F6B23C]",
+    "border-[rgba(163,123,67,0.26)] bg-[#EEE3D3] text-[#815E30]",
 };
+
 
 /* =========================================================
    Helpers
    ========================================================= */
 
+
 function getRiskTone(
-  risk?: string,
+  risk?:
+    string,
 ): Tone {
   if (
-    risk === "critical"
+    risk ===
+    "critical"
   ) {
     return "critical";
   }
 
   if (
-    risk === "high"
+    risk ===
+    "high"
   ) {
     return "caution";
   }
 
   if (
-    risk === "medium"
+    risk ===
+    "medium"
   ) {
     return "info";
   }
 
   if (
-    risk === "low"
+    risk ===
+    "low"
   ) {
     return "nominal";
   }
 
   return "muted";
 }
+
 
 function playDashboardAlertSound() {
   const AudioContextConstructor =
@@ -595,14 +634,17 @@ function playDashboardAlertSound() {
   );
 }
 
+
 /* =========================================================
-   Metric Strip
+   Metric Card
    ========================================================= */
+
 
 function VisionMetricCell({
   metric,
 }: {
-  metric: VisionMetric;
+  metric:
+    VisionMetric;
 }) {
   const Icon =
     metric.icon;
@@ -613,68 +655,107 @@ function VisionMetricCell({
     ];
 
   return (
-    <div className="flex min-w-0 items-center justify-between gap-2 border-r border-white/[0.07] px-3 last:border-r-0">
+    <div
+      className={[
+        "flex min-h-[94px] min-w-0 items-center justify-between gap-3",
+
+        "rounded-[9px]",
+
+        "border border-[#C5CDD5]",
+
+        "bg-[#EEF2F5]",
+
+        "px-4 py-3.5",
+
+        "shadow-[0_5px_16px_rgba(34,48,60,0.055)]",
+      ].join(" ")}
+    >
       <div className="min-w-0">
-        <div className="truncate font-mono text-[9px] font-semibold uppercase tracking-[0.07em] text-white/36">
-          {metric.label}
+        <div className="truncate text-[12px] font-semibold uppercase tracking-[0.05em] text-[#6E7B86]">
+          {
+            metric.label
+          }
         </div>
 
-        <div
-          className={[
-            "mt-1 truncate font-mono text-[15px] font-semibold leading-none",
-
-            tone.text,
-          ].join(" ")}
-        >
-          {metric.value}
+        <div className="mt-2 truncate font-mono text-[16px] font-semibold leading-none text-[#18232D]">
+          {
+            metric.value
+          }
         </div>
       </div>
 
-      <Icon
-        size={15}
-        strokeWidth={1.55}
+      <div
         className={[
-          "shrink-0",
+          "flex h-10 w-10 shrink-0 items-center justify-center",
+
+          "rounded-[7px] border",
+
+          tone.border,
+          tone.bg,
           tone.text,
         ].join(" ")}
-      />
+      >
+        <Icon
+          size={
+            18
+          }
+          strokeWidth={
+            1.65
+          }
+        />
+      </div>
     </div>
   );
 }
 
+
 /* =========================================================
    Rail Header
    ========================================================= */
+
 
 function RailHeader({
   eyebrow,
   title,
   right,
 }: {
-  eyebrow: string;
-  title: string;
-  right?: ReactNode;
+  eyebrow:
+    string;
+
+  title:
+    string;
+
+  right?:
+    ReactNode;
 }) {
   return (
-    <div className="flex h-[36px] items-center justify-between gap-3 border-b border-white/[0.07] px-3">
+    <div className="flex min-h-[50px] items-center justify-between gap-3 border-b border-[#CED5DB] px-4">
       <div className="min-w-0">
-        <span className="font-mono text-[9px] font-semibold uppercase tracking-[0.065em] text-[#F6B23C]">
-          {eyebrow}
+        <span className="text-[12px] font-semibold uppercase tracking-[0.055em] text-[#815E30]">
+          {
+            eyebrow
+          }
         </span>
 
-        <span className="ml-2 text-[11px] font-medium text-white/76">
-          {title}
+        <span className="ml-2 text-[14px] font-semibold text-[#25313B]">
+          {
+            title
+          }
         </span>
       </div>
 
-      {right}
+      {
+        right
+      }
     </div>
   );
 }
 
+
 /* =========================================================
    Secondary Section
    ========================================================= */
+
 
 function SectionShell({
   eyebrow,
@@ -683,28 +764,55 @@ function SectionShell({
   compact = false,
   children,
 }: {
-  eyebrow: string;
-  title: string;
-  action?: string;
-  compact?: boolean;
-  children: ReactNode;
+  eyebrow:
+    string;
+
+  title:
+    string;
+
+  action?:
+    string;
+
+  compact?:
+    boolean;
+
+  children:
+    ReactNode;
 }) {
   return (
-    <section className="overflow-hidden rounded-[6px] border border-white/[0.08] bg-[#07090d]">
-      <div className="flex min-h-[52px] items-center justify-between gap-3 border-b border-white/[0.07] px-4">
+    <section
+      className={[
+        "overflow-hidden",
+
+        "rounded-[10px]",
+
+        "border border-[#C5CDD5]",
+
+        "bg-[#EEF2F5]",
+
+        "shadow-[0_8px_24px_rgba(34,48,60,0.065)]",
+      ].join(" ")}
+    >
+      <div className="flex min-h-[64px] items-center justify-between gap-4 border-b border-[#D0D7DD] bg-[#E9EEF1] px-5">
         <div>
-          <div className="font-mono text-[9px] font-semibold uppercase tracking-[0.09em] text-[#F6B23C]">
-            {eyebrow}
+          <div className="text-[12px] font-semibold uppercase tracking-[0.07em] text-[#815E30]">
+            {
+              eyebrow
+            }
           </div>
 
-          <h2 className="mt-0.5 text-[14px] font-medium text-white/88">
-            {title}
+          <h2 className="mt-1 text-[17px] font-semibold tracking-[-0.015em] text-[#18232D]">
+            {
+              title
+            }
           </h2>
         </div>
 
         {action ? (
-          <span className="font-mono text-[9px] font-semibold uppercase tracking-[0.055em] text-[#5AA9FF]">
-            {action}
+          <span className="rounded-[5px] border border-[rgba(63,110,140,0.18)] bg-[#DCE8EF] px-2.5 py-1 text-[12px] font-semibold text-[#3F6E8C]">
+            {
+              action
+            }
           </span>
         ) : null}
       </div>
@@ -712,72 +820,92 @@ function SectionShell({
       <div
         className={
           compact
-            ? "p-3"
-            : "p-4"
+            ? "p-4"
+            : "p-5"
         }
       >
-        {children}
+        {
+          children
+        }
       </div>
     </section>
   );
 }
 
+
 /* =========================================================
    Emergency Alert
    ========================================================= */
+
 
 function EmergencyAlertToast({
   alert,
   onDismiss,
 }: {
-  alert: DashboardAlert;
-  onDismiss: () => void;
+  alert:
+    DashboardAlert;
+
+  onDismiss:
+    () => void;
 }) {
   return (
-    <div className="fixed right-4 top-[84px] z-[4500] w-[min(500px,calc(100vw-2rem))] overflow-hidden rounded-[6px] border border-[rgba(255,90,99,0.42)] bg-[rgba(7,9,13,0.97)] shadow-[0_24px_70px_rgba(0,0,0,0.65)] backdrop-blur">
-      <div className="flex items-start gap-3 p-3">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[4px] border border-[rgba(255,90,99,0.3)] bg-[rgba(255,90,99,0.07)]">
+    <div className="fixed right-5 top-[88px] z-[4500] w-[min(500px,calc(100vw-2rem))] overflow-hidden rounded-[9px] border border-[rgba(172,92,100,0.32)] bg-[#F7F9FA] shadow-[0_20px_60px_rgba(34,48,60,0.22)]">
+      <div className="flex items-start gap-3 p-4">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[7px] border border-[rgba(172,92,100,0.24)] bg-[#F2DFE2]">
           <BellRing
-            size={15}
-            strokeWidth={1.7}
-            className="text-[#FF5A63]"
+            size={
+              17
+            }
+            className="text-[#AC5C64]"
           />
         </div>
 
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="font-mono text-[9px] font-semibold uppercase tracking-[0.06em] text-[#FF5A63]">
+          <div className="flex items-center gap-2">
+            <span className="text-[12px] font-semibold uppercase tracking-[0.05em] text-[#AC5C64]">
               Visual Alert
             </span>
 
-            <span className="font-mono text-[8px] text-white/30">
-              {alert.time}
+            <span className="font-mono text-[12px] text-[#7A8792]">
+              {
+                alert.time
+              }
             </span>
           </div>
 
-          <div className="mt-1 text-[12px] font-medium text-white/88">
-            {alert.title}
+          <div className="mt-1.5 text-[14px] font-semibold text-[#18232D]">
+            {
+              alert.title
+            }
           </div>
 
-          <p className="mt-1 text-[10px] leading-[1.5] text-white/40">
-            {alert.message}
+          <p className="mt-1.5 text-[13px] leading-[1.55] text-[#596672]">
+            {
+              alert.message
+            }
           </p>
 
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            <span className="font-mono text-[8px] uppercase text-white/32">
-              {alert.source}
+          <div className="mt-3 flex flex-wrap gap-2">
+            <span className="rounded-[4px] bg-[#E4E9ED] px-2 py-1 text-[12px] text-[#596672]">
+              {
+                alert.source
+              }
             </span>
 
-            <span className="font-mono text-[8px] uppercase text-[#FF5A63]">
-              {alert.severity}
+            <span className="rounded-[4px] bg-[#F2DFE2] px-2 py-1 text-[12px] font-semibold uppercase text-[#AC5C64]">
+              {
+                alert.severity
+              }
             </span>
 
-            <span className="flex items-center gap-1 font-mono text-[8px] uppercase text-[#F6B23C]">
+            <span className="flex items-center gap-1 rounded-[4px] bg-[#EEE3D3] px-2 py-1 text-[12px] text-[#815E30]">
               <Volume2
-                size={10}
+                size={
+                  12
+                }
               />
 
-              audio
+              Audio
             </span>
           </div>
         </div>
@@ -787,11 +915,12 @@ function EmergencyAlertToast({
           onClick={
             onDismiss
           }
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[4px] border border-white/[0.08] text-white/38 transition hover:text-white"
-          aria-label="Dismiss alert"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[6px] border border-[#C5CDD5] bg-[#E4E9ED] text-[#67747F] hover:bg-[#D7DEE4]"
         >
           <X
-            size={13}
+            size={
+              14
+            }
           />
         </button>
       </div>
@@ -799,22 +928,38 @@ function EmergencyAlertToast({
   );
 }
 
+
 /* =========================================================
    Summary Card
    ========================================================= */
 
+
 function SummaryCard({
-  icon: Icon,
+  icon:
+    Icon,
+
   label,
+
   value,
+
   helper,
+
   tone,
 }: {
-  icon: LucideIcon;
-  label: string;
-  value: string;
-  helper: string;
-  tone: Tone;
+  icon:
+    LucideIcon;
+
+  label:
+    string;
+
+  value:
+    string;
+
+  helper:
+    string;
+
+  tone:
+    Tone;
 }) {
   const style =
     toneClass[
@@ -824,54 +969,66 @@ function SummaryCard({
   return (
     <div
       className={[
-        "rounded-[5px] border bg-[#05060d] p-3",
+        "rounded-[8px] border bg-[#F7F9FA] p-4",
+
+        "shadow-[0_4px_14px_rgba(34,48,60,0.04)]",
 
         style.border,
       ].join(" ")}
     >
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <Icon
-            size={13}
-            className={
-              style.text
-            }
-          />
+        <div className="flex items-center gap-2.5">
+          <div
+            className={[
+              "flex h-8 w-8 items-center justify-center rounded-[6px]",
 
-          <span className="font-mono text-[9px] font-semibold uppercase tracking-[0.06em] text-white/34">
-            {label}
+              style.bg,
+              style.text,
+            ].join(" ")}
+          >
+            <Icon
+              size={
+                15
+              }
+            />
+          </div>
+
+          <span className="text-[12px] font-semibold uppercase tracking-[0.045em] text-[#6F7C87]">
+            {
+              label
+            }
           </span>
         </div>
 
         <span
           className={[
-            "h-1.5 w-1.5 rounded-full",
+            "h-2 w-2 rounded-full",
 
             style.dot,
           ].join(" ")}
         />
       </div>
 
-      <div
-        className={[
-          "mt-2 font-mono text-[14px] font-semibold uppercase",
-
-          style.text,
-        ].join(" ")}
-      >
-        {value}
+      <div className="mt-3 text-[16px] font-semibold capitalize text-[#18232D]">
+        {
+          value
+        }
       </div>
 
-      <p className="mt-1 text-[10px] leading-[1.45] text-white/34">
-        {helper}
+      <p className="mt-1.5 text-[13px] leading-[1.5] text-[#64717D]">
+        {
+          helper
+        }
       </p>
     </div>
   );
 }
 
+
 /* =========================================================
-   Source Library
+   Source Selector
    ========================================================= */
+
 
 function VideoSourceSelector({
   videos,
@@ -890,7 +1047,7 @@ function VideoSourceSelector({
   ) => void;
 }) {
   return (
-    <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
       {videos.map(
         (
           video,
@@ -911,37 +1068,53 @@ function VideoSourceSelector({
                 )
               }
               className={[
-                "min-h-[92px] rounded-[5px] border p-3 text-left",
+                "min-h-[116px]",
 
-                "transition-colors duration-150",
+                "rounded-[8px] border",
+
+                "p-3.5 text-left",
+
+                "transition-[background-color,border-color,box-shadow] duration-150",
 
                 selected
-                  ? "border-[rgba(246,178,60,0.36)] bg-[rgba(246,178,60,0.06)]"
-                  : "border-white/[0.07] bg-[#05060d] hover:border-white/[0.16]",
+                  ? "border-[rgba(163,123,67,0.38)] bg-[#EEE3D3] shadow-[0_5px_16px_rgba(75,55,25,0.07)]"
+                  : "border-[#CBD3D9] bg-[#F7F9FA] hover:border-[#AFBAC2] hover:bg-[#EEF2F5]",
               ].join(" ")}
             >
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex min-w-0 items-start gap-2">
-                  {video.src ? (
-                    <Film
-                      size={13}
-                      className="mt-0.5 shrink-0 text-[#F6B23C]"
-                    />
-                  ) : (
-                    <Camera
-                      size={13}
-                      className="mt-0.5 shrink-0 text-[#5AA9FF]"
-                    />
-                  )}
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex min-w-0 items-start gap-2.5">
+                  <div
+                    className={[
+                      "flex h-8 w-8 shrink-0 items-center justify-center rounded-[6px]",
+
+                      video.src
+                        ? "bg-[#EEE3D3] text-[#815E30]"
+                        : "bg-[#DCE8EF] text-[#3F6E8C]",
+                    ].join(" ")}
+                  >
+                    {video.src ? (
+                      <Film
+                        size={
+                          15
+                        }
+                      />
+                    ) : (
+                      <Camera
+                        size={
+                          15
+                        }
+                      />
+                    )}
+                  </div>
 
                   <div className="min-w-0">
-                    <div className="truncate text-[11px] font-medium text-white/78">
+                    <div className="truncate text-[14px] font-semibold text-[#18232D]">
                       {
                         video.title
                       }
                     </div>
 
-                    <div className="mt-1 line-clamp-2 text-[9px] leading-[1.45] text-white/32">
+                    <div className="mt-1 line-clamp-2 text-[12px] leading-[1.5] text-[#6A7782]">
                       {
                         video.description
                       }
@@ -951,18 +1124,20 @@ function VideoSourceSelector({
 
                 {selected ? (
                   <CheckCircle2
-                    size={13}
-                    className="shrink-0 text-[#59D99A]"
+                    size={
+                      16
+                    }
+                    className="shrink-0 text-[#507A65]"
                   />
                 ) : null}
               </div>
 
-              <div className="mt-2 flex flex-wrap gap-1.5">
+              <div className="mt-3 flex gap-2">
                 <span
                   className={[
-                    "rounded-[3px] border px-1.5 py-0.5",
+                    "rounded-[4px] border px-2 py-1",
 
-                    "font-mono text-[8px] font-semibold uppercase",
+                    "text-[11px] font-semibold uppercase",
 
                     sourceToneClass[
                       video.category
@@ -975,7 +1150,7 @@ function VideoSourceSelector({
                   }
                 </span>
 
-                <span className="rounded-[3px] border border-white/[0.07] px-1.5 py-0.5 font-mono text-[8px] uppercase text-white/28">
+                <span className="rounded-[4px] border border-[#C8D0D7] bg-[#E4E9ED] px-2 py-1 text-[11px] uppercase text-[#67747F]">
                   {video.src
                     ? "MP4"
                     : "Reserved"}
@@ -989,9 +1164,11 @@ function VideoSourceSelector({
   );
 }
 
+
 /* =========================================================
    Operator Safety
    ========================================================= */
+
 
 function OperatorSafetyPanel({
   selectedVideo,
@@ -1000,7 +1177,7 @@ function OperatorSafetyPanel({
     CameraVideoSource;
 }) {
   return (
-    <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
       <SummaryCard
         icon={
           Sparkles
@@ -1048,20 +1225,30 @@ function OperatorSafetyPanel({
   );
 }
 
+
 /* =========================================================
    Signal Bar
    ========================================================= */
+
 
 function SignalBar({
   label,
   value,
   tone,
-  icon: Icon,
+  icon:
+    Icon,
 }: {
-  label: string;
-  value: number;
-  tone: Tone;
-  icon: LucideIcon;
+  label:
+    string;
+
+  value:
+    number;
+
+  tone:
+    Tone;
+
+  icon:
+    LucideIcon;
 }) {
   const style =
     toneClass[
@@ -1078,31 +1265,38 @@ function SignalBar({
     );
 
   return (
-    <div className="rounded-[5px] border border-white/[0.07] bg-[#05060d] p-3">
+    <div className="rounded-[7px] border border-[#C9D1D7] bg-[#E4E9ED] p-3.5">
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 font-mono text-[8px] font-semibold uppercase tracking-[0.06em] text-white/34">
+        <div className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.04em] text-[#5D6A75]">
           <Icon
-            size={11}
+            size={
+              14
+            }
             className={
               style.text
             }
           />
 
-          {label}
+          {
+            label
+          }
         </div>
 
         <span
           className={[
-            "font-mono text-[9px] font-semibold",
+            "font-mono text-[13px] font-semibold",
 
             style.text,
           ].join(" ")}
         >
-          {safeValue}%
+          {
+            safeValue
+          }
+          %
         </span>
       </div>
 
-      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/[0.05]">
+      <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#CDD5DB]">
         <div
           className={[
             "h-full rounded-full",
@@ -1119,20 +1313,33 @@ function SignalBar({
   );
 }
 
+
 /* =========================================================
    Evidence Tile
    ========================================================= */
 
+
 function EvidenceTile({
-  icon: Icon,
+  icon:
+    Icon,
+
   label,
+
   value,
+
   tone,
 }: {
-  icon: LucideIcon;
-  label: string;
-  value: number;
-  tone: Tone;
+  icon:
+    LucideIcon;
+
+  label:
+    string;
+
+  value:
+    number;
+
+  tone:
+    Tone;
 }) {
   const style =
     value > 0
@@ -1144,80 +1351,95 @@ function EvidenceTile({
   return (
     <div
       className={[
-        "rounded-[5px] border bg-[#05060d] p-3",
+        "rounded-[7px] border bg-[#F7F9FA] p-3",
 
         style.border,
       ].join(" ")}
     >
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex items-center justify-between">
         <Icon
-          size={12}
+          size={
+            14
+          }
           className={
             style.text
           }
         />
 
-        <span
-          className={[
-            "font-mono text-[14px] font-semibold",
-
-            style.text,
-          ].join(" ")}
-        >
-          {value}
+        <span className="font-mono text-[16px] font-semibold text-[#18232D]">
+          {
+            value
+          }
         </span>
       </div>
 
-      <div className="mt-2 truncate font-mono text-[8px] font-semibold uppercase tracking-[0.06em] text-white/30">
-        {label}
+      <div className="mt-2 text-[11px] font-semibold uppercase tracking-[0.04em] text-[#6D7A85]">
+        {
+          label
+        }
       </div>
     </div>
   );
 }
 
+
 /* =========================================================
    Checklist
    ========================================================= */
+
 
 function ChecklistItem({
   complete,
   label,
   helper,
 }: {
-  complete: boolean;
-  label: string;
-  helper: string;
+  complete:
+    boolean;
+
+  label:
+    string;
+
+  helper:
+    string;
 }) {
   return (
     <div
       className={[
-        "rounded-[5px] border p-3",
+        "rounded-[7px] border p-3.5",
 
         complete
-          ? "border-[rgba(89,217,154,0.22)] bg-[rgba(89,217,154,0.035)]"
-          : "border-[rgba(246,178,60,0.24)] bg-[rgba(246,178,60,0.035)]",
+          ? "border-[rgba(80,122,101,0.24)] bg-[#DDEBE4]"
+          : "border-[rgba(165,122,59,0.25)] bg-[#F2E7D5]",
       ].join(" ")}
     >
       <div className="flex items-start gap-2.5">
         {complete ? (
           <CheckCircle2
-            size={14}
-            className="mt-0.5 shrink-0 text-[#59D99A]"
+            size={
+              16
+            }
+            className="mt-0.5 shrink-0 text-[#507A65]"
           />
         ) : (
           <AlertTriangle
-            size={14}
-            className="mt-0.5 shrink-0 text-[#F6B23C]"
+            size={
+              16
+            }
+            className="mt-0.5 shrink-0 text-[#A57A3B]"
           />
         )}
 
         <div>
-          <div className="text-[11px] font-medium text-white/76">
-            {label}
+          <div className="text-[13px] font-semibold text-[#24313B]">
+            {
+              label
+            }
           </div>
 
-          <p className="mt-1 text-[10px] leading-[1.5] text-white/34">
-            {helper}
+          <p className="mt-1 text-[12px] leading-[1.55] text-[#63707B]">
+            {
+              helper
+            }
           </p>
         </div>
       </div>
@@ -1225,9 +1447,11 @@ function ChecklistItem({
   );
 }
 
+
 /* =========================================================
    Analysis Workbench
    ========================================================= */
+
 
 function AnalysisWorkbench({
   selectedVideo,
@@ -1241,8 +1465,11 @@ function AnalysisWorkbench({
   analysis:
     CameraOpenCvAnalysis | null;
 
-  risk: string;
-  confidence: number;
+  risk:
+    string;
+
+  confidence:
+    number;
 }) {
   const riskTone =
     getRiskTone(
@@ -1347,8 +1574,8 @@ function AnalysisWorkbench({
       : 0;
 
   return (
-    <div className="grid gap-4">
-      <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+    <div className="grid gap-5">
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         <SummaryCard
           icon={
             Radar
@@ -1419,27 +1646,29 @@ function AnalysisWorkbench({
         />
       </div>
 
+
       <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-        <div className="rounded-[5px] border border-white/[0.07] bg-[#05060d] p-4">
-          <div className="flex items-center justify-between gap-3">
+        <div className="rounded-[8px] border border-[#C9D1D7] bg-[#E4E9ED] p-4">
+          <div className="flex items-center justify-between">
             <div>
-              <div className="font-mono text-[9px] font-semibold uppercase tracking-[0.07em] text-[#F6B23C]">
+              <div className="text-[12px] font-semibold uppercase tracking-[0.055em] text-[#815E30]">
                 Detection Evidence
               </div>
 
-              <div className="mt-1 text-[13px] font-medium text-white/82">
+              <div className="mt-1 text-[15px] font-semibold text-[#18232D]">
                 Signal Breakdown
               </div>
             </div>
 
-            <span className="font-mono text-[8px] uppercase text-[#5AA9FF]">
+            <span className="rounded-[4px] bg-[#DCE8EF] px-2 py-1 text-[11px] font-semibold uppercase text-[#3F6E8C]">
               {
                 selectedVideo.category
               }
             </span>
           </div>
 
-          <div className="mt-3 grid gap-2 md:grid-cols-2">
+
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
             <SignalBar
               icon={
                 Flame
@@ -1505,7 +1734,8 @@ function AnalysisWorkbench({
             />
           </div>
 
-          <div className="mt-3 grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-6">
+
+          <div className="mt-4 grid grid-cols-2 gap-2.5 md:grid-cols-3 xl:grid-cols-6">
             <EvidenceTile
               icon={
                 UserRound
@@ -1574,12 +1804,13 @@ function AnalysisWorkbench({
           </div>
         </div>
 
-        <div className="rounded-[5px] border border-white/[0.07] bg-[#05060d] p-4">
-          <div className="font-mono text-[9px] font-semibold uppercase tracking-[0.07em] text-[#F6B23C]">
+
+        <div className="rounded-[8px] border border-[#C9D1D7] bg-[#E4E9ED] p-4">
+          <div className="text-[12px] font-semibold uppercase tracking-[0.055em] text-[#815E30]">
             Operator Checklist
           </div>
 
-          <div className="mt-3 grid gap-2">
+          <div className="mt-3 grid gap-2.5">
             <ChecklistItem
               complete={
                 Boolean(
@@ -1643,9 +1874,10 @@ function AnalysisWorkbench({
         </div>
       </div>
 
+
       <div
         className={[
-          "rounded-[5px] border p-3",
+          "rounded-[7px] border p-3.5",
 
           riskStyle.border,
           riskStyle.bg,
@@ -1653,23 +1885,28 @@ function AnalysisWorkbench({
       >
         <div
           className={[
-            "font-mono text-[10px] font-semibold uppercase",
+            "text-[13px] font-semibold",
 
             riskStyle.text,
           ].join(" ")}
         >
-          Current analysis risk:
-          {" "}
-          {risk}
+          Current analysis risk:{" "}
+          <span className="uppercase">
+            {
+              risk
+            }
+          </span>
         </div>
       </div>
     </div>
   );
 }
 
+
 /* =========================================================
    Main Page
    ========================================================= */
+
 
 export function CameraAI() {
   const {
@@ -1679,6 +1916,7 @@ export function CameraAI() {
   } =
     useUnifiedTelemetry();
 
+
   const [
     selectedVideo,
     setSelectedVideo,
@@ -1687,13 +1925,17 @@ export function CameraAI() {
       defaultVideoSource,
     );
 
+
   const [
     openCvAnalysis,
     setOpenCvAnalysis,
   ] =
     useState<
       CameraOpenCvAnalysis | null
-    >(null);
+    >(
+      null,
+    );
+
 
   const [
     annotatedVideoUrl,
@@ -1701,7 +1943,10 @@ export function CameraAI() {
   ] =
     useState<
       string | null
-    >(null);
+    >(
+      null,
+    );
+
 
   const [
     isAnnotatingVideo,
@@ -1711,13 +1956,17 @@ export function CameraAI() {
       false,
     );
 
+
   const [
     annotatorError,
     setAnnotatorError,
   ] =
     useState<
       string | null
-    >(null);
+    >(
+      null,
+    );
+
 
   const [
     videoPanelKey,
@@ -1727,22 +1976,28 @@ export function CameraAI() {
       0,
     );
 
+
   const [
     dashboardAlert,
     setDashboardAlert,
   ] =
     useState<
       DashboardAlert | null
-    >(null);
+    >(
+      null,
+    );
+
 
   /* =======================================================
-     State
+     Derived State
      ======================================================= */
+
 
   const risk =
     telemetry?.risk ??
     openCvAnalysis?.risk ??
     "low";
+
 
   const confidence =
     Math.round(
@@ -1759,6 +2014,7 @@ export function CameraAI() {
         100,
     );
 
+
   const cameraSource =
     sources.find(
       (
@@ -1768,15 +2024,18 @@ export function CameraAI() {
         "camera_ml",
     );
 
+
   const cameraOnline =
     Boolean(
       cameraSource?.connected,
     );
 
+
   const isAnnotatedPlayback =
     Boolean(
       annotatedVideoUrl,
     );
+
 
   const detectionCount =
     openCvAnalysis
@@ -1784,12 +2043,15 @@ export function CameraAI() {
       .detection_count ??
     0;
 
+
   const pipelineOnline =
     !error;
+
 
   /* =======================================================
      Metrics
      ======================================================= */
+
 
   const visionMetrics:
     VisionMetric[] = [
@@ -1886,14 +2148,11 @@ export function CameraAI() {
 
         tone:
           pipelineOnline
-            ? "caution"
+            ? "info"
             : "critical",
       },
     ];
 
-  /* =======================================================
-     Helpers
-     ======================================================= */
 
   function resetVideoPanel() {
     setVideoPanelKey(
@@ -1904,6 +2163,7 @@ export function CameraAI() {
         1,
     );
   }
+
 
   function selectVideo(
     video:
@@ -1932,8 +2192,10 @@ export function CameraAI() {
     resetVideoPanel();
   }
 
+
   function selectVideoById(
-    sourceId: string,
+    sourceId:
+      string,
   ) {
     const source =
       videoSources.find(
@@ -1953,6 +2215,7 @@ export function CameraAI() {
     }
   }
 
+
   function showRawFeed() {
     setAnnotatedVideoUrl(
       null,
@@ -1965,9 +2228,6 @@ export function CameraAI() {
     resetVideoPanel();
   }
 
-  /* =======================================================
-     Analysis
-     ======================================================= */
 
   function handleAnalysisComplete(
     analysis:
@@ -1976,6 +2236,7 @@ export function CameraAI() {
     setOpenCvAnalysis(
       analysis,
     );
+
 
     const fireDetected =
       Boolean(
@@ -1995,6 +2256,7 @@ export function CameraAI() {
       ) >
         0;
 
+
     const smokeDetected =
       Boolean(
         analysis
@@ -2008,11 +2270,13 @@ export function CameraAI() {
       ) >
         0;
 
+
     const elevatedRisk =
       analysis.risk ===
         "high" ||
       analysis.risk ===
         "critical";
+
 
     if (
       fireDetected ||
@@ -2026,6 +2290,7 @@ export function CameraAI() {
             ? "Smoke / haze signature"
             : "Elevated visual risk";
 
+
       const severity:
         DashboardAlert["severity"] =
         analysis.risk ===
@@ -2033,6 +2298,7 @@ export function CameraAI() {
         fireDetected
           ? "critical"
           : "high";
+
 
       setDashboardAlert({
         title:
@@ -2050,13 +2316,11 @@ export function CameraAI() {
           new Date().toLocaleTimeString(),
       });
 
+
       playDashboardAlertSound();
     }
   }
 
-  /* =======================================================
-     Annotated Video
-     ======================================================= */
 
   async function generateAnnotatedVideo() {
     if (
@@ -2068,6 +2332,7 @@ export function CameraAI() {
 
       return;
     }
+
 
     setIsAnnotatingVideo(
       true,
@@ -2082,6 +2347,7 @@ export function CameraAI() {
     );
 
     resetVideoPanel();
+
 
     try {
       const response =
@@ -2115,6 +2381,7 @@ export function CameraAI() {
           },
         );
 
+
       if (
         !response.ok
       ) {
@@ -2127,13 +2394,20 @@ export function CameraAI() {
         );
       }
 
+
       const result:
         {
-          ok?: boolean;
-          error?: string;
-          annotated_video_url?: string;
+          ok?:
+            boolean;
+
+          error?:
+            string;
+
+          annotated_video_url?:
+            string;
         } =
         await response.json();
+
 
       if (
         result.ok ===
@@ -2146,6 +2420,7 @@ export function CameraAI() {
         );
       }
 
+
       const separator =
         result.annotated_video_url.includes(
           "?",
@@ -2153,9 +2428,11 @@ export function CameraAI() {
           ? "&"
           : "?";
 
+
       setAnnotatedVideoUrl(
         `${BACKEND_URL}${result.annotated_video_url}${separator}t=${Date.now()}`,
       );
+
 
       resetVideoPanel();
     } catch (
@@ -2174,12 +2451,9 @@ export function CameraAI() {
     }
   }
 
-  /* =======================================================
-     Render
-     ======================================================= */
 
   return (
-    <div className="bg-[#05060d] text-white">
+    <div className="min-h-full bg-transparent text-[#18232D]">
       {dashboardAlert ? (
         <EmergencyAlertToast
           alert={
@@ -2193,65 +2467,49 @@ export function CameraAI() {
         />
       ) : null}
 
+
       {/* ===================================================
-          PRIMARY OPERATOR VIEWPORT
+          Primary Workspace
           =================================================== */}
 
-      <section className="xl:h-[calc(100vh-70px)] xl:overflow-hidden">
-        <div
-          className={[
-            "mx-auto w-full max-w-[1600px]",
+      <section>
+        <div className="mx-auto w-full max-w-[1460px] px-5 pb-8 pt-7 sm:px-6 lg:px-8 xl:px-10">
+          {/* Header */}
 
-            "px-4 pb-3 pt-2",
+          <header className="mb-6 flex min-w-0 items-end justify-between gap-5">
+            <div>
+              <div className="mb-2 text-[12px] font-semibold uppercase tracking-[0.075em] text-[#815E30]">
+                Visual Operations
+              </div>
 
-            "sm:px-6",
-
-            "lg:px-8",
-
-            "xl:grid xl:h-full",
-
-            "xl:grid-rows-[44px_64px_minmax(0,1fr)]",
-
-            "xl:gap-2",
-
-            "xl:px-10",
-
-            "2xl:px-14",
-          ].join(" ")}
-        >
-          {/* ===============================================
-              Header
-              =============================================== */}
-
-          <header className="flex min-w-0 items-center justify-between gap-4 border-b border-white/[0.08]">
-            <div className="min-w-0">
-              <h1 className="text-[16px] font-medium tracking-[-0.02em] text-white">
+              <h1 className="text-[28px] font-semibold tracking-[-0.035em] text-[#18232D]">
                 Vision Intelligence
               </h1>
 
-              <p className="mt-0.5 hidden truncate text-[11px] text-white/42 sm:block">
+              <p className="mt-1.5 text-[14px] text-[#5E6B76]">
                 Aerial video · detection · tracking · disaster intelligence
               </p>
             </div>
 
+
             <div
               className={[
-                "flex h-[30px] shrink-0 items-center gap-2 rounded-[4px] border px-2.5",
+                "flex h-[40px] items-center gap-2 rounded-[7px] border px-3.5",
 
-                "font-mono text-[9px] font-semibold uppercase tracking-[0.055em]",
+                "text-[12px] font-semibold uppercase tracking-[0.045em]",
 
                 pipelineOnline
-                  ? "border-[rgba(89,217,154,0.24)] bg-[rgba(89,217,154,0.045)] text-[#59D99A]"
-                  : "border-[rgba(255,90,99,0.26)] bg-[rgba(255,90,99,0.045)] text-[#FF5A63]",
+                  ? "border-[rgba(80,122,101,0.25)] bg-[#DDEBE4] text-[#507A65]"
+                  : "border-[rgba(172,92,100,0.26)] bg-[#F2DFE2] text-[#AC5C64]",
               ].join(" ")}
             >
               <span
                 className={[
-                  "h-1.5 w-1.5 rounded-full",
+                  "h-2 w-2 rounded-full",
 
                   pipelineOnline
-                    ? "bg-[#59D99A]"
-                    : "bg-[#FF5A63]",
+                    ? "bg-[#507A65]"
+                    : "bg-[#AC5C64]",
                 ].join(" ")}
               />
 
@@ -2261,25 +2519,10 @@ export function CameraAI() {
             </div>
           </header>
 
-          {/* ===============================================
-              Metrics
-              =============================================== */}
 
-          <section
-            className={[
-              "my-2 grid overflow-hidden",
+          {/* Metrics */}
 
-              "rounded-[6px] border border-white/[0.08]",
-
-              "bg-[#07090d]",
-
-              "grid-cols-2",
-
-              "md:grid-cols-3",
-
-              "xl:my-0 xl:grid-cols-6",
-            ].join(" ")}
-          >
+          <section className="mb-5 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
             {visionMetrics.map(
               (
                 metric,
@@ -2296,41 +2539,27 @@ export function CameraAI() {
             )}
           </section>
 
-          {/* ===============================================
-              Main Vision Workspace
-              =============================================== */}
 
-          <section
-            className={[
-              "mt-3 grid min-h-[760px] overflow-hidden",
+          {/* Main Workspace */}
 
-              "rounded-[6px] border border-white/[0.09]",
+          <section className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_420px]">
+            {/* Video */}
 
-              "bg-[#020304]",
+            <div className="overflow-hidden rounded-[10px] border border-[#BFC8D0] bg-[#EEF2F5] shadow-[0_10px_30px_rgba(34,48,60,0.08)]">
+              <div className="flex min-h-[56px] items-center justify-between gap-4 border-b border-[#CBD3DA] bg-[#E4E9ED] px-4">
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-[6px] bg-[#DCE8EF] text-[#3F6E8C]">
+                    <Eye
+                      size={
+                        16
+                      }
+                    />
+                  </div>
 
-              "xl:mt-0 xl:min-h-0",
-
-              "xl:grid-cols-[minmax(0,1fr)_390px]",
-
-              "2xl:grid-cols-[minmax(0,1fr)_410px]",
-            ].join(" ")}
-          >
-            {/* =============================================
-                VIDEO
-                ============================================= */}
-
-            <div className="grid min-h-0 grid-rows-[40px_minmax(0,1fr)]">
-              <div className="flex min-w-0 items-center justify-between gap-3 border-b border-white/[0.08] bg-[#06080b] px-3">
-                <div className="flex min-w-0 items-center gap-2">
-                  <Eye
-                    size={13}
-                    strokeWidth={1.6}
-                    className="shrink-0 text-[#5AA9FF]"
-                  />
-
-                  <span className="hidden shrink-0 text-[12px] font-medium text-white/82 sm:inline">
+                  <span className="hidden text-[14px] font-semibold text-[#26323C] sm:block">
                     Live AI Video
                   </span>
+
 
                   <select
                     value={
@@ -2340,12 +2569,10 @@ export function CameraAI() {
                       event,
                     ) =>
                       selectVideoById(
-                        event
-                          .target
-                          .value,
+                        event.target.value,
                       )
                     }
-                    className="h-[28px] min-w-0 max-w-[250px] rounded-[4px] border border-white/[0.09] bg-[#030405] px-2 font-mono text-[9px] text-white/58 outline-none focus:border-[rgba(246,178,60,0.4)]"
+                    className="h-[36px] min-w-0 max-w-[290px] rounded-[6px] border border-[#BCC6CE] bg-[#F7F9FA] px-3 text-[13px] font-medium text-[#43515D] outline-none focus:border-[#A37B43]"
                   >
                     {videoSources.map(
                       (
@@ -2368,18 +2595,20 @@ export function CameraAI() {
                   </select>
                 </div>
 
-                <div className="flex shrink-0 items-center gap-1.5">
+
+                <div className="flex items-center gap-2">
                   {isAnnotatedPlayback ? (
                     <button
                       type="button"
                       onClick={
                         showRawFeed
                       }
-                      className="h-[28px] rounded-[4px] border border-white/[0.1] px-2.5 font-mono text-[8px] font-semibold uppercase tracking-[0.05em] text-white/52 transition hover:text-white"
+                      className="h-[36px] rounded-[6px] border border-[#BEC7CF] bg-[#F7F9FA] px-3 text-[12px] font-semibold text-[#596672] hover:bg-[#E8EDF0]"
                     >
                       Raw Feed
                     </button>
                   ) : null}
+
 
                   <button
                     type="button"
@@ -2390,16 +2619,20 @@ export function CameraAI() {
                       isAnnotatingVideo ||
                       !selectedVideo.src
                     }
-                    className="flex h-[28px] items-center gap-1.5 rounded-[4px] border border-[rgba(246,178,60,0.32)] bg-[rgba(246,178,60,0.055)] px-2.5 font-mono text-[8px] font-semibold uppercase tracking-[0.05em] text-[#F6B23C] transition hover:bg-[rgba(246,178,60,0.1)] disabled:cursor-not-allowed disabled:opacity-40"
+                    className="flex h-[36px] items-center gap-2 rounded-[6px] border border-[rgba(163,123,67,0.32)] bg-[#EEE3D3] px-3 text-[12px] font-semibold text-[#815E30] hover:bg-[#E8DAC6] disabled:opacity-40"
                   >
                     {isAnnotatingVideo ? (
                       <Loader2
-                        size={11}
+                        size={
+                          14
+                        }
                         className="animate-spin"
                       />
                     ) : (
                       <ScanSearch
-                        size={11}
+                        size={
+                          14
+                        }
                       />
                     )}
 
@@ -2410,7 +2643,10 @@ export function CameraAI() {
                 </div>
               </div>
 
-              <div className="relative min-h-0">
+
+              {/* Intentional Black Video Canvas */}
+
+              <div className="relative min-h-[640px] overflow-hidden bg-black xl:h-[720px]">
                 <AiVideoPanel
                   key={`${selectedVideo.id}-${videoPanelKey}-${annotatedVideoUrl ?? "raw"}`}
                   videoSrc={
@@ -2433,34 +2669,37 @@ export function CameraAI() {
                   }
                 />
 
+
                 {annotatorError ? (
-                  <div className="absolute bottom-3 left-1/2 z-[700] max-w-[80%] -translate-x-1/2 rounded-[4px] border border-[rgba(255,90,99,0.3)] bg-[rgba(7,9,13,0.95)] px-3 py-2 font-mono text-[9px] text-[#FF5A63]">
-                    {annotatorError}
+                  <div className="absolute bottom-4 left-1/2 z-[700] max-w-[82%] -translate-x-1/2 rounded-[7px] border border-[rgba(172,92,100,0.28)] bg-[#F7F9FA] px-3.5 py-2.5 text-[12px] font-medium text-[#AC5C64] shadow-lg">
+                    {
+                      annotatorError
+                    }
                   </div>
                 ) : null}
               </div>
             </div>
 
-            {/* =============================================
-                RIGHT INTELLIGENCE RAIL
-                ============================================= */}
 
-            <aside className="min-h-0 border-t border-white/[0.08] bg-[#07090d] xl:border-l xl:border-t-0">
-              <div className="flex h-[44px] items-center justify-between gap-3 border-b border-white/[0.08] px-3">
+            {/* Intelligence Rail */}
+
+            <aside className="overflow-hidden rounded-[10px] border border-[#BFC8D0] bg-[#EEF2F5] shadow-[0_10px_30px_rgba(34,48,60,0.075)]">
+              <div className="flex min-h-[66px] items-center justify-between gap-3 border-b border-[#CAD2D9] bg-[#E4E9ED] px-4">
                 <div>
-                  <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.075em] text-[#F6B23C]">
+                  <div className="text-[14px] font-semibold uppercase tracking-[0.045em] text-[#815E30]">
                     Live Intelligence
                   </div>
 
-                  <div className="mt-0.5 font-mono text-[9px] text-white/32">
+                  <div className="mt-1 text-[12px] text-[#67747F]">
                     Detection · analysis · camera
                   </div>
                 </div>
 
+
                 <div className="text-right">
                   <div
                     className={[
-                      "font-mono text-[10px] font-semibold uppercase",
+                      "text-[13px] font-semibold uppercase",
 
                       toneClass[
                         getRiskTone(
@@ -2474,7 +2713,7 @@ export function CameraAI() {
                     }
                   </div>
 
-                  <div className="font-mono text-[8px] text-white/28">
+                  <div className="mt-1 font-mono text-[12px] text-[#77838E]">
                     {
                       detectionCount
                     }{" "}
@@ -2483,14 +2722,13 @@ export function CameraAI() {
                 </div>
               </div>
 
-              {/* Analytics */}
 
-              <div className="border-b border-white/[0.08]">
+              <div className="border-b border-[#CCD4DA] bg-[#F2F5F7]">
                 <RailHeader
                   eyebrow="AI"
                   title="Detection Summary"
                   right={
-                    <span className="font-mono text-[9px] text-[#5AA9FF]">
+                    <span className="font-mono text-[13px] font-semibold text-[#3F6E8C]">
                       {
                         confidence
                       }
@@ -2499,27 +2737,26 @@ export function CameraAI() {
                   }
                 />
 
-                <div className="p-2.5">
+                <div className="p-3.5">
                   <AiAnalyticsPanel
                     embedded
                   />
                 </div>
               </div>
 
-              {/* Frame analysis */}
 
-              <div className="border-b border-white/[0.08]">
+              <div className="border-b border-[#CCD4DA] bg-[#E9EEF1]">
                 <RailHeader
                   eyebrow="CV"
                   title="Frame Analysis"
                   right={
-                    <span className="font-mono text-[8px] uppercase text-white/28">
+                    <span className="text-[11px] uppercase text-[#71808B]">
                       0.25 threshold
                     </span>
                   }
                 />
 
-                <div className="p-2.5">
+                <div className="p-3.5">
                   <OpenCvAnalysisPanel
                     selectedVideo={
                       selectedVideo
@@ -2535,20 +2772,19 @@ export function CameraAI() {
                 </div>
               </div>
 
-              {/* Camera controls */}
 
-              <div>
+              <div className="bg-[#F2F5F7]">
                 <RailHeader
                   eyebrow="Camera"
                   title="Operator Controls"
                   right={
-                    <span className="font-mono text-[8px] uppercase text-[#59D99A]">
-                      assisted
+                    <span className="rounded-[4px] bg-[#DDEBE4] px-2 py-1 text-[11px] font-semibold uppercase text-[#507A65]">
+                      Assisted
                     </span>
                   }
                 />
 
-                <div className="p-2.5">
+                <div className="p-3.5">
                   <CameraControls
                     embedded
                     compact
@@ -2560,14 +2796,13 @@ export function CameraAI() {
         </div>
       </section>
 
+
       {/* ===================================================
-          SECONDARY INTELLIGENCE
+          Secondary Intelligence
           =================================================== */}
 
-      <section className="border-t border-white/[0.08] bg-[#05060d]">
-        <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-4 px-4 py-5 sm:px-6 lg:px-8 xl:px-10 2xl:px-14">
-          {/* Source Library */}
-
+      <section className="border-t border-[#BDC7CF] bg-[rgba(205,214,221,0.42)]">
+        <div className="mx-auto flex w-full max-w-[1460px] flex-col gap-5 px-5 py-8 sm:px-6 lg:px-8 xl:px-10">
           <SectionShell
             eyebrow="Video Sources"
             title="Camera Source Library"
@@ -2587,9 +2822,8 @@ export function CameraAI() {
             />
           </SectionShell>
 
-          {/* Detailed analysis + disaster matrix */}
 
-          <div className="grid gap-4 xl:grid-cols-2">
+          <div className="grid gap-5 xl:grid-cols-2">
             <SectionShell
               eyebrow="Detailed Analysis"
               title="YOLO + OpenCV Results"
@@ -2614,6 +2848,7 @@ export function CameraAI() {
               />
             </SectionShell>
 
+
             <SectionShell
               eyebrow="Disaster Intelligence"
               title="Feature Matrix"
@@ -2628,7 +2863,6 @@ export function CameraAI() {
             </SectionShell>
           </div>
 
-          {/* Event Ledger */}
 
           <SectionShell
             eyebrow="Event Intelligence"
@@ -2639,7 +2873,6 @@ export function CameraAI() {
             <DetectionEventLedger />
           </SectionShell>
 
-          {/* Workbench */}
 
           <SectionShell
             eyebrow="Analysis Workbench"
@@ -2662,9 +2895,8 @@ export function CameraAI() {
             />
           </SectionShell>
 
-          {/* Accuracy / Risk */}
 
-          <div className="grid gap-4 xl:grid-cols-2">
+          <div className="grid gap-5 xl:grid-cols-2">
             <SectionShell
               eyebrow="Accuracy"
               title="Detection Accuracy"
@@ -2681,6 +2913,7 @@ export function CameraAI() {
               />
             </SectionShell>
 
+
             <SectionShell
               eyebrow="Risk"
               title="AI Risk Matrix"
@@ -2691,7 +2924,6 @@ export function CameraAI() {
             </SectionShell>
           </div>
 
-          {/* Operator Safety */}
 
           <SectionShell
             eyebrow="Operator Safety"
@@ -2706,9 +2938,8 @@ export function CameraAI() {
             />
           </SectionShell>
 
-          {/* Models */}
 
-          <div className="grid gap-4 xl:grid-cols-2">
+          <div className="grid gap-5 xl:grid-cols-2">
             <SectionShell
               eyebrow="Performance"
               title="Model Performance"
@@ -2717,6 +2948,7 @@ export function CameraAI() {
             >
               <ModelPerformancePanel />
             </SectionShell>
+
 
             <SectionShell
               eyebrow="Model Flow"
