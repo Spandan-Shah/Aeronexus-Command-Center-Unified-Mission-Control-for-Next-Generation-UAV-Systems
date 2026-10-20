@@ -19,15 +19,31 @@ import {
   dronePoints,
   geofenceZone,
   heatScanPoints,
-  homePoint,
   initialMapView,
   missionRoute,
   restrictedZones,
 } from "../../data/worldMap";
 
-import {
-  useUnifiedTelemetry,
-} from "../../hooks/useUnifiedTelemetry";
+import type {
+  VehicleState,
+} from "../../types/vehicle";
+
+
+/* =========================================================
+   MissionNexus V3.1
+   Unified Vehicle Map
+
+   Vehicle Registry
+        ↓
+   LiveOps
+        ↓
+   activeVehicle
+        ↓
+   AeroWorldMap
+
+   The map no longer owns a second telemetry source.
+   ========================================================= */
+
 
 export type MapLayerId =
   | "live-drone"
@@ -39,15 +55,18 @@ export type MapLayerId =
   | "heat"
   | "home";
 
+
 export type BaseMapId =
   | "osm"
   | "hot";
+
 
 export type MapLayerState =
   Record<
     MapLayerId,
     boolean
   >;
+
 
 export type AeroWorldMapState = {
   baseMap: BaseMapId;
@@ -58,6 +77,7 @@ export type AeroWorldMapState = {
 
   gpsAvailable: boolean;
 };
+
 
 export type AeroWorldMapHandle = {
   zoomIn: () => void;
@@ -79,22 +99,41 @@ export type AeroWorldMapHandle = {
   ) => void;
 };
 
+
 type AeroWorldMapProps = {
+  vehicle?:
+    | VehicleState
+    | null;
+
   onStateChange?: (
     state: AeroWorldMapState,
   ) => void;
 };
 
+
+/* =========================================================
+   Constants
+   ========================================================= */
+
+
 const defaultLayers: MapLayerState = {
   "live-drone": true,
+
   drones: true,
+
   route: true,
+
   geofence: true,
+
   restricted: true,
+
   contacts: true,
+
   heat: true,
+
   home: true,
 };
+
 
 const baseMaps = {
   osm: {
@@ -116,9 +155,11 @@ const baseMaps = {
   BaseMapId,
   {
     url: string;
+
     attribution: string;
   }
 >;
+
 
 const colors = {
   primary:
@@ -137,6 +178,20 @@ const colors = {
     "#030405",
 };
 
+
+const MAX_TRAIL_POINTS =
+  360;
+
+
+const MIN_TRAIL_STEP_METERS =
+  1.5;
+
+
+/* =========================================================
+   Generic Helpers
+   ========================================================= */
+
+
 function createWorldBounds() {
   return L.latLngBounds(
     L.latLng(
@@ -151,67 +206,231 @@ function createWorldBounds() {
   );
 }
 
-function getRiskColor(
-  risk?: string,
-) {
-  const normalized =
-    risk?.toLowerCase();
 
+function hasValidPosition(
+  vehicle:
+    | VehicleState
+    | null
+    | undefined,
+) {
+  if (!vehicle) {
+    return false;
+  }
+
+  const latitude =
+    vehicle.position
+      .latitude_deg;
+
+  const longitude =
+    vehicle.position
+      .longitude_deg;
+
+  return (
+    Number.isFinite(
+      latitude,
+    ) &&
+    Number.isFinite(
+      longitude,
+    ) &&
+    latitude >= -90 &&
+    latitude <= 90 &&
+    longitude >= -180 &&
+    longitude <= 180
+  );
+}
+
+
+function hasValidHomePosition(
+  vehicle:
+    | VehicleState
+    | null
+    | undefined,
+) {
+  const home =
+    vehicle?.home_position;
+
+  if (!home) {
+    return false;
+  }
+
+  return (
+    Number.isFinite(
+      home.latitude_deg,
+    ) &&
+    Number.isFinite(
+      home.longitude_deg,
+    ) &&
+    home.latitude_deg >=
+      -90 &&
+    home.latitude_deg <=
+      90 &&
+    home.longitude_deg >=
+      -180 &&
+    home.longitude_deg <=
+      180
+  );
+}
+
+
+function vehicleGpsAvailable(
+  vehicle:
+    | VehicleState
+    | null
+    | undefined,
+) {
+  return Boolean(
+    vehicle &&
+      vehicle.connected &&
+      hasValidPosition(
+        vehicle,
+      ) &&
+      vehicle.gps.fix_type >=
+        2,
+  );
+}
+
+
+function escapeHtml(
+  value:
+    string | number,
+) {
+  return String(
+    value,
+  )
+    .replaceAll(
+      "&",
+      "&amp;",
+    )
+    .replaceAll(
+      "<",
+      "&lt;",
+    )
+    .replaceAll(
+      ">",
+      "&gt;",
+    )
+    .replaceAll(
+      '"',
+      "&quot;",
+    )
+    .replaceAll(
+      "'",
+      "&#039;",
+    );
+}
+
+
+function formatNullableNumber(
+  value:
+    | number
+    | null
+    | undefined,
+
+  digits =
+    1,
+) {
   if (
-    normalized ===
-      "critical" ||
-    normalized ===
-      "high"
+    value ===
+      null ||
+    value ===
+      undefined ||
+    !Number.isFinite(
+      value,
+    )
+  ) {
+    return "—";
+  }
+
+  return value.toFixed(
+    digits,
+  );
+}
+
+
+/* =========================================================
+   Vehicle Visual State
+   ========================================================= */
+
+
+function getVehicleColor(
+  vehicle:
+    VehicleState,
+) {
+  if (
+    vehicle.health
+      .failsafe_active ||
+    vehicle.health.overall ===
+      "CRITICAL"
   ) {
     return colors.critical;
   }
 
   if (
-    normalized ===
-    "medium"
+    vehicle.health.overall ===
+      "WARNING"
   ) {
     return colors.primary;
+  }
+
+  if (
+    !vehicle.connected ||
+    vehicle.link.state ===
+      "DISCONNECTED"
+  ) {
+    return colors.critical;
   }
 
   return colors.nominal;
 }
 
+
 function createLiveDroneIcon(
-  risk?: string,
+  vehicle:
+    VehicleState,
 ) {
   const color =
-    getRiskColor(
-      risk,
+    getVehicleColor(
+      vehicle,
     );
+
+  const heading =
+    Number.isFinite(
+      vehicle.motion
+        .heading_deg,
+    )
+      ? vehicle.motion
+          .heading_deg
+      : 0;
 
   return L.divIcon({
     className:
       "missionnexus-live-aircraft",
 
     iconSize: [
-      38,
-      38,
+      44,
+      44,
     ],
 
     iconAnchor: [
-      19,
-      19,
+      22,
+      22,
     ],
 
     popupAnchor: [
       0,
-      -20,
+      -24,
     ],
 
     html: `
       <div
         style="
           position:relative;
-          width:38px;
-          height:38px;
+          width:44px;
+          height:44px;
           display:flex;
           align-items:center;
           justify-content:center;
+          pointer-events:auto;
         "
       >
         <div
@@ -219,26 +438,215 @@ function createLiveDroneIcon(
             position:absolute;
             inset:2px;
             border-radius:999px;
-            border:1px solid ${color}88;
-            background:${color}14;
-            box-shadow:0 0 18px ${color}55;
+            border:1px solid ${color}66;
+            background:${color}12;
+            box-shadow:
+              0 0 10px ${color}33,
+              0 0 22px ${color}22;
+          "
+        ></div>
+
+        <div
+          style="
+            position:absolute;
+            inset:8px;
+            border-radius:999px;
+            border:1px solid ${color}2f;
           "
         ></div>
 
         <div
           style="
             position:relative;
-            width:14px;
-            height:14px;
-            transform:rotate(45deg);
-            border:1px solid ${color};
-            background:rgba(3,4,5,0.95);
+            width:24px;
+            height:24px;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            transform:rotate(${heading}deg);
+            transform-origin:center;
           "
-        ></div>
+        >
+          <svg
+            width="22"
+            height="22"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+            style="
+              overflow:visible;
+              filter:drop-shadow(0 0 5px ${color}66);
+            "
+          >
+            <path
+              d="
+                M12 2
+                L15 9
+                L21 12
+                L15 14
+                L14 21
+                L12 18
+                L10 21
+                L9 14
+                L3 12
+                L9 9
+                Z
+              "
+              fill="${color}"
+              stroke="#030405"
+              stroke-width="1.25"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </div>
       </div>
     `,
   });
 }
+
+
+function createVehiclePopup(
+  vehicle:
+    VehicleState,
+) {
+  const battery =
+    vehicle.battery
+      .remaining_percent;
+
+  const altitude =
+    vehicle.position
+      .altitude_relative_m;
+
+  const latitude =
+    vehicle.position
+      .latitude_deg;
+
+  const longitude =
+    vehicle.position
+      .longitude_deg;
+
+  return `
+    <div
+      style="
+        min-width:190px;
+        font-family:Inter,system-ui,sans-serif;
+        color:#111827;
+        line-height:1.45;
+      "
+    >
+      <div
+        style="
+          font-weight:700;
+          font-size:14px;
+          margin-bottom:3px;
+        "
+      >
+        ${escapeHtml(
+          vehicle.callsign,
+        )}
+      </div>
+
+      <div
+        style="
+          font-size:12px;
+          opacity:0.72;
+          margin-bottom:8px;
+        "
+      >
+        ${escapeHtml(
+          vehicle.vehicle_id,
+        )}
+        ·
+        ${escapeHtml(
+          vehicle.source,
+        )}
+      </div>
+
+      <div>
+        <strong>Mode:</strong>
+        ${escapeHtml(
+          vehicle.flight_mode,
+        )}
+      </div>
+
+      <div>
+        <strong>State:</strong>
+        ${
+          vehicle.armed
+            ? "ARMED"
+            : "DISARMED"
+        }
+      </div>
+
+      <div>
+        <strong>Altitude:</strong>
+        ${escapeHtml(
+          formatNullableNumber(
+            altitude,
+            1,
+          ),
+        )} m
+      </div>
+
+      <div>
+        <strong>Speed:</strong>
+        ${escapeHtml(
+          formatNullableNumber(
+            vehicle.motion
+              .ground_speed_mps,
+            1,
+          ),
+        )} m/s
+      </div>
+
+      <div>
+        <strong>Heading:</strong>
+        ${escapeHtml(
+          formatNullableNumber(
+            vehicle.motion
+              .heading_deg,
+            0,
+          ),
+        )}°
+      </div>
+
+      <div>
+        <strong>Battery:</strong>
+        ${
+          battery ===
+            null ||
+          battery ===
+            undefined
+            ? "—"
+            : `${escapeHtml(
+                Math.round(
+                  battery,
+                ),
+              )}%`
+        }
+      </div>
+
+      <div>
+        <strong>GPS:</strong>
+        ${escapeHtml(
+          latitude.toFixed(
+            5,
+          ),
+        )},
+        ${escapeHtml(
+          longitude.toFixed(
+            5,
+          ),
+        )}
+      </div>
+    </div>
+  `;
+}
+
+
+/* =========================================================
+   Component
+   ========================================================= */
+
 
 export const AeroWorldMap =
   forwardRef<
@@ -247,38 +655,103 @@ export const AeroWorldMap =
   >(
     function AeroWorldMap(
       {
+        vehicle,
         onStateChange,
       },
       ref,
     ) {
-      const {
-        telemetry,
-      } =
-        useUnifiedTelemetry();
-
       const containerRef =
         useRef<
-          HTMLDivElement |
-          null
-        >(null);
+          HTMLDivElement | null
+        >(
+          null,
+        );
 
       const mapRef =
         useRef<
-          LeafletMap |
-          null
-        >(null);
+          LeafletMap | null
+        >(
+          null,
+        );
 
       const baseTileRef =
         useRef<
-          TileLayer |
-          null
-        >(null);
+          TileLayer | null
+        >(
+          null,
+        );
+
+
+      /* =====================================================
+         Dynamic Vehicle Layers
+         ===================================================== */
+
 
       const liveDroneLayerRef =
         useRef<
-          L.LayerGroup |
-          null
-        >(null);
+          L.LayerGroup | null
+        >(
+          null,
+        );
+
+      const liveDroneMarkerRef =
+        useRef<
+          L.Marker | null
+        >(
+          null,
+        );
+
+      const flightTrailRef =
+        useRef<
+          L.Polyline | null
+        >(
+          null,
+        );
+
+      const trailPointsRef =
+        useRef<
+          Array<
+            [
+              number,
+              number,
+            ]
+          >
+        >(
+          [],
+        );
+
+      const previousVehicleIdRef =
+        useRef<
+          string | null
+        >(
+          null,
+        );
+
+
+      /* =====================================================
+         Dynamic Home Layer
+         ===================================================== */
+
+
+      const homeLayerRef =
+        useRef<
+          L.LayerGroup | null
+        >(
+          null,
+        );
+
+      const homeMarkerRef =
+        useRef<
+          L.CircleMarker | null
+        >(
+          null,
+        );
+
+
+      /* =====================================================
+         Generic Mission Layers
+         ===================================================== */
+
 
       const layerRefs =
         useRef<
@@ -287,15 +760,36 @@ export const AeroWorldMap =
             Layer | null
           >
         >({
-          "live-drone": null,
-          drones: null,
-          route: null,
-          geofence: null,
-          restricted: null,
-          contacts: null,
-          heat: null,
-          home: null,
+          "live-drone":
+            null,
+
+          drones:
+            null,
+
+          route:
+            null,
+
+          geofence:
+            null,
+
+          restricted:
+            null,
+
+          contacts:
+            null,
+
+          heat:
+            null,
+
+          home:
+            null,
         });
+
+
+      /* =====================================================
+         UI State
+         ===================================================== */
+
 
       const [
         baseMap,
@@ -324,6 +818,12 @@ export const AeroWorldMap =
             2,
           ),
         );
+
+
+      /* =====================================================
+         Map Initialization
+         ===================================================== */
+
 
       useEffect(
         () => {
@@ -382,6 +882,12 @@ export const AeroWorldMap =
           mapRef.current =
             map;
 
+
+          /* =================================================
+             Base Tile
+             ================================================= */
+
+
           const tileLayer =
             L.tileLayer(
               baseMaps.osm.url,
@@ -409,10 +915,11 @@ export const AeroWorldMap =
           baseTileRef.current =
             tileLayer;
 
+
           /* =================================================
-             Leaflet Attribution
-             Content = 13px
+             Attribution Styling
              ================================================= */
+
 
           const styleAttribution =
             () => {
@@ -476,6 +983,12 @@ export const AeroWorldMap =
               120,
             );
 
+
+          /* =================================================
+             Live Vehicle Group
+             ================================================= */
+
+
           const liveDroneLayer =
             L.layerGroup()
               .addTo(
@@ -484,6 +997,27 @@ export const AeroWorldMap =
 
           liveDroneLayerRef.current =
             liveDroneLayer;
+
+
+          /* =================================================
+             Dynamic Home Group
+             ================================================= */
+
+
+          const homeLayer =
+            L.layerGroup()
+              .addTo(
+                map,
+              );
+
+          homeLayerRef.current =
+            homeLayer;
+
+
+          /* =================================================
+             Mission Geometry
+             ================================================= */
+
 
           const geofenceLayer =
             L.geoJSON(
@@ -510,6 +1044,7 @@ export const AeroWorldMap =
               map,
             );
 
+
           const restrictedLayer =
             L.geoJSON(
               restrictedZones,
@@ -532,6 +1067,7 @@ export const AeroWorldMap =
               map,
             );
 
+
           const routeLayer =
             L.geoJSON(
               missionRoute,
@@ -553,6 +1089,7 @@ export const AeroWorldMap =
             ).addTo(
               map,
             );
+
 
           const heatLayer =
             L.geoJSON(
@@ -590,38 +1127,6 @@ export const AeroWorldMap =
               map,
             );
 
-          const homeLayer =
-            L.geoJSON(
-              homePoint,
-              {
-                pointToLayer:
-                  (
-                    _feature,
-                    latlng,
-                  ) =>
-                    L.circleMarker(
-                      latlng,
-                      {
-                        radius:
-                          7,
-
-                        color:
-                          colors.background,
-
-                        weight:
-                          2,
-
-                        fillColor:
-                          colors.nominal,
-
-                        fillOpacity:
-                          1,
-                      },
-                    ),
-              },
-            ).addTo(
-              map,
-            );
 
           const contactLayer =
             L.geoJSON(
@@ -656,6 +1161,7 @@ export const AeroWorldMap =
               map,
             );
 
+
           const droneLayer =
             L.geoJSON(
               dronePoints,
@@ -689,6 +1195,12 @@ export const AeroWorldMap =
               map,
             );
 
+
+          /* =================================================
+             Layer Registry
+             ================================================= */
+
+
           layerRefs.current = {
             "live-drone":
               liveDroneLayer,
@@ -715,6 +1227,12 @@ export const AeroWorldMap =
               homeLayer,
           };
 
+
+          /* =================================================
+             Map Events
+             ================================================= */
+
+
           map.on(
             "zoomend",
             () => {
@@ -723,6 +1241,7 @@ export const AeroWorldMap =
               );
             },
           );
+
 
           const resizeTimers = [
             window.setTimeout(
@@ -743,6 +1262,12 @@ export const AeroWorldMap =
               800,
             ),
           ];
+
+
+          /* =================================================
+             Cleanup
+             ================================================= */
+
 
           return () => {
             window.clearTimeout(
@@ -768,10 +1293,31 @@ export const AeroWorldMap =
 
             liveDroneLayerRef.current =
               null;
+
+            liveDroneMarkerRef.current =
+              null;
+
+            flightTrailRef.current =
+              null;
+
+            trailPointsRef.current =
+              [];
+
+            homeLayerRef.current =
+              null;
+
+            homeMarkerRef.current =
+              null;
           };
         },
         [],
       );
+
+
+      /* =====================================================
+         Base Map Switching
+         ===================================================== */
+
 
       useEffect(
         () => {
@@ -814,8 +1360,7 @@ export const AeroWorldMap =
                 attribution:
                   baseMaps[
                     baseMap
-                  ]
-                    .attribution,
+                  ].attribution,
               },
             );
 
@@ -832,6 +1377,12 @@ export const AeroWorldMap =
           baseMap,
         ],
       );
+
+
+      /* =====================================================
+         Layer Visibility
+         ===================================================== */
+
 
       useEffect(
         () => {
@@ -891,55 +1442,376 @@ export const AeroWorldMap =
         ],
       );
 
+
+      /* =====================================================
+         Live Vehicle Marker + Heading + Trail
+
+         This now uses active VehicleState supplied by LiveOps.
+         ===================================================== */
+
+
       useEffect(
         () => {
           const liveLayer =
             liveDroneLayerRef.current;
 
-          if (!liveLayer) {
-            return;
-          }
-
-          liveLayer.clearLayers();
-
           if (
-            !telemetry?.gps
+            !liveLayer
           ) {
             return;
           }
 
-          L.marker(
-            [
-              telemetry.gps.lat,
-
-              telemetry.gps.lng,
-            ],
-            {
-              icon:
-                createLiveDroneIcon(
-                  telemetry.risk,
-                ),
-
-              zIndexOffset:
-                1000,
-            },
-          )
-            .bindPopup(
-              `
-                <strong>${telemetry.device ?? "Live Aircraft"}</strong><br/>
-                Battery: ${telemetry.battery ?? 0}%<br/>
-                Risk: ${(telemetry.risk ?? "low").toUpperCase()}<br/>
-                GPS: ${telemetry.gps.lat.toFixed(5)}, ${telemetry.gps.lng.toFixed(5)}
-              `,
+          if (
+            !vehicle ||
+            !hasValidPosition(
+              vehicle,
             )
-            .addTo(
+          ) {
+            return;
+          }
+
+          const latitude =
+            vehicle.position
+              .latitude_deg;
+
+          const longitude =
+            vehicle.position
+              .longitude_deg;
+
+          const point:
+            [
+              number,
+              number,
+            ] = [
+              latitude,
+              longitude,
+            ];
+
+
+          /* =================================================
+             Vehicle switched
+
+             Reset trail when operator selects another vehicle.
+             ================================================= */
+
+
+          if (
+            previousVehicleIdRef
+              .current !==
+            vehicle.vehicle_id
+          ) {
+            previousVehicleIdRef.current =
+              vehicle.vehicle_id;
+
+            trailPointsRef.current =
+              [];
+
+            if (
+              flightTrailRef.current
+            ) {
+              liveLayer.removeLayer(
+                flightTrailRef.current,
+              );
+
+              flightTrailRef.current =
+                null;
+            }
+
+            if (
+              liveDroneMarkerRef.current
+            ) {
+              liveLayer.removeLayer(
+                liveDroneMarkerRef.current,
+              );
+
+              liveDroneMarkerRef.current =
+                null;
+            }
+          }
+
+
+          /* =================================================
+             Marker
+             ================================================= */
+
+
+          if (
+            !liveDroneMarkerRef.current
+          ) {
+            const marker =
+              L.marker(
+                point,
+                {
+                  icon:
+                    createLiveDroneIcon(
+                      vehicle,
+                    ),
+
+                  zIndexOffset:
+                    1000,
+                },
+              );
+
+            marker.bindPopup(
+              createVehiclePopup(
+                vehicle,
+              ),
+            );
+
+            marker.addTo(
               liveLayer,
             );
+
+            liveDroneMarkerRef.current =
+              marker;
+          } else {
+            liveDroneMarkerRef.current
+              .setLatLng(
+                point,
+              );
+
+            liveDroneMarkerRef.current
+              .setIcon(
+                createLiveDroneIcon(
+                  vehicle,
+                ),
+              );
+
+            liveDroneMarkerRef.current
+              .setPopupContent(
+                createVehiclePopup(
+                  vehicle,
+                ),
+              );
+          }
+
+
+          /* =================================================
+             Flight Trail
+
+             Append only when vehicle has actually moved enough
+             to avoid thousands of duplicate coordinates.
+             ================================================= */
+
+
+          const trail =
+            trailPointsRef.current;
+
+          const previous =
+            trail.length > 0
+              ? trail[
+                  trail.length -
+                    1
+                ]
+              : null;
+
+          let shouldAppend =
+            !previous;
+
+          if (
+            previous
+          ) {
+            const distance =
+              L.latLng(
+                previous[
+                  0
+                ],
+                previous[
+                  1
+                ],
+              ).distanceTo(
+                L.latLng(
+                  latitude,
+                  longitude,
+                ),
+              );
+
+            shouldAppend =
+              distance >=
+              MIN_TRAIL_STEP_METERS;
+          }
+
+          if (
+            shouldAppend
+          ) {
+            trail.push(
+              point,
+            );
+
+            if (
+              trail.length >
+              MAX_TRAIL_POINTS
+            ) {
+              trail.splice(
+                0,
+                trail.length -
+                  MAX_TRAIL_POINTS,
+              );
+            }
+
+            if (
+              !flightTrailRef.current
+            ) {
+              const trailLine =
+                L.polyline(
+                  trail,
+                  {
+                    color:
+                      colors.info,
+
+                    weight:
+                      2,
+
+                    opacity:
+                      0.8,
+
+                    lineCap:
+                      "round",
+
+                    lineJoin:
+                      "round",
+                  },
+                );
+
+              trailLine.addTo(
+                liveLayer,
+              );
+
+              trailLine.bringToBack();
+
+              flightTrailRef.current =
+                trailLine;
+            } else {
+              flightTrailRef.current
+                .setLatLngs(
+                  trail,
+                );
+
+              flightTrailRef.current
+                .bringToBack();
+            }
+          }
         },
         [
-          telemetry,
+          vehicle,
         ],
       );
+
+
+      /* =====================================================
+         Dynamic Vehicle Home Position
+         ===================================================== */
+
+
+      useEffect(
+        () => {
+          const homeLayer =
+            homeLayerRef.current;
+
+          if (
+            !homeLayer
+          ) {
+            return;
+          }
+
+          if (
+            !vehicle ||
+            !hasValidHomePosition(
+              vehicle,
+            ) ||
+            !vehicle.home_position
+          ) {
+            if (
+              homeMarkerRef.current
+            ) {
+              homeLayer.removeLayer(
+                homeMarkerRef.current,
+              );
+
+              homeMarkerRef.current =
+                null;
+            }
+
+            return;
+          }
+
+          const home =
+            vehicle.home_position;
+
+          const point:
+            [
+              number,
+              number,
+            ] = [
+              home.latitude_deg,
+              home.longitude_deg,
+            ];
+
+          if (
+            !homeMarkerRef.current
+          ) {
+            const marker =
+              L.circleMarker(
+                point,
+                {
+                  radius:
+                    8,
+
+                  color:
+                    colors.background,
+
+                  weight:
+                    2,
+
+                  fillColor:
+                    colors.nominal,
+
+                  fillOpacity:
+                    1,
+                },
+              );
+
+            marker.bindTooltip(
+              `${vehicle.callsign} HOME`,
+              {
+                direction:
+                  "top",
+
+                offset: [
+                  0,
+                  -8,
+                ],
+              },
+            );
+
+            marker.addTo(
+              homeLayer,
+            );
+
+            homeMarkerRef.current =
+              marker;
+          } else {
+            homeMarkerRef.current
+              .setLatLng(
+                point,
+              );
+
+            homeMarkerRef.current
+              .setTooltipContent(
+                `${vehicle.callsign} HOME`,
+              );
+          }
+        },
+        [
+          vehicle,
+        ],
+      );
+
+
+      /* =====================================================
+         State Reporting To LiveOps
+         ===================================================== */
+
 
       useEffect(
         () => {
@@ -951,8 +1823,8 @@ export const AeroWorldMap =
             zoom,
 
             gpsAvailable:
-              Boolean(
-                telemetry?.gps,
+              vehicleGpsAvailable(
+                vehicle,
               ),
           });
         },
@@ -960,10 +1832,16 @@ export const AeroWorldMap =
           baseMap,
           layers,
           zoom,
-          telemetry?.gps,
+          vehicle,
           onStateChange,
         ],
       );
+
+
+      /* =====================================================
+         Imperative Map Controls
+         ===================================================== */
+
 
       useImperativeHandle(
         ref,
@@ -973,10 +1851,12 @@ export const AeroWorldMap =
               ?.zoomIn();
           },
 
+
           zoomOut() {
             mapRef.current
               ?.zoomOut();
           },
+
 
           focusAoi() {
             mapRef.current
@@ -993,7 +1873,36 @@ export const AeroWorldMap =
               );
           },
 
+
           focusHome() {
+            if (
+              vehicle &&
+              hasValidHomePosition(
+                vehicle,
+              ) &&
+              vehicle.home_position
+            ) {
+              mapRef.current
+                ?.flyTo(
+                  [
+                    vehicle
+                      .home_position
+                      .latitude_deg,
+
+                    vehicle
+                      .home_position
+                      .longitude_deg,
+                  ],
+                  16,
+                  {
+                    duration:
+                      1.1,
+                  },
+                );
+
+              return;
+            }
+
             mapRef.current
               ?.flyTo(
                 [
@@ -1007,6 +1916,7 @@ export const AeroWorldMap =
                 },
               );
           },
+
 
           focusMission() {
             mapRef.current
@@ -1023,16 +1933,24 @@ export const AeroWorldMap =
               );
           },
 
+
           focusUav() {
             if (
-              telemetry?.gps
+              vehicle &&
+              hasValidPosition(
+                vehicle,
+              )
             ) {
               mapRef.current
                 ?.flyTo(
                   [
-                    telemetry.gps.lat,
+                    vehicle
+                      .position
+                      .latitude_deg,
 
-                    telemetry.gps.lng,
+                    vehicle
+                      .position
+                      .longitude_deg,
                   ],
                   16,
                   {
@@ -1058,6 +1976,7 @@ export const AeroWorldMap =
               );
           },
 
+
           toggleBaseMap() {
             setBaseMap(
               (
@@ -1069,6 +1988,7 @@ export const AeroWorldMap =
                   : "osm",
             );
           },
+
 
           toggleLayer(
             layer,
@@ -1088,14 +2008,22 @@ export const AeroWorldMap =
           },
         }),
         [
-          telemetry,
+          vehicle,
         ],
       );
+
+
+      /* =====================================================
+         Render
+         ===================================================== */
+
 
       return (
         <div className="relative h-full min-h-0 w-full overflow-hidden bg-[#020304]">
           <div
-            ref={containerRef}
+            ref={
+              containerRef
+            }
             className="missionnexus-map absolute inset-0 h-full w-full"
           />
         </div>
