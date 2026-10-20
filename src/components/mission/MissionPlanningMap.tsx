@@ -22,9 +22,6 @@ import {
   type MissionWaypoint,
 } from "../../utils/missionAnalytics";
 
-/* =========================================================
-   Props
-   ========================================================= */
 
 type MissionPlanningMapProps = {
   waypoints:
@@ -44,27 +41,26 @@ type MissionPlanningMapProps = {
   ) => void;
 };
 
-/* =========================================================
-   Base Maps
-   ========================================================= */
 
 type BaseMapId =
   | "openstreetmap"
   | "hot";
 
+
 const baseMaps: Record<
   BaseMapId,
   {
-    label: string;
-    shortLabel: string;
-    url: string;
-    attribution: string;
+    shortLabel:
+      string;
+
+    url:
+      string;
+
+    attribution:
+      string;
   }
 > = {
   openstreetmap: {
-    label:
-      "OpenStreetMap",
-
     shortLabel:
       "OSM",
 
@@ -76,9 +72,6 @@ const baseMaps: Record<
   },
 
   hot: {
-    label:
-      "OpenStreetMap HOT",
-
     shortLabel:
       "HOT",
 
@@ -90,42 +83,34 @@ const baseMaps: Record<
   },
 };
 
-/* =========================================================
-   MissionNexus Map Colors
-   ========================================================= */
 
 const mapColors = {
   route:
-    "#5AA9FF",
+    "#316F9F",
 
   routeHalo:
-    "rgba(3,4,5,0.82)",
+    "rgba(255,255,255,0.92)",
 
   waypoint:
-    "#5AA9FF",
+    "#316F9F",
 
   selectedWaypoint:
-    "#F6B23C",
+    "#B78939",
 
   home:
-    "#59D99A",
+    "#337D5C",
 
   geofence:
-    "#59D99A",
+    "#337D5C",
 
   restricted:
-    "#FF5A63",
-
-  background:
-    "#030405",
+    "#BD4F59",
 };
 
-/* =========================================================
-   Helpers
-   ========================================================= */
 
 function escapeHtml(
-  value: string,
+  value:
+    string,
 ) {
   return value
     .replaceAll(
@@ -150,9 +135,13 @@ function escapeHtml(
     );
 }
 
+
 function createWaypointIcon(
-  index: number,
-  selected: boolean,
+  index:
+    number,
+
+  selected:
+    boolean,
 ) {
   const color =
     selected
@@ -161,8 +150,8 @@ function createWaypointIcon(
 
   const size =
     selected
-      ? 34
-      : 30;
+      ? 38
+      : 34;
 
   return L.divIcon({
     className:
@@ -192,13 +181,13 @@ function createWaypointIcon(
           display:flex;
           align-items:center;
           justify-content:center;
-          background:rgba(3,4,5,0.96);
+          background:#ffffff;
           border:${selected ? 2 : 1.5}px solid ${color};
           color:${color};
-          font-family:monospace;
-          font-size:10px;
+          font-family:JetBrains Mono,Consolas,monospace;
+          font-size:12px;
           font-weight:700;
-          box-shadow:${selected ? `0 0 18px ${color}66` : "none"};
+          box-shadow:0 5px 16px rgba(20,30,40,0.16);
         "
       >
         ${index + 1}
@@ -207,42 +196,38 @@ function createWaypointIcon(
   });
 }
 
+
 function createHomeIcon() {
   return L.divIcon({
     className:
       "missionnexus-home-marker",
 
     iconSize: [
-      34,
-      34,
+      42,
+      42,
     ],
 
     iconAnchor: [
-      17,
-      17,
-    ],
-
-    popupAnchor: [
-      0,
-      -17,
+      21,
+      21,
     ],
 
     html: `
       <div
         style="
-          width:34px;
-          height:34px;
+          width:42px;
+          height:42px;
           border-radius:999px;
           display:flex;
           align-items:center;
           justify-content:center;
-          background:rgba(3,4,5,0.96);
+          background:#ffffff;
           border:1.5px solid ${mapColors.home};
           color:${mapColors.home};
-          font-family:monospace;
-          font-size:8px;
+          font-family:JetBrains Mono,Consolas,monospace;
+          font-size:10px;
           font-weight:700;
-          box-shadow:0 0 14px ${mapColors.home}44;
+          box-shadow:0 5px 16px rgba(20,30,40,0.14);
         "
       >
         HOME
@@ -251,9 +236,6 @@ function createHomeIcon() {
   });
 }
 
-/* =========================================================
-   Mission Planning Map
-   ========================================================= */
 
 export function MissionPlanningMap({
   waypoints,
@@ -287,9 +269,7 @@ export function MissionPlanningMap({
     >(null);
 
   const waypointsRef =
-    useRef(
-      waypoints,
-    );
+    useRef(waypoints);
 
   const onWaypointsChangeRef =
     useRef(
@@ -328,9 +308,6 @@ export function MissionPlanningMap({
       ),
     );
 
-  /* =======================================================
-     Keep callbacks/data fresh for Leaflet handlers
-     ======================================================= */
 
   useEffect(
     () => {
@@ -350,9 +327,6 @@ export function MissionPlanningMap({
     ],
   );
 
-  /* =======================================================
-     Map Initialisation
-     ======================================================= */
 
   useEffect(
     () => {
@@ -395,7 +369,6 @@ export function MissionPlanningMap({
       mapRef.current =
         map;
 
-      /* Attribution */
 
       L.control
         .attribution({
@@ -405,14 +378,12 @@ export function MissionPlanningMap({
           prefix:
             false,
         })
-        .addTo(
-          map,
-        );
+        .addTo(map);
+
 
       baseTileLayerRef.current =
         L.tileLayer(
-          baseMaps.openstreetmap
-            .url,
+          baseMaps.openstreetmap.url,
           {
             minZoom:
               11,
@@ -421,14 +392,10 @@ export function MissionPlanningMap({
               19,
 
             attribution:
-              baseMaps.openstreetmap
-                .attribution,
+              baseMaps.openstreetmap.attribution,
           },
-        ).addTo(
-          map,
-        );
+        ).addTo(map);
 
-      /* Geofence */
 
       L.geoJSON(
         geofenceZone,
@@ -447,27 +414,11 @@ export function MissionPlanningMap({
               mapColors.geofence,
 
             fillOpacity:
-              0.045,
+              0.035,
           },
-
-          onEachFeature:
-            (
-              feature,
-              layer,
-            ) => {
-              layer.bindPopup(
-                `<b>${escapeHtml(
-                  feature.properties?.name ??
-                    "Mission Geofence",
-                )}</b><br/>Operational mission boundary`,
-              );
-            },
         },
-      ).addTo(
-        map,
-      );
+      ).addTo(map);
 
-      /* Restricted Zones */
 
       L.geoJSON(
         restrictedZones,
@@ -483,27 +434,11 @@ export function MissionPlanningMap({
               mapColors.restricted,
 
             fillOpacity:
-              0.11,
+              0.09,
           },
-
-          onEachFeature:
-            (
-              feature,
-              layer,
-            ) => {
-              layer.bindPopup(
-                `<b>${escapeHtml(
-                  feature.properties?.name ??
-                    "Restricted Zone",
-                )}</b><br/>Mission route should avoid this zone`,
-              );
-            },
         },
-      ).addTo(
-        map,
-      );
+      ).addTo(map);
 
-      /* Home */
 
       L.geoJSON(
         homePoint,
@@ -520,25 +455,9 @@ export function MissionPlanningMap({
                     createHomeIcon(),
                 },
               ),
-
-          onEachFeature:
-            (
-              feature,
-              layer,
-            ) => {
-              layer.bindPopup(
-                `<b>${escapeHtml(
-                  feature.properties?.name ??
-                    "HOME",
-                )}</b><br/>Launch / return point`,
-              );
-            },
         },
-      ).addTo(
-        map,
-      );
+      ).addTo(map);
 
-      /* Dynamic route layers */
 
       routeLayerRef.current =
         L.layerGroup().addTo(
@@ -550,13 +469,10 @@ export function MissionPlanningMap({
           map,
         );
 
-      /* Add waypoint */
 
       map.on(
         "click",
-        (
-          event,
-        ) => {
+        (event) => {
           const nextWaypoint =
             createDefaultWaypoint(
               Number(
@@ -571,15 +487,13 @@ export function MissionPlanningMap({
                 ),
               ),
 
-              waypointsRef.current
-                .length +
+              waypointsRef.current.length +
                 1,
             );
 
           onWaypointsChangeRef.current(
             [
               ...waypointsRef.current,
-
               nextWaypoint,
             ],
           );
@@ -590,13 +504,10 @@ export function MissionPlanningMap({
         },
       );
 
-      /* Cursor position */
 
       map.on(
         "mousemove",
-        (
-          event,
-        ) => {
+        (event) => {
           setCoordinates(
             `${event.latlng.lat.toFixed(
               5,
@@ -607,81 +518,16 @@ export function MissionPlanningMap({
         },
       );
 
-      /* Zoom state */
 
       map.on(
         "zoomend",
         () => {
           setZoom(
-            Number(
-              map
-                .getZoom()
-                .toFixed(
-                  1,
-                ),
-            ),
+            map.getZoom(),
           );
         },
       );
 
-      /* Styling */
-
-      const styleLeafletControls =
-        () => {
-          const root =
-            containerRef.current;
-
-          if (!root) {
-            return;
-          }
-
-          const attribution =
-            root.querySelector(
-              ".leaflet-control-attribution",
-            ) as
-              | HTMLElement
-              | null;
-
-          if (
-            attribution
-          ) {
-            attribution.style.fontSize =
-              "10px";
-
-            attribution.style.lineHeight =
-              "1.35";
-
-            attribution.style.background =
-              "rgba(3,4,5,0.82)";
-
-            attribution.style.color =
-              "rgba(255,255,255,0.62)";
-
-            attribution.style.padding =
-              "3px 6px";
-
-            attribution
-              .querySelectorAll(
-                "a",
-              )
-              .forEach(
-                (
-                  link,
-                ) => {
-                  (
-                    link as HTMLElement
-                  ).style.color =
-                    "#8FC5FF";
-                },
-              );
-          }
-        };
-
-      const styleTimer =
-        window.setTimeout(
-          styleLeafletControls,
-          100,
-        );
 
       const resizeTimers = [
         window.setTimeout(
@@ -703,15 +549,10 @@ export function MissionPlanningMap({
         ),
       ];
 
-      return () => {
-        window.clearTimeout(
-          styleTimer,
-        );
 
+      return () => {
         resizeTimers.forEach(
-          (
-            timer,
-          ) =>
+          (timer) =>
             window.clearTimeout(
               timer,
             ),
@@ -735,9 +576,6 @@ export function MissionPlanningMap({
     [],
   );
 
-  /* =======================================================
-     Base Map Switching
-     ======================================================= */
 
   useEffect(
     () => {
@@ -756,14 +594,11 @@ export function MissionPlanningMap({
         );
       }
 
-      const baseMap =
-        baseMaps[
-          baseMapId
-        ];
-
       const layer =
         L.tileLayer(
-          baseMap.url,
+          baseMaps[
+            baseMapId
+          ].url,
           {
             minZoom:
               11,
@@ -772,14 +607,13 @@ export function MissionPlanningMap({
               19,
 
             attribution:
-              baseMap.attribution,
+              baseMaps[
+                baseMapId
+              ].attribution,
           },
         );
 
-      layer.addTo(
-        map,
-      );
-
+      layer.addTo(map);
       layer.bringToBack();
 
       baseTileLayerRef.current =
@@ -790,9 +624,6 @@ export function MissionPlanningMap({
     ],
   );
 
-  /* =======================================================
-     Route + Waypoints
-     ======================================================= */
 
   useEffect(
     () => {
@@ -810,10 +641,8 @@ export function MissionPlanningMap({
       }
 
       waypointLayer.clearLayers();
-
       routeLayer.clearLayers();
 
-      /* Route line */
 
       if (
         waypoints.length >=
@@ -821,9 +650,7 @@ export function MissionPlanningMap({
       ) {
         const routeCoordinates =
           waypoints.map(
-            (
-              waypoint,
-            ) =>
+            (waypoint) =>
               [
                 waypoint.lat,
                 waypoint.lng,
@@ -833,7 +660,6 @@ export function MissionPlanningMap({
               ],
           );
 
-        /* Dark route halo */
 
         L.polyline(
           routeCoordinates,
@@ -842,22 +668,15 @@ export function MissionPlanningMap({
               mapColors.routeHalo,
 
             weight:
-              7,
+              8,
 
             opacity:
-              0.88,
-
-            lineCap:
-              "round",
-
-            lineJoin:
-              "round",
+              0.9,
           },
         ).addTo(
           routeLayer,
         );
 
-        /* Mission route */
 
         L.polyline(
           routeCoordinates,
@@ -866,26 +685,19 @@ export function MissionPlanningMap({
               mapColors.route,
 
             weight:
-              3,
+              3.5,
 
             opacity:
-              0.96,
+              0.95,
 
             dashArray:
               "8 7",
-
-            lineCap:
-              "round",
-
-            lineJoin:
-              "round",
           },
         ).addTo(
           routeLayer,
         );
       }
 
-      /* Waypoints */
 
       waypoints.forEach(
         (
@@ -914,6 +726,7 @@ export function MissionPlanningMap({
               },
             );
 
+
           marker.bindPopup(
             `<b>${escapeHtml(
               waypoint.name,
@@ -926,11 +739,10 @@ export function MissionPlanningMap({
             )}`,
           );
 
+
           marker.on(
             "click",
-            (
-              event,
-            ) => {
+            (event) => {
               event.originalEvent.stopPropagation();
 
               onSelectWaypointRef.current(
@@ -939,17 +751,16 @@ export function MissionPlanningMap({
             },
           );
 
+
           marker.on(
             "dragend",
             () => {
               const position =
                 marker.getLatLng();
 
-              const updatedWaypoints =
+              const updated =
                 waypointsRef.current.map(
-                  (
-                    current,
-                  ) =>
+                  (current) =>
                     current.id ===
                     waypoint.id
                       ? {
@@ -973,10 +784,11 @@ export function MissionPlanningMap({
                 );
 
               onWaypointsChangeRef.current(
-                updatedWaypoints,
+                updated,
               );
             },
           );
+
 
           marker.addTo(
             waypointLayer,
@@ -990,21 +802,17 @@ export function MissionPlanningMap({
     ],
   );
 
-  /* =======================================================
-     Map Utilities
-     ======================================================= */
 
   function toggleBaseMap() {
     setBaseMapId(
-      (
-        current,
-      ) =>
+      (current) =>
         current ===
         "openstreetmap"
           ? "hot"
           : "openstreetmap",
     );
   }
+
 
   function fitRoute() {
     const map =
@@ -1040,9 +848,7 @@ export function MissionPlanningMap({
     const bounds =
       L.latLngBounds(
         waypoints.map(
-          (
-            waypoint,
-          ) => [
+          (waypoint) => [
             waypoint.lat,
             waypoint.lng,
           ],
@@ -1053,8 +859,8 @@ export function MissionPlanningMap({
       bounds,
       {
         padding: [
-          54,
-          54,
+          60,
+          60,
         ],
 
         maxZoom:
@@ -1063,14 +869,9 @@ export function MissionPlanningMap({
     );
   }
 
-  /* =======================================================
-     Render
-     ======================================================= */
 
   return (
-    <div className="relative h-full min-h-0 w-full overflow-hidden bg-[#020304]">
-      {/* Leaflet canvas */}
-
+    <div className="relative h-full min-h-0 w-full overflow-hidden bg-[#E6EAEE]">
       <div
         ref={
           containerRef
@@ -1078,48 +879,21 @@ export function MissionPlanningMap({
         className="absolute inset-0 z-0"
       />
 
-      {/* Compact instructions */}
-
       <div className="pointer-events-none absolute left-3 top-3 z-[500]">
-        <div className="rounded-[4px] border border-white/[0.10] bg-[rgba(3,4,5,0.88)] px-2.5 py-1.5 backdrop-blur">
-          <div className="font-mono text-[9px] font-semibold uppercase tracking-[0.055em] text-white/58">
-            Click to add · drag
-            to move
+        <div className="rounded-[6px] border border-[#D2D8DF] bg-white/95 px-3 py-2 shadow-[0_6px_18px_rgba(25,35,45,0.10)]">
+          <div className="text-[12px] font-semibold text-[#495563]">
+            Click to add · drag to move
           </div>
         </div>
       </div>
 
-      {/* Map tools */}
-
-      <div className="pointer-events-none absolute right-3 top-3 z-[500] flex items-center gap-1.5">
+      <div className="pointer-events-none absolute right-3 top-3 z-[500] flex gap-2">
         <button
           type="button"
           onClick={
             toggleBaseMap
           }
-          className={[
-            "pointer-events-auto",
-
-            "h-[30px]",
-
-            "rounded-[4px] border",
-
-            "border-white/[0.12]",
-
-            "bg-[rgba(3,4,5,0.9)]",
-
-            "px-2.5",
-
-            "font-mono text-[9px] font-semibold uppercase tracking-[0.055em]",
-
-            "text-white/66",
-
-            "backdrop-blur",
-
-            "transition-colors",
-
-            "hover:border-[rgba(90,169,255,0.35)] hover:text-[#5AA9FF]",
-          ].join(" ")}
+          className="pointer-events-auto h-[36px] rounded-[6px] border border-[#D2D8DF] bg-white px-3 text-[12px] font-semibold text-[#495563] shadow-[0_6px_18px_rgba(25,35,45,0.10)] hover:text-[#316F9F]"
         >
           {
             baseMaps[
@@ -1137,49 +911,20 @@ export function MissionPlanningMap({
             waypoints.length ===
             0
           }
-          className={[
-            "pointer-events-auto",
-
-            "h-[30px]",
-
-            "rounded-[4px] border",
-
-            "border-[rgba(90,169,255,0.24)]",
-
-            "bg-[rgba(3,4,5,0.9)]",
-
-            "px-2.5",
-
-            "font-mono text-[9px] font-semibold uppercase tracking-[0.055em]",
-
-            "text-[#5AA9FF]",
-
-            "backdrop-blur",
-
-            "transition-colors",
-
-            "hover:bg-[rgba(90,169,255,0.07)]",
-
-            "disabled:cursor-not-allowed disabled:opacity-35",
-          ].join(" ")}
+          className="pointer-events-auto h-[36px] rounded-[6px] border border-[rgba(49,111,159,0.28)] bg-white px-3 text-[12px] font-semibold text-[#316F9F] shadow-[0_6px_18px_rgba(25,35,45,0.10)] disabled:opacity-40"
         >
           Fit Route
         </button>
       </div>
 
-      {/* Coordinate readout */}
-
       <div className="pointer-events-none absolute bottom-3 left-3 z-[500]">
-        <div className="rounded-[4px] border border-white/[0.10] bg-[rgba(3,4,5,0.88)] px-2.5 py-1.5 backdrop-blur">
-          <div className="font-mono text-[10px] font-medium text-white/68">
-            {
-              coordinates
-            }
+        <div className="rounded-[6px] border border-[#D2D8DF] bg-white/95 px-3 py-2 shadow-[0_6px_18px_rgba(25,35,45,0.10)]">
+          <div className="font-mono text-[13px] font-medium text-[#343D48]">
+            {coordinates}
           </div>
 
-          <div className="mt-0.5 font-mono text-[8px] uppercase tracking-[0.055em] text-white/34">
-            WGS-84 · Zoom{" "}
-            {zoom}
+          <div className="mt-1 font-mono text-[12px] text-[#7C8794]">
+            WGS-84 · Zoom {zoom}
           </div>
         </div>
       </div>
