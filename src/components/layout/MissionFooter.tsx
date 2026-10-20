@@ -1,329 +1,384 @@
+import {
+  Activity,
+  ArrowUpRight,
+  Map,
+  Plane,
+  Radar,
+  Settings,
+  ShieldCheck,
+} from "lucide-react";
+
 import aeronexusFooterLogo from "../../assets/aeronexus-footer-logo.png";
 
 import type {
   PageId,
 } from "../../data/navigation";
 
-/* =========================================================
-   MissionNexus V2
-   Product Footer
-
-   Purpose:
-   - Aeronexus parent-brand identity
-   - MissionNexus product identity
-   - Essential product navigation only
-   - Compact dashboard-oriented footer
-
-   Intentionally removed:
-   - Fake/static platform status
-   - Network status
-   - Security status
-   - Telemetry readiness
-   - Large marketing copy
-   - Unnecessary dashboard duplication
-   ========================================================= */
 
 type MissionFooterProps = {
-  activePage: PageId;
+  activePage:
+    PageId;
 
   onPageChange: (
-    page: PageId,
+    page:
+      PageId,
   ) => void;
 };
+
 
 type FooterLink = {
-  label: string;
+  id:
+    PageId;
 
-  page: PageId;
+  label:
+    string;
 };
 
-type FooterColumnProps = {
-  title: string;
 
-  links: FooterLink[];
-
-  activePage: PageId;
-
-  onNavigate: (
-    page: PageId,
-  ) => void;
-};
-
-/* =========================================================
-   Typography
-   ========================================================= */
-
-const interfaceFont = {
-  fontFamily:
-    '"Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-};
-
-const productFont = {
-  fontFamily:
-    '"Manrope", "Inter", ui-sans-serif, system-ui, sans-serif',
-};
-
-/* =========================================================
-   Footer Navigation
-
-   Only pages useful enough to expose from the footer.
-   ========================================================= */
-
-const operationsLinks: FooterLink[] = [
+const operationsLinks:
+  FooterLink[] = [
   {
-    label: "Live Operations",
-    page: "live-ops",
+    id:
+      "live-ops",
+
+    label:
+      "Live Operations",
   },
 
   {
-    label: "Mission Planner",
-    page: "mission-planner",
+    id:
+      "mission-planner",
+
+    label:
+      "Mission Planner",
   },
 
   {
-    label: "Drone Control",
-    page: "drone-control",
+    id:
+      "fleet",
+
+    label:
+      "Fleet",
   },
 
   {
-    label: "Fleet",
-    page: "fleet",
-  },
+    id:
+      "drone-control",
 
-  {
-    label: "Pre-Flight",
-    page: "pre-flight",
+    label:
+      "Drone Control",
   },
 ];
 
-const intelligenceLinks: FooterLink[] = [
+
+const platformLinks:
+  FooterLink[] = [
   {
-    label: "Vision Intelligence",
-    page: "camera-ai",
+    id:
+      "camera-ai",
+
+    label:
+      "Vision Intelligence",
   },
 
   {
-    label: "Mission Debrief",
-    page: "logs",
+    id:
+      "security",
+
+    label:
+      "Security",
   },
 
   {
-    label: "Security",
-    page: "security",
+    id:
+      "drone-health",
+
+    label:
+      "Drone Health",
+  },
+
+  {
+    id:
+      "settings",
+
+    label:
+      "Settings",
   },
 ];
 
-const systemLinks: FooterLink[] = [
-  {
-    label: "Drone Health",
-    page: "drone-health",
-  },
 
-  {
-    label: "Battery & Power",
-    page: "battery",
-  },
-
-  {
-    label: "Settings",
-    page: "settings",
-  },
-];
-
-/* =========================================================
-   Footer Column
-   ========================================================= */
-
-function FooterColumn({
-  title,
-  links,
+function FooterLinkButton({
+  item,
   activePage,
-  onNavigate,
-}: FooterColumnProps) {
+  onPageChange,
+}: {
+  item:
+    FooterLink;
+
+  activePage:
+    PageId;
+
+  onPageChange: (
+    page:
+      PageId,
+  ) => void;
+}) {
+  const active =
+    activePage ===
+    item.id;
+
   return (
-    <div className="min-w-0">
-      <div
-        style={productFont}
-        className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white/42"
-      >
-        {title}
-      </div>
+    <button
+      type="button"
+      onClick={() =>
+        onPageChange(
+          item.id,
+        )
+      }
+      className={[
+        "flex items-center gap-1.5",
 
-      <div className="mt-4 flex flex-col items-start gap-3">
-        {links.map(
-          (link) => {
-            const active =
-              activePage ===
-              link.page;
+        "text-[13px] font-medium",
 
-            return (
-              <button
-                key={link.page}
-                type="button"
-                onClick={() =>
-                  onNavigate(
-                    link.page,
-                  )
-                }
-                aria-current={
-                  active
-                    ? "page"
-                    : undefined
-                }
-                className={[
-                  "w-fit text-left",
+        "transition-colors duration-150",
 
-                  "text-[13px] font-medium leading-[1.4]",
+        active
+          ? "text-[#D1AD74]"
+          : "text-white/54 hover:text-white",
+      ].join(" ")}
+    >
+      {
+        item.label
+      }
 
-                  "transition-colors duration-150",
-
-                  active
-                    ? "text-(--primary)"
-                    : "text-white/58 hover:text-white",
-                ].join(" ")}
-              >
-                {link.label}
-              </button>
-            );
-          },
-        )}
-      </div>
-    </div>
+      {active ? (
+        <ArrowUpRight
+          size={
+            12
+          }
+        />
+      ) : null}
+    </button>
   );
 }
 
-/* =========================================================
-   Mission Footer
-   ========================================================= */
 
 export function MissionFooter({
   activePage,
   onPageChange,
 }: MissionFooterProps) {
-  function navigate(
-    page: PageId,
-  ) {
-    onPageChange(
-      page,
-    );
-
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
-  }
+  const year =
+    new Date().getFullYear();
 
   return (
-    <footer
-      style={interfaceFont}
-      className="border-t border-white/[0.08] bg-[#030409]"
-    >
-      <div className="mx-auto w-full max-w-[1600px] px-4 py-9 sm:px-6 lg:px-8 xl:px-10 2xl:px-14">
-        {/* =================================================
-            Main Footer
-            ================================================= */}
+    <footer className="relative z-[2] border-t border-white/[0.09] bg-[#050607] text-white">
+      <div className="mx-auto w-full max-w-[1680px] px-4 py-10 sm:px-6 lg:px-8 xl:px-10 2xl:px-14">
+        <div className="grid gap-10 lg:grid-cols-[1.6fr_0.7fr_0.7fr_1fr]">
+          {/* Brand */}
 
-        <div
-          className={[
-            "grid items-start gap-10",
+          <div className="max-w-[560px]">
+            <img
+              src={
+                aeronexusFooterLogo
+              }
+              alt="Aeronexus Aerospace"
+              className="h-auto w-[300px] object-contain object-left sm:w-[340px] lg:w-[380px]"
+            />
 
-            "md:grid-cols-2",
-
-            "xl:grid-cols-[1.45fr_0.8fr_0.8fr_0.8fr]",
-
-            "xl:gap-14",
-          ].join(" ")}
-        >
-          {/* ===============================================
-              Aeronexus / MissionNexus Identity
-              =============================================== */}
-
-          <div className="min-w-0">
-            <div className="w-full max-w-[220px] overflow-hidden rounded-[4px] border border-white/[0.08] bg-white p-2.5">
-              <img
-                src={aeronexusFooterLogo}
-                alt="Aeronexus"
-                className="h-auto w-full object-contain"
-              />
+            <div className="mt-5 text-[18px] font-semibold tracking-[-0.025em] text-white">
+              MissionNexus
             </div>
 
-            <div className="mt-5">
-              <div
-                style={productFont}
-                className="text-[17px] font-medium tracking-[-0.02em] text-white"
-              >
-                MissionNexus
-              </div>
-
-              <div className="mt-1 text-[11px] font-medium text-(--primary)">
-                A product by Aeronexus
-              </div>
-            </div>
-
-            <p className="mt-4 max-w-[410px] text-[13px] leading-[1.7] text-white/48">
-              Unified mission operations for UAV control,
-              planning, fleet awareness and aerial intelligence.
+            <p className="mt-2.5 max-w-[460px] text-[14px] leading-[1.7] text-white/48">
+              Unified mission operations,
+              planning, telemetry,
+              intelligence and autonomous
+              UAV system supervision.
             </p>
           </div>
 
-          {/* ===============================================
-              Operations
-              =============================================== */}
 
-          <FooterColumn
-            title="Operations"
-            links={operationsLinks}
-            activePage={activePage}
-            onNavigate={navigate}
-          />
+          {/* Operations */}
 
-          {/* ===============================================
-              Intelligence
-              =============================================== */}
-
-          <FooterColumn
-            title="Intelligence"
-            links={intelligenceLinks}
-            activePage={activePage}
-            onNavigate={navigate}
-          />
-
-          {/* ===============================================
-              System
-              =============================================== */}
-
-          <FooterColumn
-            title="System"
-            links={systemLinks}
-            activePage={activePage}
-            onNavigate={navigate}
-          />
-        </div>
-
-        {/* =================================================
-            Bottom Product Bar
-            ================================================= */}
-
-        <div className="mt-9 border-t border-white/[0.07] pt-5">
-          <div className="flex flex-col gap-3 text-[11px] text-white/36 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              © 2026 Aeronexus. All rights reserved.
-            </div>
-
-            <div className="flex items-center gap-3">
-              <span>
-                MissionNexus V2
-              </span>
-
-              <span
-                aria-hidden="true"
-                className="h-3 w-px bg-white/[0.10]"
+          <div>
+            <div className="mb-4 flex items-center gap-2 text-[14px] font-semibold text-white/84">
+              <Radar
+                size={
+                  15
+                }
+                className="text-[#C8A66F]"
               />
 
-              <span>
-                Aeronexus
-              </span>
+              Operations
             </div>
+
+            <div className="grid gap-3">
+              {operationsLinks.map(
+                (
+                  item,
+                ) => (
+                  <FooterLinkButton
+                    key={
+                      item.id
+                    }
+                    item={
+                      item
+                    }
+                    activePage={
+                      activePage
+                    }
+                    onPageChange={
+                      onPageChange
+                    }
+                  />
+                ),
+              )}
+            </div>
+          </div>
+
+
+          {/* Platform */}
+
+          <div>
+            <div className="mb-4 flex items-center gap-2 text-[14px] font-semibold text-white/84">
+              <Plane
+                size={
+                  15
+                }
+                className="text-[#C8A66F]"
+              />
+
+              Platform
+            </div>
+
+            <div className="grid gap-3">
+              {platformLinks.map(
+                (
+                  item,
+                ) => (
+                  <FooterLinkButton
+                    key={
+                      item.id
+                    }
+                    item={
+                      item
+                    }
+                    activePage={
+                      activePage
+                    }
+                    onPageChange={
+                      onPageChange
+                    }
+                  />
+                ),
+              )}
+            </div>
+          </div>
+
+
+          {/* System */}
+
+          <div>
+            <div className="mb-4 flex items-center gap-2 text-[14px] font-semibold text-white/84">
+              <ShieldCheck
+                size={
+                  15
+                }
+                className="text-[#C8A66F]"
+              />
+
+              System
+            </div>
+
+            <div className="rounded-[7px] border border-white/[0.09] bg-white/[0.025] p-4">
+              <div className="flex items-center justify-between gap-4">
+                <span className="text-[13px] text-white/48">
+                  Console
+                </span>
+
+                <span className="flex items-center gap-2 text-[13px] font-semibold text-[#79BC98]">
+                  <span className="h-2 w-2 rounded-full bg-[#6FB28D]" />
+
+                  Operational
+                </span>
+              </div>
+
+              <div className="mt-3.5 flex items-center justify-between gap-4 border-t border-white/[0.07] pt-3.5">
+                <span className="text-[13px] text-white/48">
+                  Platform
+                </span>
+
+                <span className="font-mono text-[13px] text-white/70">
+                  MissionNexus
+                </span>
+              </div>
+
+              <div className="mt-3.5 flex items-center justify-between gap-4 border-t border-white/[0.07] pt-3.5">
+                <span className="text-[13px] text-white/48">
+                  Mode
+                </span>
+
+                <span className="flex items-center gap-1.5 font-mono text-[13px] text-white/70">
+                  <Activity
+                    size={
+                      13
+                    }
+                  />
+
+                  Mission Ops
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+        <div className="mt-10 flex flex-col gap-3 border-t border-white/[0.08] pt-5 md:flex-row md:items-center md:justify-between">
+          <div className="text-[13px] text-white/38">
+            © {year} Aeronexus Aerospace.
+            MissionNexus mission systems.
+          </div>
+
+          <div className="flex flex-wrap items-center gap-4 text-[13px] text-white/40">
+            <span className="flex items-center gap-1.5">
+              <Map
+                size={
+                  13
+                }
+              />
+
+              Mission Operations
+            </span>
+
+            <span className="hidden h-3 w-px bg-white/[0.12] sm:block" />
+
+            <span className="flex items-center gap-1.5">
+              <ShieldCheck
+                size={
+                  13
+                }
+              />
+
+              Secure Systems
+            </span>
+
+            <button
+              type="button"
+              onClick={() =>
+                onPageChange(
+                  "settings",
+                )
+              }
+              className="flex items-center gap-1.5 transition-colors hover:text-white"
+            >
+              <Settings
+                size={
+                  13
+                }
+              />
+
+              Settings
+            </button>
           </div>
         </div>
       </div>
