@@ -43,9 +43,11 @@ import {
   type WaypointAction,
 } from "../utils/missionAnalytics";
 
+
 /* =========================================================
    Types
    ========================================================= */
+
 
 type Tone =
   | "nominal"
@@ -54,18 +56,32 @@ type Tone =
   | "info"
   | "muted";
 
+
 type MissionMetric = {
-  label: string;
-  value: string | number;
-  unit?: string;
-  helper: string;
-  icon: LucideIcon;
-  tone: Tone;
+  label:
+    string;
+
+  value:
+    string | number;
+
+  unit?:
+    string;
+
+  helper:
+    string;
+
+  icon:
+    LucideIcon;
+
+  tone:
+    Tone;
 };
+
 
 /* =========================================================
    Initial Mission
    ========================================================= */
+
 
 const initialWaypoints: MissionWaypoint[] = [
   {
@@ -74,10 +90,18 @@ const initialWaypoints: MissionWaypoint[] = [
       72.5717,
       1,
     ),
-    name: "WP-1",
-    altitude: 55,
-    speed: 6,
-    action: "scan",
+
+    name:
+      "WP-1",
+
+    altitude:
+      55,
+
+    speed:
+      6,
+
+    action:
+      "scan",
   },
 
   {
@@ -86,10 +110,18 @@ const initialWaypoints: MissionWaypoint[] = [
       72.5762,
       2,
     ),
-    name: "WP-2",
-    altitude: 65,
-    speed: 6,
-    action: "photo",
+
+    name:
+      "WP-2",
+
+    altitude:
+      65,
+
+    speed:
+      6,
+
+    action:
+      "photo",
   },
 
   {
@@ -98,269 +130,359 @@ const initialWaypoints: MissionWaypoint[] = [
       72.5812,
       3,
     ),
-    name: "WP-3",
-    altitude: 60,
-    speed: 5,
-    holdSeconds: 8,
-    action: "hover",
+
+    name:
+      "WP-3",
+
+    altitude:
+      60,
+
+    speed:
+      5,
+
+    holdSeconds:
+      8,
+
+    action:
+      "hover",
   },
 ];
+
 
 /* =========================================================
    Waypoint Actions
    ========================================================= */
 
+
 const actionOptions: {
-  value: WaypointAction;
-  label: string;
+  value:
+    WaypointAction;
+
+  label:
+    string;
 }[] = [
   {
-    value: "none",
-    label: "No Action",
+    value:
+      "none",
+
+    label:
+      "No Action",
   },
 
   {
-    value: "scan",
-    label: "Area Scan",
+    value:
+      "scan",
+
+    label:
+      "Area Scan",
   },
 
   {
-    value: "photo",
-    label: "Photo",
+    value:
+      "photo",
+
+    label:
+      "Photo",
   },
 
   {
-    value: "video",
-    label: "Video",
+    value:
+      "video",
+
+    label:
+      "Video",
   },
 
   {
-    value: "thermal-scan",
-    label: "Thermal Scan",
+    value:
+      "thermal-scan",
+
+    label:
+      "Thermal Scan",
   },
 
   {
-    value: "hover",
-    label: "Hover",
+    value:
+      "hover",
+
+    label:
+      "Hover",
   },
 
   {
-    value: "loiter",
-    label: "Loiter",
+    value:
+      "loiter",
+
+    label:
+      "Loiter",
   },
 
   {
-    value: "perimeter-scan",
-    label: "Perimeter",
+    value:
+      "perimeter-scan",
+
+    label:
+      "Perimeter",
   },
 
   {
-    value: "search-grid",
-    label: "Search Grid",
+    value:
+      "search-grid",
+
+    label:
+      "Search Grid",
   },
 
   {
-    value: "inspect-target",
-    label: "Inspect",
+    value:
+      "inspect-target",
+
+    label:
+      "Inspect",
   },
 
   {
-    value: "speaker-alert",
-    label: "Speaker Alert",
+    value:
+      "speaker-alert",
+
+    label:
+      "Speaker Alert",
   },
 
   {
-    value: "spotlight",
-    label: "Spotlight",
+    value:
+      "spotlight",
+
+    label:
+      "Spotlight",
   },
 
   {
-    value: "payload-check",
-    label: "Payload Check",
+    value:
+      "payload-check",
+
+    label:
+      "Payload Check",
   },
 
   {
-    value: "return-check",
-    label: "Return Check",
+    value:
+      "return-check",
+
+    label:
+      "Return Check",
   },
 
   {
-    value: "emergency-mark",
-    label: "Emergency Mark",
+    value:
+      "emergency-mark",
+
+    label:
+      "Emergency Mark",
   },
 ];
 
+
 /* =========================================================
-   MissionNexus tones
+   MissionNexus Operational Tones
    ========================================================= */
+
 
 const toneClass: Record<
   Tone,
   {
-    text: string;
-    border: string;
-    bg: string;
-    dot: string;
+    text:
+      string;
+
+    border:
+      string;
+
+    bg:
+      string;
   }
 > = {
   nominal: {
-    text: "text-[#59D99A]",
+    text:
+      "text-[#337D5C]",
+
     border:
-      "border-[rgba(89,217,154,0.24)]",
+      "border-[rgba(51,125,92,0.24)]",
+
     bg:
-      "bg-[rgba(89,217,154,0.055)]",
-    dot:
-      "bg-[#59D99A]",
+      "bg-[rgba(51,125,92,0.075)]",
   },
 
   caution: {
     text:
-      "text-[#F6B23C]",
+      "text-[#A97324]",
+
     border:
-      "border-[rgba(246,178,60,0.25)]",
+      "border-[rgba(169,115,36,0.26)]",
+
     bg:
-      "bg-[rgba(246,178,60,0.055)]",
-    dot:
-      "bg-[#F6B23C]",
+      "bg-[rgba(169,115,36,0.075)]",
   },
 
   critical: {
     text:
-      "text-[#FF5A63]",
+      "text-[#BD4F59]",
+
     border:
-      "border-[rgba(255,90,99,0.26)]",
+      "border-[rgba(189,79,89,0.26)]",
+
     bg:
-      "bg-[rgba(255,90,99,0.055)]",
-    dot:
-      "bg-[#FF5A63]",
+      "bg-[rgba(189,79,89,0.075)]",
   },
 
   info: {
     text:
-      "text-[#5AA9FF]",
+      "text-[#316F9F]",
+
     border:
-      "border-[rgba(90,169,255,0.24)]",
+      "border-[rgba(49,111,159,0.24)]",
+
     bg:
-      "bg-[rgba(90,169,255,0.055)]",
-    dot:
-      "bg-[#5AA9FF]",
+      "bg-[rgba(49,111,159,0.075)]",
   },
 
   muted: {
     text:
-      "text-white/42",
+      "text-[#687482]",
+
     border:
-      "border-white/[0.08]",
+      "border-[#D7DDE4]",
+
     bg:
-      "bg-white/[0.015]",
-    dot:
-      "bg-white/34",
+      "bg-[#F4F6F8]",
   },
 };
+
 
 /* =========================================================
    Helpers
    ========================================================= */
 
+
 function getBatteryTone(
-  value: number,
+  value:
+    number,
 ): Tone {
-  if (value >= 70) {
+  if (
+    value >=
+    70
+  ) {
     return "critical";
   }
 
-  if (value >= 45) {
+  if (
+    value >=
+    45
+  ) {
     return "caution";
   }
 
   return "nominal";
 }
 
+
 function actionLabel(
-  action: WaypointAction,
+  action:
+    WaypointAction,
 ) {
   return (
     actionOptions.find(
-      (item) =>
-        item.value === action,
+      (
+        item,
+      ) =>
+        item.value ===
+        action,
     )?.label ??
     action
   );
 }
 
-function numberInputClass() {
+
+function inputClass() {
   return [
-    "h-[32px] w-full",
+    "h-[40px] w-full",
 
-    "rounded-[4px]",
+    "rounded-[6px]",
 
-    "border border-white/[0.09]",
+    "border border-[#D4DAE1]",
 
-    "bg-[#030405]",
+    "bg-white",
 
-    "px-2",
+    "px-3",
 
-    "font-mono text-[11px] text-white/82",
+    "font-mono text-[14px] text-[#151A21]",
 
     "outline-none",
 
-    "transition-colors duration-150",
+    "transition-[border-color,box-shadow,background-color] duration-150",
 
-    "focus:border-[rgba(246,178,60,0.5)]",
+    "hover:border-[#BCC5CF]",
+
+    "focus:border-[#B78939]",
+
+    "focus:bg-white",
+
+    "focus:shadow-[0_0_0_3px_rgba(183,137,57,0.10)]",
   ].join(" ");
 }
 
-function selectInputClass() {
-  return numberInputClass();
-}
 
 /* =========================================================
-   Field label
+   Field Label
    ========================================================= */
+
 
 function FieldLabel({
   children,
 }: {
-  children: ReactNode;
+  children:
+    ReactNode;
 }) {
   return (
-    <label className="mb-1 block font-mono text-[9px] font-semibold uppercase tracking-[0.08em] text-white/38">
+    <label className="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.055em] text-[#65717E]">
       {children}
     </label>
   );
 }
 
+
 /* =========================================================
    Mission Status
    ========================================================= */
 
+
 function MissionStatus({
   ready,
 }: {
-  ready: boolean;
+  ready:
+    boolean;
 }) {
   return (
     <div
       className={[
-        "flex h-[30px] items-center gap-2",
+        "flex h-[38px] items-center gap-2",
 
-        "rounded-[4px] border px-2.5",
+        "rounded-[6px] border px-3.5",
 
-        "font-mono text-[10px] font-semibold uppercase tracking-[0.07em]",
+        "text-[13px] font-semibold",
 
         ready
-          ? "border-[rgba(89,217,154,0.25)] bg-[rgba(89,217,154,0.045)] text-[#59D99A]"
-          : "border-[rgba(246,178,60,0.25)] bg-[rgba(246,178,60,0.045)] text-[#F6B23C]",
+          ? "border-[rgba(51,125,92,0.26)] bg-[rgba(51,125,92,0.07)] text-[#337D5C]"
+          : "border-[rgba(169,115,36,0.28)] bg-[rgba(169,115,36,0.07)] text-[#A97324]",
       ].join(" ")}
     >
       {ready ? (
         <ShieldCheck
-          size={12}
+          size={15}
           strokeWidth={1.7}
         />
       ) : (
         <AlertTriangle
-          size={12}
+          size={15}
           strokeWidth={1.7}
         />
       )}
@@ -372,14 +494,17 @@ function MissionStatus({
   );
 }
 
+
 /* =========================================================
-   Compact metric strip
+   Mission Metric Cell
    ========================================================= */
+
 
 function MissionMetricCell({
   item,
 }: {
-  item: MissionMetric;
+  item:
+    MissionMetric;
 }) {
   const Icon =
     item.icon;
@@ -391,85 +516,94 @@ function MissionMetricCell({
 
   return (
     <div
-      title={item.helper}
+      title={
+        item.helper
+      }
       className={[
-        "flex min-w-0 items-center justify-between gap-2",
+        "flex min-w-0 items-center justify-between gap-3",
 
-        "border-r border-white/[0.07]",
+        "border-r border-[#E4E8ED]",
 
-        "px-3",
+        "px-4 py-3.5",
 
         "last:border-r-0",
       ].join(" ")}
     >
       <div className="min-w-0">
-        <div className="truncate font-mono text-[9px] font-semibold uppercase tracking-[0.075em] text-white/38">
+        <div className="truncate text-[12px] font-semibold uppercase tracking-[0.05em] text-[#727D89]">
           {item.label}
         </div>
 
-        <div
-          className={[
-            "mt-1 flex min-w-0 items-baseline gap-1",
-
-            tone.text,
-          ].join(" ")}
-        >
-          <span className="truncate font-mono text-[16px] font-semibold leading-none">
+        <div className="mt-1.5 flex min-w-0 items-baseline gap-1.5">
+          <span className="truncate font-mono text-[20px] font-semibold leading-none tracking-[-0.03em] text-[#151A21]">
             {item.value}
           </span>
 
           {item.unit ? (
-            <span className="font-mono text-[9px] font-semibold uppercase text-white/42">
+            <span className="font-mono text-[12px] font-medium text-[#737E8B]">
               {item.unit}
             </span>
           ) : null}
         </div>
       </div>
 
-      <Icon
-        size={15}
-        strokeWidth={1.55}
+      <div
         className={[
-          "shrink-0",
+          "flex h-9 w-9 shrink-0 items-center justify-center",
+
+          "rounded-[7px] border",
+
+          tone.border,
+          tone.bg,
           tone.text,
         ].join(" ")}
-      />
+      >
+        <Icon
+          size={17}
+          strokeWidth={1.7}
+        />
+      </div>
     </div>
   );
 }
 
+
 /* =========================================================
    Waypoint Stack
    ========================================================= */
+
 
 function WaypointStack({
   waypoints,
   selectedWaypointId,
   onSelect,
 }: {
-  waypoints: MissionWaypoint[];
+  waypoints:
+    MissionWaypoint[];
 
   selectedWaypointId:
     string | null;
 
   onSelect: (
-    waypointId: string,
+    waypointId:
+      string,
   ) => void;
 }) {
   if (
-    waypoints.length === 0
+    waypoints.length ===
+    0
   ) {
     return (
-      <div className="flex h-full items-center justify-center px-4 text-center text-[11px] leading-[1.55] text-white/40">
+      <div className="flex h-full items-center justify-center px-5 text-center text-[14px] leading-[1.6] text-[#737E8B]">
         No route points yet.
-        Click the planning map or
-        use Add Waypoint.
+        Click the planning map
+        or use Add Waypoint.
       </div>
     );
   }
 
   return (
-    <div className="grid gap-1.5">
+    <div className="grid gap-2">
       {waypoints.map(
         (
           waypoint,
@@ -491,38 +625,41 @@ function WaypointStack({
                 )
               }
               className={[
-                "grid min-h-[54px] w-full grid-cols-[28px_minmax(0,1fr)_auto]",
+                "grid min-h-[72px] w-full",
 
-                "items-center gap-2",
+                "grid-cols-[34px_minmax(0,1fr)_auto]",
 
-                "rounded-[4px] border",
+                "items-center gap-3",
 
-                "px-2.5 py-1.5",
+                "rounded-[7px] border",
+
+                "px-3 py-2.5",
 
                 "text-left",
 
-                "transition-colors duration-150",
+                "transition-[background-color,border-color,box-shadow] duration-150",
 
                 selected
-                  ? "border-[rgba(246,178,60,0.34)] bg-[rgba(246,178,60,0.065)]"
-                  : "border-white/[0.07] bg-white/[0.012] hover:border-white/[0.14] hover:bg-white/[0.025]",
+                  ? "border-[rgba(183,137,57,0.38)] bg-[#FFF8EC] shadow-[0_3px_12px_rgba(80,60,20,0.06)]"
+                  : "border-[#E0E5EA] bg-white hover:border-[#C8D0D9] hover:bg-[#F8FAFB]",
               ].join(" ")}
             >
               <span
                 className={[
-                  "flex h-6 w-6 items-center justify-center",
+                  "flex h-8 w-8 items-center justify-center",
 
                   "rounded-full border",
 
-                  "font-mono text-[10px] font-semibold",
+                  "font-mono text-[12px] font-semibold",
 
                   selected
-                    ? "border-[rgba(246,178,60,0.5)] text-[#F6B23C]"
-                    : "border-white/[0.12] text-white/48",
+                    ? "border-[rgba(183,137,57,0.50)] bg-white text-[#9A6B21]"
+                    : "border-[#CED5DC] bg-[#F7F9FA] text-[#66717D]",
                 ].join(" ")}
               >
                 {String(
-                  index + 1,
+                  index +
+                    1,
                 ).padStart(
                   2,
                   "0",
@@ -533,26 +670,24 @@ function WaypointStack({
                 <span className="flex min-w-0 items-center gap-2">
                   <span
                     className={[
-                      "truncate text-[12px] font-medium",
+                      "truncate text-[14px] font-semibold",
 
                       selected
-                        ? "text-[#F6B23C]"
-                        : "text-white/86",
+                        ? "text-[#8D6427]"
+                        : "text-[#151A21]",
                     ].join(" ")}
                   >
-                    {
-                      waypoint.name
-                    }
+                    {waypoint.name}
                   </span>
 
-                  <span className="truncate font-mono text-[9px] uppercase tracking-[0.05em] text-white/34">
+                  <span className="truncate text-[12px] font-medium uppercase tracking-[0.03em] text-[#77828E]">
                     {actionLabel(
                       waypoint.action,
                     )}
                   </span>
                 </span>
 
-                <span className="mt-0.5 block truncate font-mono text-[9px] text-white/36">
+                <span className="mt-1 block truncate font-mono text-[12px] text-[#6E7986]">
                   {waypoint.lat.toFixed(
                     5,
                   )}
@@ -564,17 +699,13 @@ function WaypointStack({
               </span>
 
               <span className="shrink-0 text-right">
-                <span className="block font-mono text-[10px] font-semibold text-white/68">
-                  {
-                    waypoint.altitude
-                  }
+                <span className="block font-mono text-[13px] font-semibold text-[#38424D]">
+                  {waypoint.altitude}
                   m
                 </span>
 
-                <span className="mt-0.5 block font-mono text-[9px] text-white/34">
-                  {
-                    waypoint.speed
-                  }
+                <span className="mt-1 block font-mono text-[12px] text-[#7A8590]">
+                  {waypoint.speed}
                   m/s
                 </span>
               </span>
@@ -586,9 +717,11 @@ function WaypointStack({
   );
 }
 
+
 /* =========================================================
-   Selected waypoint editor
+   Waypoint Editor
    ========================================================= */
+
 
 function WaypointEditor({
   selectedWaypoint,
@@ -599,19 +732,23 @@ function WaypointEditor({
     MissionWaypoint;
 
   onUpdate: (
-    waypointId: string,
-    updates: Partial<MissionWaypoint>,
+    waypointId:
+      string,
+
+    updates:
+      Partial<MissionWaypoint>,
   ) => void;
 
   onDelete: (
-    waypointId: string,
+    waypointId:
+      string,
   ) => void;
 }) {
   if (
     !selectedWaypoint
   ) {
     return (
-      <div className="flex h-full items-center justify-center px-4 text-center text-[11px] leading-[1.55] text-white/40">
+      <div className="flex h-full items-center justify-center px-5 text-center text-[14px] leading-[1.6] text-[#737E8B]">
         Select a waypoint from
         the stack or click the
         map to create one.
@@ -620,7 +757,7 @@ function WaypointEditor({
   }
 
   return (
-    <div className="grid gap-2">
+    <div className="grid gap-3">
       {/* Name */}
 
       <div>
@@ -639,18 +776,19 @@ function WaypointEditor({
               selectedWaypoint.id,
               {
                 name:
-                  event.target
-                    .value,
+                  event.target.value,
               },
             )
           }
-          className={numberInputClass()}
+          className={
+            inputClass()
+          }
         />
       </div>
 
       {/* Coordinates */}
 
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 gap-3">
         <div>
           <FieldLabel>
             Latitude
@@ -669,14 +807,14 @@ function WaypointEditor({
                 {
                   lat:
                     Number(
-                      event
-                        .target
-                        .value,
+                      event.target.value,
                     ),
                 },
               )
             }
-            className={numberInputClass()}
+            className={
+              inputClass()
+            }
           />
         </div>
 
@@ -698,21 +836,21 @@ function WaypointEditor({
                 {
                   lng:
                     Number(
-                      event
-                        .target
-                        .value,
+                      event.target.value,
                     ),
                 },
               )
             }
-            className={numberInputClass()}
+            className={
+              inputClass()
+            }
           />
         </div>
       </div>
 
-      {/* Flight parameters */}
+      {/* Flight */}
 
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 gap-3">
         <div>
           <FieldLabel>
             Altitude
@@ -731,14 +869,14 @@ function WaypointEditor({
                 {
                   altitude:
                     Number(
-                      event
-                        .target
-                        .value,
+                      event.target.value,
                     ),
                 },
               )
             }
-            className={numberInputClass()}
+            className={
+              inputClass()
+            }
           />
         </div>
 
@@ -760,21 +898,21 @@ function WaypointEditor({
                 {
                   speed:
                     Number(
-                      event
-                        .target
-                        .value,
+                      event.target.value,
                     ),
                 },
               )
             }
-            className={numberInputClass()}
+            className={
+              inputClass()
+            }
           />
         </div>
       </div>
 
       {/* Hold / Action */}
 
-      <div className="grid grid-cols-[0.8fr_1.2fr] gap-2">
+      <div className="grid grid-cols-[0.8fr_1.2fr] gap-3">
         <div>
           <FieldLabel>
             Hold
@@ -793,14 +931,14 @@ function WaypointEditor({
                 {
                   holdSeconds:
                     Number(
-                      event
-                        .target
-                        .value,
+                      event.target.value,
                     ),
                 },
               )
             }
-            className={numberInputClass()}
+            className={
+              inputClass()
+            }
           />
         </div>
 
@@ -820,16 +958,18 @@ function WaypointEditor({
                 selectedWaypoint.id,
                 {
                   action:
-                    event
-                      .target
-                      .value as WaypointAction,
+                    event.target.value as WaypointAction,
                 },
               )
             }
-            className={selectInputClass()}
+            className={
+              inputClass()
+            }
           >
             {actionOptions.map(
-              (action) => (
+              (
+                action,
+              ) => (
                 <option
                   key={
                     action.value
@@ -838,9 +978,7 @@ function WaypointEditor({
                     action.value
                   }
                 >
-                  {
-                    action.label
-                  }
+                  {action.label}
                 </option>
               ),
             )}
@@ -858,25 +996,27 @@ function WaypointEditor({
           )
         }
         className={[
-          "mt-0.5 flex h-[31px] w-full items-center justify-center gap-2",
+          "mt-1 flex h-[40px] w-full items-center justify-center gap-2",
 
-          "rounded-[4px] border",
+          "rounded-[6px] border",
 
-          "border-[rgba(255,90,99,0.25)]",
+          "border-[rgba(189,79,89,0.26)]",
 
-          "bg-[rgba(255,90,99,0.045)]",
+          "bg-[rgba(189,79,89,0.06)]",
 
-          "font-mono text-[10px] font-semibold uppercase tracking-[0.06em]",
+          "text-[13px] font-semibold",
 
-          "text-[#FF5A63]",
+          "text-[#BD4F59]",
 
-          "transition-colors duration-150",
+          "transition-[background-color,border-color] duration-150",
 
-          "hover:bg-[rgba(255,90,99,0.08)]",
+          "hover:border-[rgba(189,79,89,0.36)]",
+
+          "hover:bg-[rgba(189,79,89,0.10)]",
         ].join(" ")}
       >
         <Trash2
-          size={12}
+          size={15}
           strokeWidth={1.7}
         />
 
@@ -886,19 +1026,22 @@ function WaypointEditor({
   );
 }
 
+
 /* =========================================================
-   Safety panel
+   Safety Panel
    ========================================================= */
+
 
 function SafetyPanel({
   analysis,
 }: {
-  analysis: ReturnType<
-    typeof analyzeMission
-  >;
+  analysis:
+    ReturnType<
+      typeof analyzeMission
+    >;
 }) {
   return (
-    <div className="grid gap-2">
+    <div className="grid gap-2.5">
       {analysis.warnings.map(
         (
           warning,
@@ -933,25 +1076,30 @@ function SafetyPanel({
               className={[
                 "flex items-start gap-3",
 
-                "rounded-[5px] border",
+                "rounded-[7px] border",
 
-                "bg-[#07090d] p-3",
+                "bg-white",
+
+                "p-3.5",
+
+                "shadow-[0_4px_14px_rgba(25,35,45,0.04)]",
 
                 style.border,
               ].join(" ")}
             >
               <div
                 className={[
-                  "mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center",
+                  "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center",
 
-                  "rounded-[4px] border",
+                  "rounded-[6px] border",
 
                   style.border,
+
                   style.bg,
                 ].join(" ")}
               >
                 <Icon
-                  size={13}
+                  size={15}
                   strokeWidth={1.7}
                   className={
                     style.text
@@ -961,29 +1109,23 @@ function SafetyPanel({
 
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <div className="text-[12px] font-medium text-white/88">
-                    {
-                      warning.title
-                    }
+                  <div className="text-[14px] font-semibold text-[#151A21]">
+                    {warning.title}
                   </div>
 
                   <span
                     className={[
-                      "font-mono text-[9px] font-semibold uppercase tracking-[0.055em]",
+                      "text-[12px] font-semibold uppercase tracking-[0.04em]",
 
                       style.text,
                     ].join(" ")}
                   >
-                    {
-                      warning.severity
-                    }
+                    {warning.severity}
                   </span>
                 </div>
 
-                <p className="mt-1 text-[11px] leading-[1.55] text-white/42">
-                  {
-                    warning.message
-                  }
+                <p className="mt-1.5 text-[13px] leading-[1.6] text-[#66717E]">
+                  {warning.message}
                 </p>
               </div>
             </div>
@@ -994,41 +1136,62 @@ function SafetyPanel({
   );
 }
 
+
 /* =========================================================
-   Secondary section shell
+   Secondary Section
    ========================================================= */
+
 
 function SecondarySection({
   eyebrow,
   title,
   children,
 }: {
-  eyebrow: string;
-  title: string;
-  children: ReactNode;
+  eyebrow:
+    string;
+
+  title:
+    string;
+
+  children:
+    ReactNode;
 }) {
   return (
-    <section className="overflow-hidden rounded-[6px] border border-white/[0.08] bg-[#07090d]">
-      <div className="border-b border-white/[0.07] px-4 py-3">
-        <div className="font-mono text-[9px] font-semibold uppercase tracking-[0.1em] text-[#F6B23C]">
+    <section
+      className={[
+        "overflow-hidden",
+
+        "rounded-[8px]",
+
+        "border border-[#D7DDE4]",
+
+        "bg-white",
+
+        "shadow-[0_10px_28px_rgba(25,35,45,0.055)]",
+      ].join(" ")}
+    >
+      <div className="border-b border-[#E4E8ED] px-5 py-4">
+        <div className="text-[12px] font-semibold uppercase tracking-[0.075em] text-[#9A6B21]">
           {eyebrow}
         </div>
 
-        <h2 className="mt-1 text-[15px] font-medium tracking-[-0.01em] text-white">
+        <h2 className="mt-1.5 text-[17px] font-semibold tracking-[-0.015em] text-[#151A21]">
           {title}
         </h2>
       </div>
 
-      <div className="p-4">
+      <div className="p-5">
         {children}
       </div>
     </section>
   );
 }
 
+
 /* =========================================================
    Mission Planner
    ========================================================= */
+
 
 export function MissionPlanner() {
   const [
@@ -1057,11 +1220,15 @@ export function MissionPlanner() {
   const safetySectionRef =
     useRef<
       HTMLDivElement | null
-    >(null);
+    >(
+      null,
+    );
+
 
   /* =======================================================
-     Analysis
+     Mission Analysis
      ======================================================= */
+
 
   const analysis =
     useMemo(
@@ -1081,162 +1248,171 @@ export function MissionPlanner() {
       ],
     );
 
+
   const selectedWaypoint =
     waypoints.find(
-      (waypoint) =>
+      (
+        waypoint,
+      ) =>
         waypoint.id ===
         selectedWaypointId,
     );
 
+
   /* =======================================================
-     Metric strip
+     Metrics
      ======================================================= */
+
 
   const missionMetrics:
-    MissionMetric[] =
-      [
-        {
-          label:
-            "Waypoints",
+    MissionMetric[] = [
+      {
+        label:
+          "Waypoints",
 
-          value:
-            analysis.waypointCount,
+        value:
+          analysis.waypointCount,
 
-          helper:
-            "Mission route points",
+        helper:
+          "Mission route points",
 
-          icon:
-            MapPinned,
+        icon:
+          MapPinned,
 
-          tone:
-            analysis.waypointCount >=
-            2
-              ? "nominal"
-              : "caution",
-        },
+        tone:
+          analysis.waypointCount >=
+          2
+            ? "nominal"
+            : "caution",
+      },
 
-        {
-          label:
-            "Distance",
+      {
+        label:
+          "Distance",
 
-          value:
-            (
-              analysis.totalDistanceMeters /
-              1000
-            ).toFixed(
-              2,
-            ),
+        value:
+          (
+            analysis.totalDistanceMeters /
+            1000
+          ).toFixed(
+            2,
+          ),
 
-          unit:
-            "km",
+        unit:
+          "km",
 
-          helper:
-            "Estimated route length",
+        helper:
+          "Estimated route length",
 
-          icon:
-            Route,
+        icon:
+          Route,
 
-          tone:
-            "info",
-        },
+        tone:
+          "info",
+      },
 
-        {
-          label:
-            "Est. Time",
+      {
+        label:
+          "Est. Time",
 
-          value:
-            Math.ceil(
-              analysis.estimatedTimeSeconds /
-                60,
-            ),
+        value:
+          Math.ceil(
+            analysis.estimatedTimeSeconds /
+              60,
+          ),
 
-          unit:
-            "min",
+        unit:
+          "min",
 
-          helper:
-            "Planned mission duration",
+        helper:
+          "Planned mission duration",
 
-          icon:
-            Clock,
+        icon:
+          Clock,
 
-          tone:
-            "info",
-        },
+        tone:
+          "info",
+      },
 
-        {
-          label:
-            "Battery",
+      {
+        label:
+          "Battery",
 
-          value:
-            analysis.estimatedBatteryPercent.toFixed(
-              1,
-            ),
+        value:
+          analysis.estimatedBatteryPercent.toFixed(
+            1,
+          ),
 
-          unit:
-            "%",
+        unit:
+          "%",
 
-          helper:
-            "Estimated battery usage",
+        helper:
+          "Estimated battery usage",
 
-          icon:
-            Battery,
+        icon:
+          Battery,
 
-          tone:
-            getBatteryTone(
-              analysis.estimatedBatteryPercent,
-            ),
-        },
+        tone:
+          getBatteryTone(
+            analysis.estimatedBatteryPercent,
+          ),
+      },
 
-        {
-          label:
-            "Geofence",
+      {
+        label:
+          "Geofence",
 
-          value:
-            analysis.geofencePassed
-              ? "Clear"
-              : "Fail",
+        value:
+          analysis.geofencePassed
+            ? "Clear"
+            : "Fail",
 
-          helper:
-            "Boundary safety validation",
+        helper:
+          "Boundary safety validation",
 
-          icon:
-            Navigation,
+        icon:
+          Navigation,
 
-          tone:
-            analysis.geofencePassed
-              ? "nominal"
-              : "critical",
-        },
+        tone:
+          analysis.geofencePassed
+            ? "nominal"
+            : "critical",
+      },
 
-        {
-          label:
-            "Readiness",
+      {
+        label:
+          "Readiness",
 
-          value:
-            analysis.missionReady
-              ? "Ready"
-              : "Review",
+        value:
+          analysis.missionReady
+            ? "Ready"
+            : "Review",
 
-          helper:
-            "Mission validation state",
+        helper:
+          "Mission validation state",
 
-          icon:
-            Gauge,
+        icon:
+          Gauge,
 
-          tone:
-            analysis.missionReady
-              ? "nominal"
-              : "caution",
-        },
-      ];
+        tone:
+          analysis.missionReady
+            ? "nominal"
+            : "caution",
+      },
+    ];
+
 
   /* =======================================================
-     Waypoint operations
+     Waypoint Operations
      ======================================================= */
 
+
   function updateWaypoint(
-    waypointId: string,
-    updates: Partial<MissionWaypoint>,
+    waypointId:
+      string,
+
+    updates:
+      Partial<MissionWaypoint>,
   ) {
     setWaypoints(
       (
@@ -1257,8 +1433,10 @@ export function MissionPlanner() {
     );
   }
 
+
   function deleteWaypoint(
-    waypointId: string,
+    waypointId:
+      string,
   ) {
     setWaypoints(
       (
@@ -1300,6 +1478,7 @@ export function MissionPlanner() {
     );
   }
 
+
   function addDefaultWaypoint() {
     const lastWaypoint =
       waypoints[
@@ -1339,6 +1518,7 @@ export function MissionPlanner() {
     );
   }
 
+
   function clearMission() {
     setWaypoints(
       [],
@@ -1348,6 +1528,7 @@ export function MissionPlanner() {
       null,
     );
   }
+
 
   function reviewSafety() {
     safetySectionRef.current?.scrollIntoView(
@@ -1361,9 +1542,11 @@ export function MissionPlanner() {
     );
   }
 
+
   /* =======================================================
      Export
      ======================================================= */
+
 
   function exportMissionJson() {
     const mission = {
@@ -1387,6 +1570,7 @@ export function MissionPlanner() {
       waypoints,
     };
 
+
     const blob =
       new Blob(
         [
@@ -1402,15 +1586,18 @@ export function MissionPlanner() {
         },
       );
 
+
     const url =
       URL.createObjectURL(
         blob,
       );
 
+
     const anchor =
       document.createElement(
         "a",
       );
+
 
     anchor.href =
       url;
@@ -1420,33 +1607,34 @@ export function MissionPlanner() {
 
     anchor.click();
 
+
     URL.revokeObjectURL(
       url,
     );
   }
 
+
+  /* =======================================================
+     Render
+     ======================================================= */
+
+
   return (
-    <div className="bg-[#05060d] text-white">
+    <div className="mn-page text-[var(--foreground)]">
       {/* ===================================================
-          PRIMARY PLANNER VIEWPORT
+          Primary Planner
           =================================================== */}
 
-      <section className="xl:h-[calc(100vh-70px)] xl:overflow-hidden">
+      <section className="min-h-[calc(100vh-70px)]">
         <div
           className={[
-            "mx-auto w-full max-w-[1600px]",
+            "mx-auto w-full max-w-[1680px]",
 
-            "px-4 pb-3 pt-2",
+            "px-4 pb-6 pt-5",
 
             "sm:px-6",
 
             "lg:px-8",
-
-            "xl:grid xl:h-full",
-
-            "xl:grid-rows-[44px_64px_minmax(0,1fr)]",
-
-            "xl:gap-2",
 
             "xl:px-10",
 
@@ -1454,20 +1642,18 @@ export function MissionPlanner() {
           ].join(" ")}
         >
           {/* ===============================================
-              Compact page header
+              Page Header
               =============================================== */}
 
-          <header className="flex min-w-0 items-center justify-between border-b border-white/[0.08]">
-            <div className="flex min-w-0 items-center gap-3">
-              <div>
-                <h1 className="text-[16px] font-medium tracking-[-0.02em] text-white">
-                  Mission Planner
-                </h1>
+          <header className="flex min-w-0 items-end justify-between gap-6 border-b border-[#D7DDE4] pb-4">
+            <div className="min-w-0">
+              <h1 className="text-[26px] font-semibold tracking-[-0.03em] text-[#151A21]">
+                Mission Planner
+              </h1>
 
-                <p className="mt-0.5 hidden truncate text-[11px] text-white/42 sm:block">
-                  Route planning · waypoint configuration · mission validation
-                </p>
-              </div>
+              <p className="mt-1.5 text-[14px] leading-[1.5] text-[#687482]">
+                Route planning · waypoint configuration · mission validation
+              </p>
             </div>
 
             <MissionStatus
@@ -1477,23 +1663,28 @@ export function MissionPlanner() {
             />
           </header>
 
+
           {/* ===============================================
-              Mission metric strip
+              Metric Strip
               =============================================== */}
 
           <section
             className={[
-              "my-2 grid overflow-hidden",
+              "mt-4 grid overflow-hidden",
 
-              "rounded-[6px] border border-white/[0.08]",
+              "rounded-[8px]",
 
-              "bg-[#07090d]",
+              "border border-[#D7DDE4]",
+
+              "bg-white",
+
+              "shadow-[0_8px_24px_rgba(25,35,45,0.055)]",
 
               "grid-cols-2",
 
               "md:grid-cols-3",
 
-              "xl:my-0 xl:grid-cols-6",
+              "xl:grid-cols-6",
             ].join(" ")}
           >
             {missionMetrics.map(
@@ -1512,44 +1703,49 @@ export function MissionPlanner() {
             )}
           </section>
 
+
           {/* ===============================================
-              Planner workspace
+              Planner Workspace
               =============================================== */}
 
           <section
             className={[
-              "mt-3 grid min-h-[700px] overflow-hidden",
+              "mt-4 grid min-h-[760px] overflow-hidden",
 
-              "rounded-[6px] border border-white/[0.09]",
+              "rounded-[8px]",
 
-              "bg-[#020304]",
+              "border border-[#D7DDE4]",
 
-              "xl:mt-0 xl:min-h-0",
+              "bg-white",
 
-              "xl:grid-cols-[minmax(0,1fr)_390px]",
+              "shadow-[0_12px_32px_rgba(25,35,45,0.065)]",
 
-              "2xl:grid-cols-[minmax(0,1fr)_410px]",
+              "xl:h-[760px]",
+
+              "xl:grid-cols-[minmax(0,1fr)_430px]",
+
+              "2xl:grid-cols-[minmax(0,1fr)_450px]",
             ].join(" ")}
           >
             {/* =============================================
-                MAP
+                Map
                 ============================================= */}
 
-            <div className="grid min-h-0 grid-rows-[38px_minmax(0,1fr)]">
-              <div className="flex min-w-0 items-center justify-between border-b border-white/[0.08] bg-[#06080b] px-3">
-                <div className="flex min-w-0 items-center gap-2">
+            <div className="grid min-h-0 grid-rows-[52px_minmax(0,1fr)]">
+              <div className="flex min-w-0 items-center justify-between border-b border-[#E0E5EA] bg-white px-4">
+                <div className="flex min-w-0 items-center gap-2.5">
                   <Navigation
-                    size={13}
-                    strokeWidth={1.6}
-                    className="shrink-0 text-[#5AA9FF]"
+                    size={16}
+                    strokeWidth={1.7}
+                    className="shrink-0 text-[#316F9F]"
                   />
 
-                  <span className="truncate text-[12px] font-medium text-white/86">
+                  <span className="truncate text-[15px] font-semibold text-[#151A21]">
                     Route Planning Map
                   </span>
                 </div>
 
-                <span className="hidden font-mono text-[9px] uppercase tracking-[0.055em] text-white/36 md:block">
+                <span className="hidden text-[12px] font-medium text-[#7A8590] md:block">
                   Click map to add · drag to reposition
                 </span>
               </div>
@@ -1572,35 +1768,34 @@ export function MissionPlanner() {
               </div>
             </div>
 
+
             {/* =============================================
-                RIGHT MISSION INSPECTOR
+                Mission Inspector
                 ============================================= */}
 
             <aside
               className={[
                 "grid min-h-0",
 
-                "border-t border-white/[0.08]",
+                "border-t border-[#D7DDE4]",
 
-                "bg-[#07090d]",
+                "bg-[#F8F9FB]",
 
                 "xl:border-l xl:border-t-0",
 
-                "xl:grid-rows-[52px_minmax(135px,1fr)_226px_46px]",
+                "xl:grid-rows-[64px_250px_minmax(0,1fr)_58px]",
               ].join(" ")}
             >
-              {/* Mission route summary */}
+              {/* Mission Summary */}
 
-              <div className="flex items-center justify-between gap-3 border-b border-white/[0.08] px-3">
+              <div className="flex items-center justify-between gap-4 border-b border-[#DCE2E8] px-4">
                 <div className="min-w-0">
-                  <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.08em] text-[#F6B23C]">
+                  <div className="text-[14px] font-semibold text-[#8D6427]">
                     Mission Route
                   </div>
 
-                  <div className="mt-0.5 truncate font-mono text-[9px] text-white/36">
-                    {
-                      analysis.waypointCount
-                    }{" "}
+                  <div className="mt-1 truncate font-mono text-[12px] text-[#6E7986]">
+                    {analysis.waypointCount}{" "}
                     WP ·{" "}
                     {formatDistance(
                       analysis.totalDistanceMeters,
@@ -1614,11 +1809,13 @@ export function MissionPlanner() {
 
                 <span
                   className={[
-                    "shrink-0 font-mono text-[9px] font-semibold uppercase tracking-[0.055em]",
+                    "shrink-0 rounded-full px-2.5 py-1",
+
+                    "text-[12px] font-semibold uppercase tracking-[0.04em]",
 
                     analysis.missionReady
-                      ? "text-[#59D99A]"
-                      : "text-[#F6B23C]",
+                      ? "bg-[rgba(51,125,92,0.08)] text-[#337D5C]"
+                      : "bg-[rgba(169,115,36,0.08)] text-[#A97324]",
                   ].join(" ")}
                 >
                   {analysis.missionReady
@@ -1627,28 +1824,27 @@ export function MissionPlanner() {
                 </span>
               </div>
 
-              {/* Waypoint stack */}
 
-              <div className="grid min-h-0 grid-rows-[38px_minmax(0,1fr)] border-b border-white/[0.08]">
-                <div className="flex items-center justify-between px-3">
+              {/* Waypoint Stack */}
+
+              <div className="grid min-h-0 grid-rows-[54px_minmax(0,1fr)] border-b border-[#DCE2E8]">
+                <div className="flex items-center justify-between px-4">
                   <div>
-                    <div className="text-[12px] font-medium text-white/82">
+                    <div className="text-[15px] font-semibold text-[#151A21]">
                       Waypoint Stack
                     </div>
 
-                    <div className="font-mono text-[9px] text-white/32">
+                    <div className="mt-0.5 text-[12px] text-[#78838F]">
                       Mission route sequence
                     </div>
                   </div>
 
-                  <span className="font-mono text-[10px] font-semibold text-[#5AA9FF]">
-                    {
-                      waypoints.length
-                    }
+                  <span className="flex h-7 min-w-7 items-center justify-center rounded-[6px] bg-[rgba(49,111,159,0.08)] px-2 font-mono text-[13px] font-semibold text-[#316F9F]">
+                    {waypoints.length}
                   </span>
                 </div>
 
-                <div className="min-h-0 overflow-y-auto px-2.5 pb-2.5">
+                <div className="min-h-0 overflow-y-auto px-3 pb-3">
                   <WaypointStack
                     waypoints={
                       waypoints
@@ -1663,21 +1859,22 @@ export function MissionPlanner() {
                 </div>
               </div>
 
-              {/* Selected waypoint */}
 
-              <div className="min-h-0 overflow-y-auto border-b border-white/[0.08] px-3 py-2.5">
-                <div className="mb-2 flex items-center justify-between gap-2">
+              {/* Waypoint Editor */}
+
+              <div className="min-h-0 overflow-y-auto border-b border-[#DCE2E8] px-4 py-3.5">
+                <div className="mb-3 flex items-center justify-between gap-3">
                   <div>
-                    <div className="text-[12px] font-medium text-white/82">
+                    <div className="text-[15px] font-semibold text-[#151A21]">
                       Selected Waypoint
                     </div>
 
-                    <div className="font-mono text-[9px] text-white/32">
+                    <div className="mt-0.5 text-[12px] text-[#78838F]">
                       Position · flight · action
                     </div>
                   </div>
 
-                  <span className="max-w-[120px] truncate font-mono text-[10px] font-semibold text-[#F6B23C]">
+                  <span className="max-w-[140px] truncate rounded-[5px] bg-[#FFF5E5] px-2 py-1 font-mono text-[13px] font-semibold text-[#8D6427]">
                     {selectedWaypoint?.name ??
                       "None"}
                   </span>
@@ -1696,34 +1893,37 @@ export function MissionPlanner() {
                 />
               </div>
 
-              {/* Important actions */}
 
-              <div className="grid grid-cols-2 gap-2 p-2">
+              {/* Actions */}
+
+              <div className="grid grid-cols-2 gap-2.5 bg-white p-2.5">
                 <button
                   type="button"
                   onClick={
                     addDefaultWaypoint
                   }
                   className={[
-                    "flex h-[30px] items-center justify-center gap-1.5",
+                    "flex h-[38px] items-center justify-center gap-2",
 
-                    "rounded-[4px] border",
+                    "rounded-[6px] border",
 
-                    "border-[rgba(90,169,255,0.24)]",
+                    "border-[rgba(49,111,159,0.27)]",
 
-                    "bg-[rgba(90,169,255,0.045)]",
+                    "bg-[rgba(49,111,159,0.065)]",
 
-                    "font-mono text-[9px] font-semibold uppercase tracking-[0.055em]",
+                    "text-[13px] font-semibold",
 
-                    "text-[#5AA9FF]",
+                    "text-[#316F9F]",
 
-                    "transition-colors",
+                    "transition-[background-color,border-color]",
 
-                    "hover:bg-[rgba(90,169,255,0.08)]",
+                    "hover:border-[rgba(49,111,159,0.38)]",
+
+                    "hover:bg-[rgba(49,111,159,0.10)]",
                   ].join(" ")}
                 >
                   <Plus
-                    size={12}
+                    size={15}
                     strokeWidth={1.7}
                   />
 
@@ -1736,19 +1936,21 @@ export function MissionPlanner() {
                     reviewSafety
                   }
                   className={[
-                    "flex h-[30px] items-center justify-center gap-1.5",
+                    "flex h-[38px] items-center justify-center gap-2",
 
-                    "rounded-[4px] border",
+                    "rounded-[6px] border",
+
+                    "text-[13px] font-semibold",
+
+                    "transition-[background-color,border-color]",
 
                     analysis.missionReady
-                      ? "border-[rgba(89,217,154,0.24)] bg-[rgba(89,217,154,0.045)] text-[#59D99A]"
-                      : "border-[rgba(246,178,60,0.25)] bg-[rgba(246,178,60,0.045)] text-[#F6B23C]",
-
-                    "font-mono text-[9px] font-semibold uppercase tracking-[0.055em]",
+                      ? "border-[rgba(51,125,92,0.26)] bg-[rgba(51,125,92,0.065)] text-[#337D5C] hover:bg-[rgba(51,125,92,0.10)]"
+                      : "border-[rgba(169,115,36,0.28)] bg-[rgba(169,115,36,0.065)] text-[#A97324] hover:bg-[rgba(169,115,36,0.10)]",
                   ].join(" ")}
                 >
                   <ShieldCheck
-                    size={12}
+                    size={15}
                     strokeWidth={1.7}
                   />
 
@@ -1760,17 +1962,34 @@ export function MissionPlanner() {
         </div>
       </section>
 
+
       {/* ===================================================
-          SECONDARY FEATURES
+          Secondary Features
           =================================================== */}
 
       <section
         ref={
           safetySectionRef
         }
-        className="border-t border-white/[0.08] bg-[#05060d]"
+        className="border-t border-[#D7DDE4] bg-[#EDF0F3]"
       >
-        <div className="mx-auto grid w-full max-w-[1600px] gap-4 px-4 py-5 sm:px-6 lg:px-8 xl:grid-cols-[1.35fr_0.65fr] xl:px-10 2xl:px-14">
+        <div
+          className={[
+            "mx-auto grid w-full max-w-[1680px] gap-5",
+
+            "px-4 py-7",
+
+            "sm:px-6",
+
+            "lg:px-8",
+
+            "xl:grid-cols-[1.35fr_0.65fr]",
+
+            "xl:px-10",
+
+            "2xl:px-14",
+          ].join(" ")}
+        >
           {/* Safety */}
 
           <SecondarySection
@@ -1784,7 +2003,8 @@ export function MissionPlanner() {
             />
           </SecondarySection>
 
-          {/* Mission file */}
+
+          {/* Mission File */}
 
           <SecondarySection
             eyebrow="Mission File"
@@ -1793,41 +2013,42 @@ export function MissionPlanner() {
             <div className="grid gap-4">
               {/* Summary */}
 
-              <div className="grid grid-cols-3 overflow-hidden rounded-[5px] border border-white/[0.07] bg-[#030405]">
-                <div className="border-r border-white/[0.07] px-3 py-2.5">
-                  <div className="font-mono text-[9px] uppercase tracking-[0.06em] text-white/34">
+              <div className="grid grid-cols-3 overflow-hidden rounded-[7px] border border-[#DDE2E8] bg-[#F7F9FA]">
+                <div className="border-r border-[#E0E5EA] px-3 py-3">
+                  <div className="text-[12px] font-medium uppercase tracking-[0.04em] text-[#737E8B]">
                     Distance
                   </div>
 
-                  <div className="mt-1 font-mono text-[11px] font-semibold text-white/72">
+                  <div className="mt-1.5 font-mono text-[14px] font-semibold text-[#26303A]">
                     {formatDistance(
                       analysis.totalDistanceMeters,
                     )}
                   </div>
                 </div>
 
-                <div className="border-r border-white/[0.07] px-3 py-2.5">
-                  <div className="font-mono text-[9px] uppercase tracking-[0.06em] text-white/34">
+                <div className="border-r border-[#E0E5EA] px-3 py-3">
+                  <div className="text-[12px] font-medium uppercase tracking-[0.04em] text-[#737E8B]">
                     Time
                   </div>
 
-                  <div className="mt-1 font-mono text-[11px] font-semibold text-white/72">
+                  <div className="mt-1.5 font-mono text-[14px] font-semibold text-[#26303A]">
                     {formatTime(
                       analysis.estimatedTimeSeconds,
                     )}
                   </div>
                 </div>
 
-                <div className="px-3 py-2.5">
-                  <div className="font-mono text-[9px] uppercase tracking-[0.06em] text-white/34">
+                <div className="px-3 py-3">
+                  <div className="text-[12px] font-medium uppercase tracking-[0.04em] text-[#737E8B]">
                     Format
                   </div>
 
-                  <div className="mt-1 font-mono text-[11px] font-semibold text-white/72">
+                  <div className="mt-1.5 font-mono text-[14px] font-semibold text-[#26303A]">
                     JSON
                   </div>
                 </div>
               </div>
+
 
               {/* Export */}
 
@@ -1837,28 +2058,35 @@ export function MissionPlanner() {
                   exportMissionJson
                 }
                 className={[
-                  "flex h-[38px] items-center justify-center gap-2",
+                  "flex h-[42px] items-center justify-center gap-2",
 
-                  "rounded-[5px]",
+                  "rounded-[6px]",
 
-                  "bg-[#F6B23C]",
+                  "border border-[#A87B31]",
 
-                  "font-mono text-[10px] font-semibold uppercase tracking-[0.065em]",
+                  "bg-[#B78939]",
 
-                  "text-black",
+                  "text-[13px] font-semibold",
 
-                  "transition-opacity",
+                  "text-white",
 
-                  "hover:opacity-90",
+                  "shadow-[0_4px_12px_rgba(120,85,30,0.14)]",
+
+                  "transition-[background-color,transform]",
+
+                  "hover:bg-[#A97C32]",
+
+                  "active:translate-y-px",
                 ].join(" ")}
               >
                 <Download
-                  size={13}
+                  size={15}
                   strokeWidth={1.8}
                 />
 
                 Export Mission JSON
               </button>
+
 
               {/* Clear */}
 
@@ -1868,52 +2096,55 @@ export function MissionPlanner() {
                   clearMission
                 }
                 className={[
-                  "flex h-[36px] items-center justify-center gap-2",
+                  "flex h-[40px] items-center justify-center gap-2",
 
-                  "rounded-[5px] border",
+                  "rounded-[6px] border",
 
-                  "border-[rgba(255,90,99,0.24)]",
+                  "border-[rgba(189,79,89,0.26)]",
 
-                  "bg-[rgba(255,90,99,0.04)]",
+                  "bg-[rgba(189,79,89,0.055)]",
 
-                  "font-mono text-[10px] font-semibold uppercase tracking-[0.065em]",
+                  "text-[13px] font-semibold",
 
-                  "text-[#FF5A63]",
+                  "text-[#BD4F59]",
 
                   "transition-colors",
 
-                  "hover:bg-[rgba(255,90,99,0.08)]",
+                  "hover:bg-[rgba(189,79,89,0.10)]",
                 ].join(" ")}
               >
                 <Trash2
-                  size={13}
+                  size={15}
                   strokeWidth={1.7}
                 />
 
                 Clear Mission
               </button>
 
-              <div className="border-t border-white/[0.07] pt-3">
-                <div className="flex items-center justify-between gap-3 text-[11px]">
-                  <span className="text-white/38">
+
+              {/* Detail State */}
+
+              <div className="border-t border-[#E0E5EA] pt-4">
+                <div className="flex items-center justify-between gap-3 text-[13px]">
+                  <span className="text-[#6E7986]">
                     Route Mode
                   </span>
 
-                  <span className="font-mono text-white/68">
+                  <span className="font-mono font-semibold text-[#343D48]">
                     Manual
                   </span>
                 </div>
 
-                <div className="mt-2 flex items-center justify-between gap-3 text-[11px]">
-                  <span className="text-white/38">
+                <div className="mt-3 flex items-center justify-between gap-3 text-[13px]">
+                  <span className="text-[#6E7986]">
                     Safety Engine
                   </span>
 
                   <span
                     className={
                       analysis.missionReady
-                        ? "font-mono text-[#59D99A]"
-                        : "font-mono text-[#F6B23C]"
+                        ? "font-mono font-semibold text-[#337D5C]"
+                        : "font-mono font-semibold text-[#A97324]"
                     }
                   >
                     {analysis.missionReady
