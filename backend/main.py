@@ -10,7 +10,9 @@ from fastapi.middleware.cors import (
     CORSMiddleware,
 )
 
-from pydantic import BaseModel
+from pydantic import (
+    BaseModel,
+)
 
 from alert_system import (
     create_alert_contact,
@@ -58,13 +60,18 @@ from telemetry_hub import (
     ingest_telemetry,
 )
 
-from missionnexus.sim_vehicle_source import (
-    sim_vehicle_source,
-)
-
 from missionnexus.vehicle_router import (
     router as missionnexus_vehicle_router,
     websocket_router as missionnexus_vehicle_websocket_router,
+)
+
+from missionnexus.devices.device_manager import (
+    device_manager,
+)
+
+from missionnexus.devices.device_router import (
+    router as missionnexus_device_router,
+    websocket_router as missionnexus_device_websocket_router,
 )
 
 
@@ -74,7 +81,7 @@ from missionnexus.vehicle_router import (
 
 app = FastAPI(
     title="AeroNexus Backend",
-    version="3.1.0",
+    version="3.2.0",
 )
 
 
@@ -84,10 +91,16 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "*"
+    ],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=[
+        "*"
+    ],
+    allow_headers=[
+        "*"
+    ],
 )
 
 
@@ -109,7 +122,7 @@ app.include_router(
 
 
 # ============================================================
-# MissionNexus Vehicle Core Routers
+# MissionNexus Vehicle Core
 # ============================================================
 
 app.include_router(
@@ -122,25 +135,44 @@ app.include_router(
 
 
 # ============================================================
-# MAVLink Adapter
+# MissionNexus Hardware Integration
 # ============================================================
 
-mavlink = MavlinkAdapter()
+app.include_router(
+    missionnexus_device_router
+)
+
+app.include_router(
+    missionnexus_device_websocket_router
+)
+
+
+# ============================================================
+# Existing MAVLink Adapter
+# ============================================================
+
+mavlink = (
+    MavlinkAdapter()
+)
 
 
 # ============================================================
 # Request Models
 # ============================================================
 
-class CommandRequest(BaseModel):
+class CommandRequest(
+    BaseModel
+):
     command: str
 
 
 # ============================================================
-# Startup / Shutdown
+# Existing AeroNexus Startup
 # ============================================================
 
-@app.on_event("startup")
+@app.on_event(
+    "startup"
+)
 def startup():
     """
     Existing AeroNexus services.
@@ -159,59 +191,111 @@ def startup():
     )
 
 
-@app.on_event("startup")
-async def startup_missionnexus_vehicle_core():
+# ============================================================
+# MissionNexus Hardware Startup
+# ============================================================
+
+@app.on_event(
+    "startup"
+)
+async def startup_missionnexus_hardware():
     """
-    Start MissionNexus Vehicle Core.
+    Start the MissionNexus Hardware Integration layer.
 
-    MN-001-SIM is currently a development-only telemetry source.
+    The Device Manager currently auto-connects MN-001-SIM
+    through SimulatorDeviceAdapter.
 
-    Later this source will be replaceable by:
-        - ArduPilot SITL
-        - MAVLink hardware
-        - Real MN-001 vehicle
+    Later the same manager will support:
+
+        MAVLink Serial
+        MAVLink UDP
+        MAVLink TCP
+        Companion Computer
+        Payload / Sensor adapters
     """
 
-    await sim_vehicle_source.start()
+    await (
+        device_manager.startup()
+    )
 
     insert_event(
         now_time(),
         "MISSIONNEXUS",
-        "MissionNexus Vehicle Core started with MN-001-SIM",
+        (
+            "MissionNexus Hardware Integration started "
+            "with MN-001-SIM"
+        ),
     )
 
 
-@app.on_event("shutdown")
-async def shutdown_missionnexus_vehicle_core():
+# ============================================================
+# MissionNexus Hardware Shutdown
+# ============================================================
+
+@app.on_event(
+    "shutdown"
+)
+async def shutdown_missionnexus_hardware():
     """
-    Cleanly stop MissionNexus development telemetry source.
+    Cleanly stop connected MissionNexus device adapters.
     """
 
-    await sim_vehicle_source.stop()
+    await (
+        device_manager.shutdown()
+    )
 
 
 # ============================================================
 # Root
 # ============================================================
 
-@app.get("/")
+@app.get(
+    "/"
+)
 def root():
     return {
-        "name": "AeroNexus Backend",
-        "status": "running",
-        "mode": "simulator",
-        "version": "3.1.0",
+        "name":
+            "AeroNexus Backend",
+
+        "status":
+            "running",
+
+        "mode":
+            "hardware-integration",
+
+        "version":
+            "3.2.0",
 
         "services": {
-            "camera_ai": "enabled",
-            "camera_video_annotator": "enabled",
-            "logs_python_analytics": "enabled",
-            "telemetry": "enabled",
-            "alerts": "enabled",
-            "mavlink": "simulated",
+            "camera_ai":
+                "enabled",
 
-            "missionnexus_vehicle_core": "enabled",
-            "missionnexus_vehicle_source": "MN-001-SIM",
+            "camera_video_annotator":
+                "enabled",
+
+            "logs_python_analytics":
+                "enabled",
+
+            "telemetry":
+                "enabled",
+
+            "alerts":
+                "enabled",
+
+            "legacy_mavlink":
+                "simulated",
+
+            "missionnexus_vehicle_core":
+                "enabled",
+
+            "missionnexus_hardware_integration":
+                "enabled",
+
+            "missionnexus_default_device":
+                "MN-001-SIM-ADAPTER",
+
+            "missionnexus_vehicle_source":
+                "MN-001-SIM",
         },
     }
 
@@ -220,25 +304,40 @@ def root():
 # Existing Simulator API
 # ============================================================
 
-@app.get("/api/state")
+@app.get(
+    "/api/state"
+)
 def get_state():
-    return simulator_state
-
-
-@app.get("/api/events")
-def events():
-    return get_events()
-
-
-@app.post("/api/command")
-def command(
-    request: CommandRequest,
-):
-    result = run_command(
-        request.command
+    return (
+        simulator_state
     )
 
-    event_time = now_time()
+
+@app.get(
+    "/api/events"
+)
+def events():
+    return (
+        get_events()
+    )
+
+
+@app.post(
+    "/api/command"
+)
+def command(
+    request:
+        CommandRequest,
+):
+    result = (
+        run_command(
+            request.command
+        )
+    )
+
+    event_time = (
+        now_time()
+    )
 
     insert_command(
         event_time,
@@ -249,23 +348,35 @@ def command(
     insert_event(
         event_time,
         "COMMAND",
-        f"{request.command}: {result}",
+        (
+            f"{request.command}: "
+            f"{result}"
+        ),
     )
 
     return {
-        "command": request.command,
-        "result": result,
-        "state": simulator_state,
+        "command":
+            request.command,
+
+        "result":
+            result,
+
+        "state":
+            simulator_state,
     }
 
 
 # ============================================================
-# MAVLink
+# Legacy MAVLink API
 # ============================================================
 
-@app.get("/api/mavlink/status")
+@app.get(
+    "/api/mavlink/status"
+)
 def mavlink_status():
-    return mavlink.connect()
+    return (
+        mavlink.connect()
+    )
 
 
 # ============================================================
@@ -276,11 +387,14 @@ def mavlink_status():
     "/api/telemetry/esp32"
 )
 async def receive_esp32_wifi_telemetry(
-    payload: dict,
+    payload:
+        dict,
 ):
-    telemetry = ingest_telemetry(
-        payload,
-        "esp32_wifi",
+    telemetry = (
+        ingest_telemetry(
+            payload,
+            "esp32_wifi",
+        )
     )
 
     insert_event(
@@ -293,9 +407,14 @@ async def receive_esp32_wifi_telemetry(
     )
 
     return {
-        "ok": True,
-        "message": "ESP32 Wi-Fi telemetry received",
-        "telemetry": telemetry,
+        "ok":
+            True,
+
+        "message":
+            "ESP32 Wi-Fi telemetry received",
+
+        "telemetry":
+            telemetry,
     }
 
 
@@ -307,11 +426,14 @@ async def receive_esp32_wifi_telemetry(
     "/api/telemetry/ml"
 )
 async def receive_camera_ml_telemetry(
-    payload: dict,
+    payload:
+        dict,
 ):
-    telemetry = ingest_telemetry(
-        payload,
-        "camera_ml",
+    telemetry = (
+        ingest_telemetry(
+            payload,
+            "camera_ml",
+        )
     )
 
     insert_event(
@@ -324,9 +446,14 @@ async def receive_camera_ml_telemetry(
     )
 
     return {
-        "ok": True,
-        "message": "Camera ML telemetry received",
-        "telemetry": telemetry,
+        "ok":
+            True,
+
+        "message":
+            "Camera ML telemetry received",
+
+        "telemetry":
+            telemetry,
     }
 
 
@@ -338,7 +465,9 @@ async def receive_camera_ml_telemetry(
     "/api/telemetry/current"
 )
 async def current_unified_telemetry():
-    return get_latest_telemetry()
+    return (
+        get_latest_telemetry()
+    )
 
 
 @app.get(
@@ -346,7 +475,8 @@ async def current_unified_telemetry():
 )
 async def telemetry_sources():
     return {
-        "sources": get_source_statuses(),
+        "sources":
+            get_source_statuses(),
     }
 
 
@@ -359,7 +489,8 @@ async def telemetry_sources():
 )
 def alert_contacts():
     return {
-        "contacts": get_alert_contacts(),
+        "contacts":
+            get_alert_contacts(),
     }
 
 
@@ -367,7 +498,8 @@ def alert_contacts():
     "/api/alerts/contacts"
 )
 def add_alert_contact(
-    payload: dict,
+    payload:
+        dict,
 ):
     try:
         contact = (
@@ -386,14 +518,22 @@ def add_alert_contact(
         )
 
         return {
-            "ok": True,
-            "contact": contact,
+            "ok":
+                True,
+
+            "contact":
+                contact,
         }
 
     except ValueError as error:
         return {
-            "ok": False,
-            "error": str(error),
+            "ok":
+                False,
+
+            "error":
+                str(
+                    error
+                ),
         }
 
 
@@ -406,7 +546,8 @@ def add_alert_contact(
 )
 def emergency_alerts():
     return {
-        "alerts": get_alerts(),
+        "alerts":
+            get_alerts(),
     }
 
 
@@ -414,7 +555,8 @@ def emergency_alerts():
     "/api/alerts/send"
 )
 def send_emergency_alert(
-    payload: dict,
+    payload:
+        dict,
 ):
     try:
         result = (
@@ -434,14 +576,22 @@ def send_emergency_alert(
         )
 
         return {
-            "ok": True,
-            "result": result,
+            "ok":
+                True,
+
+            "result":
+                result,
         }
 
     except ValueError as error:
         return {
-            "ok": False,
-            "error": str(error),
+            "ok":
+                False,
+
+            "error":
+                str(
+                    error
+                ),
         }
 
 
@@ -449,7 +599,8 @@ def send_emergency_alert(
     "/api/alerts/{alert_id}/deliveries"
 )
 def emergency_alert_deliveries(
-    alert_id: int,
+    alert_id:
+        int,
 ):
     return {
         "deliveries":
@@ -467,9 +618,12 @@ def emergency_alert_deliveries(
     "/ws/telemetry"
 )
 async def telemetry_socket(
-    websocket: WebSocket,
+    websocket:
+        WebSocket,
 ):
-    await websocket.accept()
+    await (
+        websocket.accept()
+    )
 
     try:
         while True:
@@ -477,8 +631,10 @@ async def telemetry_socket(
                 update_simulator()
             )
 
-            await websocket.send_json(
-                state
+            await (
+                websocket.send_json(
+                    state
+                )
             )
 
             await asyncio.sleep(
@@ -489,5 +645,8 @@ async def telemetry_socket(
         insert_event(
             now_time(),
             "WEBSOCKET",
-            "Telemetry websocket disconnected",
+            (
+                "Telemetry websocket "
+                "disconnected"
+            ),
         )
