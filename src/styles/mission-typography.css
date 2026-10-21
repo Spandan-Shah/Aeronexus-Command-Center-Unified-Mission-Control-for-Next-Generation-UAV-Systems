@@ -1,0 +1,484 @@
+/* =========================================================
+   AERONEXUS / MISSIONNEXUS
+   GLOBAL OPERATIONAL TYPOGRAPHY SYSTEM
+
+   Reference readability:
+   "Fire with smoke becomes critical. Person with smoke
+   becomes rescue priority. Person-only detection stays
+   medium until another hazard is confirmed."
+
+   That explanatory/body level = 14px.
+
+   SCALE
+   ---------------------------------------------------------
+   Page title                    27–30px
+   Section title                 18px
+   Card / module title           15–16px
+   Important values              17–22px
+   Body / explanation            14px
+   Standard controls / labels    13px
+   Uppercase metadata            12px
+   Technical micro metadata      11px absolute minimum
+   ========================================================= */
+
+
+/* =========================================================
+   GLOBAL BASE
+   Only application BODY is affected.
+
+   Header and footer are outside .mn-workspace and therefore
+   remain untouched.
+   ========================================================= */
+
+.mn-workspace {
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+
+/* =========================================================
+   PAGE TITLES
+   ========================================================= */
+
+.mn-workspace h1 {
+  font-size: 28px;
+  line-height: 1.15;
+  font-weight: 650;
+  letter-spacing: -0.035em;
+}
+
+
+/* =========================================================
+   SECTION TITLES
+   ========================================================= */
+
+.mn-workspace h2 {
+  font-size: 18px;
+  line-height: 1.3;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+
+/* =========================================================
+   CARD / MODULE TITLES
+   ========================================================= */
+
+.mn-workspace h3 {
+  font-size: 16px;
+  line-height: 1.4;
+  font-weight: 620;
+}
+
+
+/* =========================================================
+   BODY / EXPLANATORY TEXT
+
+   This is the size of the reference sentence you gave.
+   ========================================================= */
+
+.mn-workspace p {
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+
+/* =========================================================
+   LEGACY 8PX TEXT
+   ========================================================= */
+
+.mn-workspace [class*="text-[8px]"] {
+  font-size: 11px !important;
+  line-height: 1.45 !important;
+}
+
+
+/* =========================================================
+   LEGACY 9PX TEXT
+   ========================================================= */
+
+.mn-workspace [class*="text-[9px]"] {
+  font-size: 11px !important;
+  line-height: 1.45 !important;
+}
+
+
+/* =========================================================
+   LEGACY 10PX TEXT
+
+   Old HUD labels were far too small.
+   ========================================================= */
+
+.mn-workspace [class*="text-[10px]"] {
+  font-size: 12px !important;
+  line-height: 1.5 !important;
+}
+
+
+/* =========================================================
+   LEGACY 11PX TEXT
+   ========================================================= */
+
+.mn-workspace [class*="text-[11px]"] {
+  font-size: 12.5px !important;
+  line-height: 1.5 !important;
+}
+
+
+/* =========================================================
+   LEGACY 12PX TEXT
+
+   Most old MissionNexus pages used 12px for normal content.
+   That now becomes proper 13px operational text.
+   ========================================================= */
+
+.mn-workspace [class*="text-[12px]"] {
+  font-size: 13px !important;
+  line-height: 1.55 !important;
+}
+
+
+/* =========================================================
+   LEGACY 13PX TEXT
+
+   Explanatory text becomes the desired 14px reference size.
+   ========================================================= */
+
+.mn-workspace [class*="text-[13px]"] {
+  font-size: 14px !important;
+  line-height: 1.6 !important;
+}
+
+
+/* =========================================================
+   TAILWIND TEXT-XS
+
+   Tailwind text-xs is normally 12px.
+   MissionNexus should not use 12px as regular body text.
+   ========================================================= */
+
+.mn-workspace .text-xs {
+  font-size: 13px !important;
+  line-height: 1.55 !important;
+}
+
+
+/* =========================================================
+   TAILWIND TEXT-SM
+   ========================================================= */
+
+.mn-workspace .text-sm {
+  font-size: 14px !important;
+  line-height: 1.6 !important;
+}
+
+
+/* =========================================================
+   PAGE DESCRIPTION TEXT
+   ========================================================= */
+
+.mn-workspace .mn-page-subtitle {
+  font-size: 14px !important;
+  line-height: 1.65 !important;
+}
+
+
+/* =========================================================
+   STANDARD LABELS
+   ========================================================= */
+
+.mn-workspace .mn-label {
+  font-size: 13px !important;
+  line-height: 1.5 !important;
+}
+
+
+/* =========================================================
+   METADATA
+
+   Keep metadata slightly smaller, but never microscopic.
+   ========================================================= */
+
+.mn-workspace .mn-meta {
+  font-size: 12px !important;
+  line-height: 1.5 !important;
+}
+
+
+/* =========================================================
+   EYEBROWS
+
+   Examples:
+   SYSTEMS
+   VISUAL OPERATIONS · AI INTELLIGENCE
+   COMMAND INTEGRITY
+   SERVICE PLANNING
+   ========================================================= */
+
+.mn-workspace .mn-eyebrow {
+  font-size: 12px !important;
+  line-height: 1.45 !important;
+}
+
+
+/* =========================================================
+   BUTTONS
+
+   Buttons must be readable from normal workstation distance.
+   ========================================================= */
+
+.mn-workspace button {
+  font-size: max(13px, 0.8125rem);
+}
+
+
+/* =========================================================
+   FORM CONTROLS
+   ========================================================= */
+
+.mn-workspace input,
+.mn-workspace select,
+.mn-workspace textarea {
+  font-size: 14px !important;
+  line-height: 1.5;
+}
+
+
+.mn-workspace option {
+  font-size: 14px;
+}
+
+
+/* =========================================================
+   TABLES
+   ========================================================= */
+
+.mn-workspace table th {
+  font-size: 12px !important;
+  line-height: 1.5 !important;
+}
+
+
+.mn-workspace table td {
+  font-size: 13px !important;
+  line-height: 1.55 !important;
+}
+
+
+/* =========================================================
+   MONOSPACED TELEMETRY
+
+   Keep technical look without making it unreadable.
+   ========================================================= */
+
+.mn-workspace .font-mono {
+  line-height: 1.45;
+}
+
+
+/* =========================================================
+   IMPORTANT METRIC VALUES
+   ========================================================= */
+
+.mn-workspace .text-metric {
+  line-height: 1.15;
+}
+
+
+/* =========================================================
+   OLD text-[14px]
+
+   These are already correct.
+   Only normalize line-height.
+   ========================================================= */
+
+.mn-workspace [class*="text-[14px]"] {
+  line-height: 1.6;
+}
+
+
+/* =========================================================
+   CARD DESCRIPTION TEXT
+   ========================================================= */
+
+.mn-workspace article p,
+.mn-workspace section p {
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+
+/* =========================================================
+   BADGES / PILLS
+
+   Allow compact labels but never smaller than 12px if they
+   originally used old 10/11px typography.
+   ========================================================= */
+
+.mn-workspace [class*="uppercase"][class*="text-[10px]"] {
+  font-size: 12px !important;
+  line-height: 1.4 !important;
+}
+
+
+.mn-workspace [class*="uppercase"][class*="text-[11px]"] {
+  font-size: 12px !important;
+  line-height: 1.4 !important;
+}
+
+
+/* =========================================================
+   TIGHT LINE HEIGHT MIGRATION
+   ========================================================= */
+
+.mn-workspace [class*="leading-[1.2]"] {
+  line-height: 1.4 !important;
+}
+
+
+.mn-workspace [class*="leading-[1.3]"] {
+  line-height: 1.45 !important;
+}
+
+
+.mn-workspace [class*="leading-[1.4]"] {
+  line-height: 1.5 !important;
+}
+
+
+.mn-workspace [class*="leading-[1.5]"] {
+  line-height: 1.6 !important;
+}
+
+
+/* =========================================================
+   DROPDOWN / SELECT MENU
+   ========================================================= */
+
+.mn-workspace select {
+  min-height: 40px;
+}
+
+
+/* =========================================================
+   READABILITY CLASSES
+
+   These can be used in new components going forward.
+   ========================================================= */
+
+.mn-operational-body {
+  font-size: 14px !important;
+  line-height: 1.65 !important;
+  color: var(--muted);
+}
+
+
+.mn-operational-label {
+  font-size: 13px !important;
+  line-height: 1.5 !important;
+  font-weight: 600;
+}
+
+
+.mn-operational-eyebrow {
+  font-size: 12px !important;
+  line-height: 1.4 !important;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+
+.mn-operational-meta {
+  font-size: 12px !important;
+  line-height: 1.5 !important;
+  color: var(--muted-soft);
+}
+
+
+.mn-operational-value {
+  font-size: 18px !important;
+  line-height: 1.2 !important;
+  font-weight: 650;
+}
+
+
+/* =========================================================
+   CARDS
+
+   Larger text sometimes needs slightly more vertical room.
+   ========================================================= */
+
+.mn-workspace [class*="min-h-[102px]"] {
+  min-height: 112px;
+}
+
+
+.mn-workspace [class*="min-h-[116px]"] {
+  min-height: 124px;
+}
+
+
+/* =========================================================
+   LEAFLET
+
+   Map attribution remains intentionally smaller.
+   It is legal/technical attribution rather than operational
+   mission information.
+   ========================================================= */
+
+.mn-workspace .leaflet-control-attribution {
+  font-size: 11px !important;
+  line-height: 1.35 !important;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+
+   Do NOT aggressively shrink mission text on laptops/tablets.
+   ========================================================= */
+
+@media (max-width: 1200px) {
+  .mn-workspace {
+    font-size: 14px;
+  }
+
+  .mn-workspace p {
+    font-size: 14px;
+  }
+}
+
+
+@media (max-width: 768px) {
+  .mn-workspace h1 {
+    font-size: 26px;
+  }
+
+  .mn-workspace h2 {
+    font-size: 18px;
+  }
+
+  .mn-workspace h3 {
+    font-size: 15px;
+  }
+
+  .mn-workspace p {
+    font-size: 14px;
+  }
+}
+
+
+@media (max-width: 480px) {
+  .mn-workspace h1 {
+    font-size: 24px;
+  }
+
+  .mn-workspace p {
+    font-size: 13.5px;
+  }
+
+  .mn-workspace [class*="text-[13px]"] {
+    font-size: 13.5px !important;
+  }
+}

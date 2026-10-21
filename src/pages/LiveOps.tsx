@@ -1,317 +1,1688 @@
 import {
-  Battery,
+  useRef,
+  useState,
+  type ReactNode,
+  type RefObject,
+} from "react";
+
+import {
+  Activity,
+  BatteryCharging,
+  Compass,
+  Focus,
   Gauge,
-  Mountain,
+  Globe2,
+  Home,
+  LocateFixed,
+  MapPinned,
+  Minus,
   Navigation,
+  Plus,
   Radio,
+  RefreshCw,
   Satellite,
-  ShieldCheck,
-  Thermometer,
 } from "lucide-react";
-import type { ReactNode } from "react";
 
-import { AlertsPanel } from "../components/live/AlertsPanel";
-import { CommandDeck } from "../components/live/CommandDeck";
-import { DataSourcePanel } from "../components/live/DataSourcePanel";
-import { MetricCard } from "../components/common/MetricCard";
-import { AeroWorldMap } from "../components/map/AeroWorldMap";
-import { telemetry } from "../data/telemetry";
+import type {
+  LucideIcon,
+} from "lucide-react";
 
-type SectionCardProps = {
-  eyebrow: string;
-  title: string;
-  badge?: string;
-  badgeTone?: "green" | "amber" | "blue" | "red" | "muted";
-  children: ReactNode;
+import {
+  AeroWorldMap,
+} from "../components/map/AeroWorldMap";
+
+import type {
+  AeroWorldMapHandle,
+  AeroWorldMapState,
+  MapLayerId,
+} from "../components/map/AeroWorldMap";
+
+import {
+  useVehicleTelemetry,
+} from "../hooks/useVehicleTelemetry";
+
+import type {
+  MissionNexusConnectionState,
+  VehicleState,
+} from "../types/vehicle";
+
+
+/* =========================================================
+   MissionNexus V3.1
+   Live Operations
+
+   Backend
+      ↓
+   Vehicle Registry
+      ↓
+   WebSocket
+      ↓
+   useVehicleTelemetry()
+      ↓
+   Live Operations
+   ========================================================= */
+
+
+const initialMapState: AeroWorldMapState = {
+  baseMap: "osm",
+
+  zoom: 12,
+
+  gpsAvailable: false,
+
+  layers: {
+    "live-drone": true,
+
+    drones: true,
+
+    route: true,
+
+    geofence: true,
+
+    restricted: true,
+
+    contacts: true,
+
+    heat: true,
+
+    home: true,
+  },
 };
 
-const badgeToneClass = {
-  green:
-    "border-[rgba(73,229,143,0.32)] bg-[rgba(73,229,143,0.08)] text-(--nominal)",
-  amber:
-    "border-[rgba(246,178,60,0.34)] bg-[rgba(246,178,60,0.08)] text-(--primary)",
-  blue:
-    "border-[rgba(90,169,255,0.34)] bg-[rgba(90,169,255,0.08)] text-(--info)",
-  red:
-    "border-[rgba(255,77,77,0.34)] bg-[rgba(255,77,77,0.08)] text-(--critical)",
-  muted: "border-[#1d2533] bg-[#070a10] text-(--muted)",
-};
 
-function SectionCard({
-  eyebrow,
-  title,
-  badge,
-  badgeTone = "muted",
-  children,
-}: SectionCardProps) {
+/* =========================================================
+   Formatting Helpers
+   ========================================================= */
+
+
+function formatNumber(
+  value: number | null | undefined,
+  digits = 1,
+) {
+  if (
+    value === null ||
+    value === undefined ||
+    !Number.isFinite(value)
+  ) {
+    return "—";
+  }
+
+  return value.toFixed(digits);
+}
+
+
+function formatPercent(
+  value: number | null | undefined,
+) {
+  if (
+    value === null ||
+    value === undefined ||
+    !Number.isFinite(value)
+  ) {
+    return "—";
+  }
+
+  return `${Math.round(value)}%`;
+}
+
+
+function formatGpsFix(
+  fixType: number | undefined,
+) {
+  if (fixType === undefined) {
+    return "NO DATA";
+  }
+
+  if (fixType >= 6) {
+    return "RTK FIXED";
+  }
+
+  if (fixType === 5) {
+    return "RTK FLOAT";
+  }
+
+  if (fixType >= 3) {
+    return "3D FIX";
+  }
+
+  if (fixType === 2) {
+    return "2D FIX";
+  }
+
+  if (fixType === 1) {
+    return "NO FIX";
+  }
+
+  return "NO GPS";
+}
+
+
+function formatWaypoint(
+  vehicle: VehicleState | null,
+) {
+  if (!vehicle) {
+    return "—";
+  }
+
+  if (
+    vehicle.mission.total_waypoints <= 0
+  ) {
+    return "—";
+  }
+
+  return `${vehicle.mission.current_waypoint} / ${vehicle.mission.total_waypoints}`;
+}
+
+
+/* =========================================================
+   Connection Helpers
+   ========================================================= */
+
+
+function connectionLabel(
+  state: MissionNexusConnectionState,
+) {
+  if (state === "DISCONNECTED") {
+    return "LINK LOST";
+  }
+
+  return state;
+}
+
+
+function connectionColor(
+  state: MissionNexusConnectionState,
+) {
+  if (state === "CONNECTED") {
+    return {
+      text: "text-(--nominal)",
+
+      dot: "bg-(--nominal)",
+
+      border:
+        "border-[rgba(89,217,154,0.26)]",
+
+      background:
+        "bg-[rgba(89,217,154,0.045)]",
+    };
+  }
+
+  if (state === "DEGRADED") {
+    return {
+      text: "text-(--caution)",
+
+      dot: "bg-(--caution)",
+
+      border:
+        "border-[rgba(246,178,60,0.28)]",
+
+      background:
+        "bg-[rgba(246,178,60,0.045)]",
+    };
+  }
+
+  if (state === "CONNECTING") {
+    return {
+      text: "text-(--info)",
+
+      dot: "bg-(--info)",
+
+      border:
+        "border-[rgba(90,169,255,0.26)]",
+
+      background:
+        "bg-[rgba(90,169,255,0.04)]",
+    };
+  }
+
+  return {
+    text: "text-(--critical)",
+
+    dot: "bg-(--critical)",
+
+    border:
+      "border-[rgba(255,90,99,0.30)]",
+
+    background:
+      "bg-[rgba(255,90,99,0.05)]",
+  };
+}
+
+
+function sourceClass(
+  source: string | undefined,
+) {
+  if (source === "LIVE") {
+    return "text-(--nominal)";
+  }
+
+  if (source === "SITL") {
+    return "text-(--info)";
+  }
+
+  if (source === "SIM") {
+    return "text-(--primary)";
+  }
+
+  return "text-white/42";
+}
+
+
+/* =========================================================
+   Compact Action
+   ========================================================= */
+
+
+function CompactAction({
+  icon: Icon,
+  label,
+  onClick,
+  primary = false,
+}: {
+  icon: LucideIcon;
+
+  label: string;
+
+  onClick: () => void;
+
+  primary?: boolean;
+}) {
   return (
-    <section className="flex min-h-[360px] flex-col rounded-xl border border-[#1d2533] bg-black p-5 shadow-[0_18px_50px_rgba(0,0,0,0.28)]">
-      <div className="mb-4 flex items-center justify-between border-b border-[#151923] pb-4">
-        <div>
-          <p className="text-hud text-[9px] tracking-[0.2em] text-(--primary)">
-            {eyebrow}
-          </p>
+    <button
+      type="button"
+      onClick={onClick}
+      className={[
+        "group flex h-[38px] min-w-0 items-center gap-2",
 
-          <h2 className="mt-1 text-[16px] font-semibold leading-tight text-(--foreground)">
-            {title}
-          </h2>
-        </div>
+        "rounded-[5px] border px-2.5",
 
-        {badge && (
-          <span
-            className={`rounded-full border px-3 py-1 text-hud text-[9px] ${badgeToneClass[badgeTone]}`}
-          >
-            {badge}
-          </span>
-        )}
+        "text-left",
+
+        "transition-[background-color,border-color,color,transform] duration-150",
+
+        "active:translate-y-px",
+
+        primary
+          ? "border-[rgba(246,178,60,0.30)] bg-[rgba(246,178,60,0.06)] text-(--primary)"
+          : "border-white/[0.08] bg-white/[0.015] text-white/70 hover:border-white/15 hover:bg-white/[0.03] hover:text-white",
+      ].join(" ")}
+    >
+      <span
+        className={[
+          "flex h-6 w-6 shrink-0 items-center justify-center",
+
+          "rounded-[4px] border",
+
+          primary
+            ? "border-[rgba(246,178,60,0.24)] bg-[rgba(246,178,60,0.05)]"
+            : "border-white/[0.07] bg-black/25",
+        ].join(" ")}
+      >
+        <Icon
+          size={12}
+          strokeWidth={1.6}
+        />
+      </span>
+
+      <span className="min-w-0 truncate text-[13px] font-medium leading-none">
+        {label}
+      </span>
+    </button>
+  );
+}
+
+
+/* =========================================================
+   Layer Toggle
+   ========================================================= */
+
+
+function CompactLayer({
+  label,
+  enabled,
+  onClick,
+}: {
+  label: string;
+
+  enabled: boolean;
+
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={enabled}
+      className={[
+        "flex h-[30px] min-w-0 items-center justify-between",
+
+        "rounded-[4px] border px-2.5",
+
+        "transition-[background-color,border-color,color] duration-150",
+
+        enabled
+          ? "border-[rgba(246,178,60,0.22)] bg-[rgba(246,178,60,0.04)] text-(--primary)"
+          : "border-white/[0.06] bg-white/[0.01] text-white/50 hover:border-white/12 hover:text-white/74",
+      ].join(" ")}
+    >
+      <span className="min-w-0 truncate text-[13px] font-medium leading-none tracking-[-0.01em]">
+        {label}
+      </span>
+
+      <span className="ml-2 shrink-0 font-mono text-[12px] font-semibold leading-none">
+        {enabled
+          ? "ON"
+          : "OFF"}
+      </span>
+    </button>
+  );
+}
+
+
+/* =========================================================
+   Control Section
+   ========================================================= */
+
+
+function ControlSection({
+  title,
+  children,
+}: {
+  title: string;
+
+  children: ReactNode;
+}) {
+  return (
+    <section className="min-w-0">
+      <div className="mb-1.5 flex items-center gap-2">
+        <span className="shrink-0 font-mono text-[13px] font-semibold uppercase tracking-[0.055em] text-white/52">
+          {title}
+        </span>
+
+        <span className="h-px min-w-0 flex-1 bg-white/[0.07]" />
       </div>
 
-      <div className="min-h-0 flex-1 text-[13px] text-(--foreground)">
-        {children}
-      </div>
+      {children}
     </section>
   );
 }
 
-function InfoTile({
+
+/* =========================================================
+   Telemetry Metric
+   ========================================================= */
+
+
+function TelemetryMetric({
+  icon: Icon,
   label,
   value,
-  tone = "text-(--foreground)",
+  suffix,
+  valueClass = "text-white/82",
 }: {
+  icon: LucideIcon;
+
   label: string;
+
   value: string;
-  tone?: string;
+
+  suffix?: string;
+
+  valueClass?: string;
 }) {
   return (
-    <div className="rounded-lg border border-[#1d2533] bg-[#070a10] p-4">
-      <div className="text-hud text-[9px] tracking-[0.12em] text-(--muted)">
-        {label}
+    <div className="min-w-0 rounded-[4px] border border-white/[0.065] bg-black/20 px-2.5 py-2">
+      <div className="flex items-center gap-1.5">
+        <Icon
+          size={12}
+          strokeWidth={1.6}
+          className="shrink-0 text-white/36"
+        />
+
+        <span className="truncate text-[12px] font-medium text-white/38">
+          {label}
+        </span>
       </div>
 
-      <div className={`mt-2 text-[13px] font-medium ${tone}`}>{value}</div>
+      <div className="mt-1 flex min-w-0 items-baseline gap-1">
+        <span
+          className={[
+            "truncate font-mono text-[14px] font-semibold",
+
+            valueClass,
+          ].join(" ")}
+        >
+          {value}
+        </span>
+
+        {suffix ? (
+          <span className="shrink-0 font-mono text-[11px] text-white/28">
+            {suffix}
+          </span>
+        ) : null}
+      </div>
     </div>
   );
 }
 
-function getBatteryStatus(battery: number) {
-  if (battery <= 20) return "critical";
-  if (battery <= 40) return "caution";
-  return "nominal";
-}
 
-function getLinkStatus(linkRssi: number) {
-  if (linkRssi >= 85) return "critical";
-  if (linkRssi >= 70) return "caution";
-  return "nominal";
-}
+/* =========================================================
+   Dense Status Row
+   ========================================================= */
 
-function getTemperatureStatus(temperature: number) {
-  if (temperature >= 60) return "critical";
-  if (temperature >= 45) return "caution";
-  return "nominal";
-}
 
-function getRiskStatus(risk?: string) {
-  if (risk === "critical") return "critical";
-  if (risk === "high") return "caution";
-  if (risk === "medium") return "info";
-  return "nominal";
-}
+function StatusRow({
+  label,
+  value,
+  valueClass = "text-white/74",
+}: {
+  label: string;
 
-function roundValue(value: number) {
-  return Math.round(value * 10) / 10;
-}
+  value: string;
 
-export function LiveOps() {
-  const missionProgress = Math.round(
-    (telemetry.currentWaypoint / telemetry.totalWaypoints) * 100
+  valueClass?: string;
+}) {
+  return (
+    <div className="flex h-[27px] min-w-0 items-center justify-between gap-3 border-b border-white/[0.05] last:border-b-0">
+      <span className="truncate text-[12px] text-white/38">
+        {label}
+      </span>
+
+      <span
+        className={[
+          "max-w-[62%] truncate text-right font-mono text-[12px] font-semibold",
+
+          valueClass,
+        ].join(" ")}
+      >
+        {value}
+      </span>
+    </div>
   );
+}
 
-  const battery = roundValue(telemetry.battery);
-  const altitude = roundValue(telemetry.altitude);
-  const speed = roundValue(telemetry.speed);
-  const heading = telemetry.heading;
-  const gpsSatellites = telemetry.gpsSatellites;
-  const linkRssi = Math.abs(telemetry.rssi);
-  const sensorTemp = roundValue(telemetry.escTemp);
-  const risk = (telemetry.risk ?? "low").toUpperCase();
+
+/* =========================================================
+   Vehicle Header
+   ========================================================= */
+
+
+function VehicleHeader({
+  vehicle,
+  connectionState,
+  vehicleCount,
+  selectedVehicleId,
+  setSelectedVehicleId,
+  vehicles,
+  reconnect,
+}: {
+  vehicle: VehicleState | null;
+
+  connectionState:
+    MissionNexusConnectionState;
+
+  vehicleCount: number;
+
+  selectedVehicleId:
+    string | null;
+
+  setSelectedVehicleId: (
+    id: string | null,
+  ) => void;
+
+  vehicles: VehicleState[];
+
+  reconnect: () => void;
+}) {
+  const connection =
+    connectionColor(
+      connectionState,
+    );
+
+  const source =
+    vehicle?.source ??
+    "NO SOURCE";
 
   return (
-    <div className="min-h-screen bg-[#09090b] px-5 py-6">
-      <div className="mx-auto flex max-w-[1680px] flex-col gap-6">
-        <section className="overflow-hidden rounded-xl border border-[#1d2533] bg-black shadow-[0_24px_80px_rgba(0,0,0,0.35)]">
-          <div className="border-b border-[#151923] bg-black px-5 py-4">
-            <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-              <div>
-                <p className="text-hud text-[9px] tracking-[0.22em] text-(--primary)">
-                  Aeronexus Mission Control
-                </p>
+    <div
+      className={[
+        "shrink-0 border-b px-3 py-2.5",
 
-                <h1 className="mt-2 text-[22px] font-semibold tracking-tight text-(--foreground)">
-                  Live Operations Map
-                </h1>
-              </div>
+        connection.border,
 
-              <p className="max-w-xl text-[13px] leading-relaxed text-(--muted)">
-                Real-time operational view for route awareness, geofence
-                monitoring, simulated UAV position and mission overlays.
-              </p>
-            </div>
+        connection.background,
+      ].join(" ")}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="truncate text-[16px] font-semibold tracking-[-0.015em] text-white">
+              {vehicle?.callsign ??
+                "NO VEHICLE"}
+            </span>
+
+            <span
+              className={[
+                "rounded-[3px] border border-white/[0.08] bg-black/25 px-1.5 py-0.5",
+
+                "font-mono text-[11px] font-semibold",
+
+                sourceClass(
+                  vehicle?.source,
+                ),
+              ].join(" ")}
+            >
+              {source}
+            </span>
           </div>
 
-          <div className="h-[760px] bg-black">
-            <AeroWorldMap />
+          <div className="mt-0.5 flex items-center gap-2 text-[12px] text-white/38">
+            <span>
+              {vehicle?.vehicle_id ??
+                "Vehicle Core"}
+            </span>
+
+            <span className="text-white/16">
+              •
+            </span>
+
+            <span>
+              {vehicle?.flight_mode ??
+                "WAITING"}
+            </span>
+
+            <span className="text-white/16">
+              •
+            </span>
+
+            <span>
+              {vehicle?.armed
+                ? "ARMED"
+                : "DISARMED"}
+            </span>
           </div>
-        </section>
+        </div>
 
-        <div className="grid items-stretch gap-6 lg:grid-cols-2 2xl:grid-cols-3">
-          <SectionCard
-            eyebrow="Telemetry Overview"
-            title="Flight Telemetry"
-            badge="Live Feed"
-            badgeTone="green"
+        <div className="flex shrink-0 items-center gap-2">
+          <div
+            className={[
+              "flex items-center gap-1.5",
+
+              "font-mono text-[12px] font-semibold uppercase",
+
+              connection.text,
+            ].join(" ")}
           >
-            <div className="grid grid-cols-2 gap-4">
-              <MetricCard
-                label="Battery"
-                value={battery}
-                unit="%"
-                icon={Battery}
-                status={getBatteryStatus(battery)}
+            <span
+              className={[
+                "h-2 w-2 rounded-full",
+
+                connection.dot,
+
+                connectionState ===
+                "CONNECTING"
+                  ? "animate-pulse"
+                  : "",
+              ].join(" ")}
+            />
+
+            {connectionLabel(
+              connectionState,
+            )}
+          </div>
+
+          {connectionState !==
+          "CONNECTED" ? (
+            <button
+              type="button"
+              onClick={reconnect}
+              title="Reconnect telemetry"
+              className="flex h-7 w-7 items-center justify-center rounded-[4px] border border-white/[0.09] bg-black/25 text-white/55 transition hover:border-white/20 hover:text-white"
+            >
+              <RefreshCw
+                size={12}
               />
-
-              <MetricCard
-                label="Altitude"
-                value={altitude}
-                unit="m"
-                icon={Mountain}
-                status="info"
-              />
-
-              <MetricCard
-                label="Speed"
-                value={speed}
-                unit="m/s"
-                icon={Gauge}
-                status="info"
-              />
-
-              <MetricCard
-                label="Heading"
-                value={heading}
-                unit="°"
-                icon={Navigation}
-                status="info"
-              />
-            </div>
-          </SectionCard>
-
-          <SectionCard
-            eyebrow="Signal & Environment"
-            title="Link Intelligence"
-            badge="Stable"
-            badgeTone="blue"
-          >
-            <div className="grid grid-cols-2 gap-4">
-              <MetricCard
-                label="GPS"
-                value={gpsSatellites}
-                unit="sats"
-                icon={Satellite}
-                status="caution"
-              />
-
-              <MetricCard
-                label="Link RSSI"
-                value={linkRssi}
-                unit="dBm"
-                icon={Radio}
-                status={getLinkStatus(linkRssi)}
-              />
-
-              <MetricCard
-                label="Sensor Temp"
-                value={sensorTemp}
-                unit="°C"
-                icon={Thermometer}
-                status={getTemperatureStatus(sensorTemp)}
-              />
-
-              <MetricCard
-                label="Risk Level"
-                value={risk}
-                icon={ShieldCheck}
-                status={getRiskStatus(telemetry.risk)}
-              />
-            </div>
-          </SectionCard>
-
-          <SectionCard
-            eyebrow="Mission Progress"
-            title="Waypoint Execution"
-            badge={`${missionProgress}%`}
-            badgeTone="amber"
-          >
-            <div className="flex h-full flex-col">
-              <p className="text-[13px] text-(--muted)">
-                Current waypoint {telemetry.currentWaypoint} of{" "}
-                {telemetry.totalWaypoints}
-              </p>
-
-              <div className="mt-5 h-3 overflow-hidden rounded-full bg-[#09090b]">
-                <div
-                  className="h-full rounded-full bg-(--primary)"
-                  style={{
-                    width: `${missionProgress}%`,
-                  }}
-                />
-              </div>
-
-              <div className="mt-6 grid grid-cols-2 gap-4">
-                <InfoTile label="Drone" value={telemetry.droneId} />
-                <InfoTile label="Mission" value={telemetry.mission} />
-                <InfoTile
-                  label="Mode"
-                  value="Simulation"
-                  tone="text-(--nominal)"
-                />
-                <InfoTile label="Platform" value={telemetry.model} />
-              </div>
-            </div>
-          </SectionCard>
-
-          <SectionCard
-            eyebrow="Alert Stream"
-            title="Mission Events"
-            badge="4 Active"
-            badgeTone="red"
-          >
-            <div className="h-full overflow-hidden rounded-lg border border-[#1d2533] bg-[#070a10]/60">
-              <AlertsPanel />
-            </div>
-          </SectionCard>
-
-          <SectionCard
-            eyebrow="Data Sources"
-            title="Telemetry Input"
-            badge="Backend Check"
-            badgeTone="amber"
-          >
-            <div className="h-full overflow-hidden rounded-lg border border-[#1d2533] bg-[#070a10]/60 p-3">
-              <DataSourcePanel />
-            </div>
-          </SectionCard>
-
-          <SectionCard
-            eyebrow="Command Deck"
-            title="Flight Command Console"
-            badge="2-Step Confirm"
-            badgeTone="muted"
-          >
-            <CommandDeck />
-          </SectionCard>
+            </button>
+          ) : null}
         </div>
       </div>
+
+      {vehicleCount > 1 ? (
+        <select
+          value={
+            selectedVehicleId ??
+            ""
+          }
+          onChange={(
+            event,
+          ) =>
+            setSelectedVehicleId(
+              event.target.value ||
+                null,
+            )
+          }
+          className="mt-2 h-8 w-full rounded-[4px] border border-white/[0.08] bg-[#05060d] px-2 font-mono text-[12px] text-white/72 outline-none"
+        >
+          {vehicles.map(
+            (
+              item,
+            ) => (
+              <option
+                key={
+                  item.vehicle_id
+                }
+                value={
+                  item.vehicle_id
+                }
+              >
+                {item.callsign} ·{" "}
+                {item.source} ·{" "}
+                {item.vehicle_id}
+              </option>
+            ),
+          )}
+        </select>
+      ) : null}
     </div>
+  );
+}
+
+
+/* =========================================================
+   Vehicle Telemetry
+   ========================================================= */
+
+
+function VehicleTelemetryPanel({
+  vehicle,
+}: {
+  vehicle: VehicleState | null;
+}) {
+  const gpsGood =
+    Boolean(
+      vehicle &&
+        vehicle.gps.fix_type >=
+          3 &&
+        vehicle.health.gps_ok,
+    );
+
+  const batteryGood =
+    Boolean(
+      vehicle &&
+        vehicle.health
+          .battery_ok,
+    );
+
+  const linkGood =
+    Boolean(
+      vehicle &&
+        vehicle.health.link_ok,
+    );
+
+  const overallHealthy =
+    vehicle?.health.overall ===
+    "NOMINAL";
+
+  return (
+    <>
+      <ControlSection title="Flight Telemetry">
+        <div className="grid grid-cols-2 gap-1.5">
+          <TelemetryMetric
+            icon={Gauge}
+            label="Altitude"
+            value={
+              formatNumber(
+                vehicle?.position
+                  .altitude_relative_m,
+                1,
+              )
+            }
+            suffix="m AGL"
+            valueClass="text-(--info)"
+          />
+
+          <TelemetryMetric
+            icon={Navigation}
+            label="Ground Speed"
+            value={
+              formatNumber(
+                vehicle?.motion
+                  .ground_speed_mps,
+                1,
+              )
+            }
+            suffix="m/s"
+          />
+
+          <TelemetryMetric
+            icon={Compass}
+            label="Heading"
+            value={
+              formatNumber(
+                vehicle?.motion
+                  .heading_deg,
+                0,
+              )
+            }
+            suffix="deg"
+          />
+
+          <TelemetryMetric
+            icon={Activity}
+            label="Vertical"
+            value={
+              formatNumber(
+                vehicle?.motion
+                  .vertical_speed_mps,
+                1,
+              )
+            }
+            suffix="m/s"
+          />
+        </div>
+      </ControlSection>
+
+      <ControlSection title="Power">
+        <div className="grid grid-cols-3 gap-1.5">
+          <TelemetryMetric
+            icon={
+              BatteryCharging
+            }
+            label="Battery"
+            value={
+              formatPercent(
+                vehicle?.battery
+                  .remaining_percent,
+              )
+            }
+            valueClass={
+              batteryGood
+                ? "text-(--nominal)"
+                : "text-(--critical)"
+            }
+          />
+
+          <TelemetryMetric
+            icon={Activity}
+            label="Voltage"
+            value={
+              formatNumber(
+                vehicle?.battery
+                  .voltage_v,
+                2,
+              )
+            }
+            suffix="V"
+          />
+
+          <TelemetryMetric
+            icon={Gauge}
+            label="Current"
+            value={
+              formatNumber(
+                vehicle?.battery
+                  .current_a,
+                1,
+              )
+            }
+            suffix="A"
+          />
+        </div>
+      </ControlSection>
+
+      <ControlSection title="Navigation / Link">
+        <div className="grid grid-cols-2 gap-x-3">
+          <div>
+            <StatusRow
+              label="GPS"
+              value={
+                formatGpsFix(
+                  vehicle?.gps
+                    .fix_type,
+                )
+              }
+              valueClass={
+                gpsGood
+                  ? "text-(--nominal)"
+                  : "text-(--caution)"
+              }
+            />
+
+            <StatusRow
+              label="Satellites"
+              value={
+                vehicle
+                  ? `${vehicle.gps.satellites_visible}`
+                  : "—"
+              }
+            />
+
+            <StatusRow
+              label="HDOP"
+              value={
+                formatNumber(
+                  vehicle?.gps
+                    .hdop,
+                  2,
+                )
+              }
+            />
+          </div>
+
+          <div>
+            <StatusRow
+              label="Link"
+              value={
+                vehicle?.link.state ??
+                "—"
+              }
+              valueClass={
+                linkGood
+                  ? "text-(--nominal)"
+                  : "text-(--critical)"
+              }
+            />
+
+            <StatusRow
+              label="Quality"
+              value={
+                formatPercent(
+                  vehicle?.link
+                    .quality_percent,
+                )
+              }
+            />
+
+            <StatusRow
+              label="RSSI"
+              value={
+                vehicle?.link
+                  .rssi_dbm ===
+                  null ||
+                vehicle?.link
+                  .rssi_dbm ===
+                  undefined
+                  ? "—"
+                  : `${Math.round(
+                      vehicle.link
+                        .rssi_dbm,
+                    )} dBm`
+              }
+            />
+          </div>
+        </div>
+      </ControlSection>
+
+      <ControlSection title="Mission / Health">
+        <div className="grid grid-cols-2 gap-x-3">
+          <div>
+            <StatusRow
+              label="Mission"
+              value={
+                vehicle?.mission
+                  .mission_id ??
+                "—"
+              }
+            />
+
+            <StatusRow
+              label="State"
+              value={
+                vehicle?.mission
+                  .state ??
+                "—"
+              }
+              valueClass="text-(--info)"
+            />
+
+            <StatusRow
+              label="Waypoint"
+              value={
+                formatWaypoint(
+                  vehicle,
+                )
+              }
+            />
+          </div>
+
+          <div>
+            <StatusRow
+              label="Health"
+              value={
+                vehicle?.health
+                  .overall ??
+                "UNKNOWN"
+              }
+              valueClass={
+                overallHealthy
+                  ? "text-(--nominal)"
+                  : "text-(--caution)"
+              }
+            />
+
+            <StatusRow
+              label="Failsafe"
+              value={
+                vehicle?.health
+                  .failsafe_active
+                  ? "ACTIVE"
+                  : "CLEAR"
+              }
+              valueClass={
+                vehicle?.health
+                  .failsafe_active
+                  ? "text-(--critical)"
+                  : "text-(--nominal)"
+              }
+            />
+
+            <StatusRow
+              label="System ID"
+              value={
+                vehicle?.system_id !==
+                  null &&
+                vehicle?.system_id !==
+                  undefined
+                  ? `${vehicle.system_id}`
+                  : "—"
+              }
+            />
+          </div>
+        </div>
+      </ControlSection>
+    </>
+  );
+}
+
+
+/* =========================================================
+   Map Controls
+   ========================================================= */
+
+
+function MapControls({
+  mapRef,
+  mapState,
+  toggleLayer,
+  gpsOnline,
+}: {
+  mapRef:
+    RefObject<
+      AeroWorldMapHandle | null
+    >;
+
+  mapState:
+    AeroWorldMapState;
+
+  toggleLayer: (
+    layer: MapLayerId,
+  ) => void;
+
+  gpsOnline: boolean;
+}) {
+  return (
+    <>
+      <ControlSection title="Map Navigation">
+        <div className="grid grid-cols-4 gap-1.5">
+          <CompactAction
+            icon={LocateFixed}
+            label="UAV"
+            primary
+            onClick={() =>
+              mapRef.current?.focusUav()
+            }
+          />
+
+          <CompactAction
+            icon={Focus}
+            label="AOI"
+            onClick={() =>
+              mapRef.current?.focusAoi()
+            }
+          />
+
+          <CompactAction
+            icon={MapPinned}
+            label="Mission"
+            onClick={() =>
+              mapRef.current?.focusMission()
+            }
+          />
+
+          <CompactAction
+            icon={Home}
+            label="Home"
+            onClick={() =>
+              mapRef.current?.focusHome()
+            }
+          />
+        </div>
+
+        <div className="mt-1.5 grid grid-cols-[1fr_1fr_1.7fr] gap-1.5">
+          <CompactAction
+            icon={Plus}
+            label="In"
+            onClick={() =>
+              mapRef.current?.zoomIn()
+            }
+          />
+
+          <CompactAction
+            icon={Minus}
+            label="Out"
+            onClick={() =>
+              mapRef.current?.zoomOut()
+            }
+          />
+
+          <button
+            type="button"
+            onClick={() =>
+              mapRef.current?.toggleBaseMap()
+            }
+            className={[
+              "flex h-[38px] min-w-0 items-center justify-between gap-2",
+
+              "rounded-[5px] border",
+
+              "border-[rgba(90,169,255,0.20)]",
+
+              "bg-[rgba(90,169,255,0.04)]",
+
+              "px-2.5 text-(--info)",
+
+              "transition-[background-color,border-color] duration-150",
+
+              "hover:border-[rgba(90,169,255,0.35)]",
+            ].join(" ")}
+          >
+            <span className="flex min-w-0 items-center gap-1.5">
+              <Globe2
+                size={12}
+                strokeWidth={1.6}
+              />
+
+              <span className="truncate text-[12px]">
+                Map
+              </span>
+            </span>
+
+            <span className="shrink-0 font-mono text-[11px] font-semibold uppercase">
+              {mapState.baseMap}
+            </span>
+          </button>
+        </div>
+      </ControlSection>
+
+      <ControlSection title="Mission Layers">
+        <div className="grid grid-cols-4 gap-1">
+          <CompactLayer
+            label="Aircraft"
+            enabled={
+              mapState.layers[
+                "live-drone"
+              ]
+            }
+            onClick={() =>
+              toggleLayer(
+                "live-drone",
+              )
+            }
+          />
+
+          <CompactLayer
+            label="Route"
+            enabled={
+              mapState.layers
+                .route
+            }
+            onClick={() =>
+              toggleLayer(
+                "route",
+              )
+            }
+          />
+
+          <CompactLayer
+            label="Fence"
+            enabled={
+              mapState.layers
+                .geofence
+            }
+            onClick={() =>
+              toggleLayer(
+                "geofence",
+              )
+            }
+          />
+
+          <CompactLayer
+            label="Restricted"
+            enabled={
+              mapState.layers
+                .restricted
+            }
+            onClick={() =>
+              toggleLayer(
+                "restricted",
+              )
+            }
+          />
+
+          <CompactLayer
+            label="Contacts"
+            enabled={
+              mapState.layers
+                .contacts
+            }
+            onClick={() =>
+              toggleLayer(
+                "contacts",
+              )
+            }
+          />
+
+          <CompactLayer
+            label="Heat"
+            enabled={
+              mapState.layers
+                .heat
+            }
+            onClick={() =>
+              toggleLayer(
+                "heat",
+              )
+            }
+          />
+
+          <CompactLayer
+            label="Sim UAVs"
+            enabled={
+              mapState.layers
+                .drones
+            }
+            onClick={() =>
+              toggleLayer(
+                "drones",
+              )
+            }
+          />
+
+          <CompactLayer
+            label="Home"
+            enabled={
+              mapState.layers
+                .home
+            }
+            onClick={() =>
+              toggleLayer(
+                "home",
+              )
+            }
+          />
+        </div>
+
+        <div className="mt-1.5 flex items-center justify-between gap-3 rounded-[4px] border border-white/[0.055] bg-black/20 px-2.5 py-1.5">
+          <div className="flex items-center gap-2">
+            <Satellite
+              size={12}
+              className={
+                gpsOnline
+                  ? "text-(--nominal)"
+                  : "text-(--caution)"
+              }
+            />
+
+            <span className="font-mono text-[11px] uppercase tracking-[0.04em] text-white/42">
+              WGS-84
+            </span>
+          </div>
+
+          <span className="font-mono text-[11px] text-white/56">
+            Z{" "}
+            {mapState.zoom.toFixed(
+              1,
+            )}
+          </span>
+        </div>
+      </ControlSection>
+    </>
+  );
+}
+
+
+/* =========================================================
+   Right Operations Rail
+   ========================================================= */
+
+
+function OperationsRail({
+  mapRef,
+  mapState,
+  toggleLayer,
+  vehicle,
+  vehicles,
+  vehicleCount,
+  selectedVehicleId,
+  setSelectedVehicleId,
+  connectionState,
+  reconnect,
+}: {
+  mapRef:
+    RefObject<
+      AeroWorldMapHandle | null
+    >;
+
+  mapState:
+    AeroWorldMapState;
+
+  toggleLayer: (
+    layer: MapLayerId,
+  ) => void;
+
+  vehicle: VehicleState | null;
+
+  vehicles: VehicleState[];
+
+  vehicleCount: number;
+
+  selectedVehicleId:
+    string | null;
+
+  setSelectedVehicleId: (
+    id: string | null,
+  ) => void;
+
+  connectionState:
+    MissionNexusConnectionState;
+
+  reconnect: () => void;
+}) {
+  const gpsOnline =
+    Boolean(
+      vehicle &&
+        vehicle.connected &&
+        vehicle.gps.fix_type >=
+          3 &&
+        vehicle.health.gps_ok,
+    );
+
+  return (
+    <aside
+      className={[
+        "flex h-full min-h-0 flex-col",
+
+        "overflow-hidden",
+
+        "border-l border-white/[0.08]",
+
+        "bg-[#07090d]",
+      ].join(" ")}
+    >
+      <VehicleHeader
+        vehicle={vehicle}
+        connectionState={
+          connectionState
+        }
+        vehicleCount={
+          vehicleCount
+        }
+        selectedVehicleId={
+          selectedVehicleId
+        }
+        setSelectedVehicleId={
+          setSelectedVehicleId
+        }
+        vehicles={vehicles}
+        reconnect={reconnect}
+      />
+
+      <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto p-3">
+        <VehicleTelemetryPanel
+          vehicle={vehicle}
+        />
+
+        <MapControls
+          mapRef={mapRef}
+          mapState={mapState}
+          toggleLayer={
+            toggleLayer
+          }
+          gpsOnline={gpsOnline}
+        />
+      </div>
+    </aside>
+  );
+}
+
+
+/* =========================================================
+   Live Operations
+   ========================================================= */
+
+
+export function LiveOps() {
+  const mapRef =
+    useRef<
+      AeroWorldMapHandle | null
+    >(
+      null,
+    );
+
+  const [
+    mapState,
+    setMapState,
+  ] =
+    useState<AeroWorldMapState>(
+      initialMapState,
+    );
+
+  const {
+    vehicles,
+
+    vehicleCount,
+
+    activeVehicle,
+
+    selectedVehicleId,
+
+    setSelectedVehicleId,
+
+    connectionState,
+
+    reconnect,
+  } =
+    useVehicleTelemetry(
+      "MN-001-SIM",
+    );
+
+
+  function toggleLayer(
+    layer: MapLayerId,
+  ) {
+    mapRef.current?.toggleLayer(
+      layer,
+    );
+  }
+
+
+  const connection =
+    connectionColor(
+      connectionState,
+    );
+
+
+  const gpsOnline =
+    Boolean(
+      activeVehicle &&
+        activeVehicle.connected &&
+        activeVehicle.gps.fix_type >=
+          3 &&
+        activeVehicle.health.gps_ok,
+    );
+
+
+  return (
+    <section className="h-[calc(100vh-70px)] w-full overflow-hidden bg-[#05060d]">
+      <div
+        className={[
+          "mx-auto grid h-full w-full max-w-[1640px]",
+
+          "grid-rows-[52px_minmax(0,1fr)]",
+
+          "px-4 pb-4 pt-2",
+
+          "sm:px-6",
+
+          "lg:px-8",
+
+          "xl:px-10",
+
+          "2xl:px-14",
+        ].join(" ")}
+      >
+        {/* =================================================
+            Page Header
+            ================================================= */}
+
+        <header className="flex min-w-0 items-center justify-between border-b border-white/[0.08]">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <Navigation
+              size={15}
+              strokeWidth={1.6}
+              className="shrink-0 text-(--info)"
+            />
+
+            <h1
+              className="truncate text-[16px] font-semibold tracking-[-0.02em] text-white"
+              style={{
+                fontFamily:
+                  '"Manrope", "Inter", ui-sans-serif, system-ui, sans-serif',
+              }}
+            >
+              Live Operations
+            </h1>
+
+            <span
+              aria-hidden="true"
+              className="hidden h-3 w-px bg-white/10 sm:block"
+            />
+
+            <span className="hidden truncate font-mono text-[13px] font-medium uppercase tracking-[0.045em] text-white/40 sm:block">
+              Tactical Mission Map
+            </span>
+
+            {activeVehicle ? (
+              <>
+                <span
+                  aria-hidden="true"
+                  className="hidden h-3 w-px bg-white/10 lg:block"
+                />
+
+                <span className="hidden font-mono text-[12px] font-semibold text-white/68 lg:block">
+                  {
+                    activeVehicle.callsign
+                  }
+                </span>
+
+                <span
+                  className={[
+                    "hidden rounded-[3px] border border-white/[0.08] bg-black/25 px-1.5 py-0.5",
+
+                    "font-mono text-[11px] font-semibold lg:block",
+
+                    sourceClass(
+                      activeVehicle.source,
+                    ),
+                  ].join(" ")}
+                >
+                  {
+                    activeVehicle.source
+                  }
+                </span>
+              </>
+            ) : null}
+          </div>
+
+          <div className="flex shrink-0 items-center gap-4">
+            <div className="hidden items-center gap-1.5 lg:flex">
+              <Satellite
+                size={13}
+                className={
+                  gpsOnline
+                    ? "text-(--nominal)"
+                    : "text-(--caution)"
+                }
+              />
+
+              <span
+                className={[
+                  "font-mono text-[12px] font-semibold uppercase",
+
+                  gpsOnline
+                    ? "text-(--nominal)"
+                    : "text-(--caution)",
+                ].join(" ")}
+              >
+                {gpsOnline
+                  ? "GPS 3D FIX"
+                  : "GPS WAIT"}
+              </span>
+            </div>
+
+            <div
+              className={[
+                "flex items-center gap-1.5",
+
+                "font-mono text-[12px] font-semibold uppercase tracking-[0.04em]",
+
+                connection.text,
+              ].join(" ")}
+            >
+              <span
+                className={[
+                  "h-2 w-2 rounded-full",
+
+                  connection.dot,
+
+                  connectionState ===
+                  "CONNECTING"
+                    ? "animate-pulse"
+                    : "",
+                ].join(" ")}
+              />
+
+              {connectionLabel(
+                connectionState,
+              )}
+            </div>
+          </div>
+        </header>
+
+        {/* =================================================
+            Map + Operations Rail
+            ================================================= */}
+
+        <div className="min-h-0 pt-3">
+          <div
+            className={[
+              "grid h-full min-h-0 overflow-hidden",
+
+              "rounded-[6px]",
+
+              "border border-white/[0.09]",
+
+              "bg-[#020304]",
+
+              "shadow-[0_18px_48px_rgba(0,0,0,0.2)]",
+
+              "lg:grid-cols-[minmax(0,1fr)_390px]",
+
+              "xl:grid-cols-[minmax(0,1fr)_410px]",
+
+              "2xl:grid-cols-[minmax(0,1fr)_430px]",
+            ].join(" ")}
+          >
+            {/* =============================================
+                Map Workspace
+                ============================================= */}
+
+            <div className="relative min-h-0 min-w-0 overflow-hidden">
+              <AeroWorldMap
+                ref={mapRef}
+                onStateChange={
+                  setMapState
+                }
+              />
+
+              {/* ===========================================
+                  Active Vehicle Source
+                  =========================================== */}
+
+              {activeVehicle ? (
+                <div className="pointer-events-none absolute bottom-3 left-3 z-[450] hidden items-center gap-2 rounded-[4px] border border-white/[0.09] bg-[#05060d]/94 px-2.5 py-1.5 shadow-lg backdrop-blur lg:flex">
+                  <Radio
+                    size={12}
+                    className={
+                      connectionState ===
+                      "CONNECTED"
+                        ? "text-(--nominal)"
+                        : "text-(--caution)"
+                    }
+                  />
+
+                  <span className="font-mono text-[11px] font-semibold text-white/74">
+                    {
+                      activeVehicle.vehicle_id
+                    }
+                  </span>
+
+                  <span className="text-white/18">
+                    •
+                  </span>
+
+                  <span
+                    className={[
+                      "font-mono text-[11px] font-semibold",
+
+                      sourceClass(
+                        activeVehicle.source,
+                      ),
+                    ].join(" ")}
+                  >
+                    {
+                      activeVehicle.source
+                    }
+                  </span>
+
+                  <span className="text-white/18">
+                    •
+                  </span>
+
+                  <span className="font-mono text-[11px] text-white/48">
+                    {activeVehicle.position.latitude_deg.toFixed(
+                      5,
+                    )}
+                    ,{" "}
+                    {activeVehicle.position.longitude_deg.toFixed(
+                      5,
+                    )}
+                  </span>
+                </div>
+              ) : null}
+            </div>
+
+            {/* =============================================
+                Vehicle Operations Rail
+                ============================================= */}
+
+            <OperationsRail
+              mapRef={mapRef}
+              mapState={mapState}
+              toggleLayer={
+                toggleLayer
+              }
+              vehicle={
+                activeVehicle
+              }
+              vehicles={vehicles}
+              vehicleCount={
+                vehicleCount
+              }
+              selectedVehicleId={
+                selectedVehicleId
+              }
+              setSelectedVehicleId={
+                setSelectedVehicleId
+              }
+              connectionState={
+                connectionState
+              }
+              reconnect={reconnect}
+            />
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }

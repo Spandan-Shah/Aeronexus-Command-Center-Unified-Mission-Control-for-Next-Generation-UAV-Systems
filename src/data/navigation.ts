@@ -2,6 +2,7 @@ export type PageId =
   | "live-ops"
   | "mission-planner"
   | "drone-control"
+  | "autonomous-intercept"
   | "fleet"
   | "drone-health"
   | "battery"
@@ -35,6 +36,12 @@ export const pageDetails: Record<
     subtitle: "Command console, safety actions, and telemetry control link",
   },
 
+  "autonomous-intercept": {
+    title: "Autonomous Intercept",
+    subtitle:
+      "Leader-follower AI guidance, trajectory prediction, rendezvous, and shadow simulation",
+  },
+
   fleet: {
     title: "Fleet",
     subtitle: "Multi-drone status, assignment, and readiness",
@@ -51,8 +58,8 @@ export const pageDetails: Record<
   },
 
   "camera-ai": {
-    title: "Camera AI",
-    subtitle: "Video feed, detection events, and model pipeline",
+    title: "Vision Intelligence",
+    subtitle: "Video feed, detection events, and AI model pipeline",
   },
 
   "pre-flight": {
@@ -61,7 +68,7 @@ export const pageDetails: Record<
   },
 
   logs: {
-    title: "Logs & Debrief",
+    title: "Mission Debrief",
     subtitle: "Flight timeline, alerts, evidence, and report export",
   },
 
