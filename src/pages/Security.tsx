@@ -27,6 +27,11 @@ import type {
   LucideIcon,
 } from "lucide-react";
 
+
+/* =========================================================
+   Types
+   ========================================================= */
+
 type Tone =
   | "nominal"
   | "caution"
@@ -34,70 +39,112 @@ type Tone =
   | "info"
   | "muted";
 
+
 type SummaryMetric = {
   label: string;
+
   value: string;
+
   helper: string;
+
   icon: LucideIcon;
+
   tone: Tone;
 };
+
 
 type ProtocolStep = {
   step: string;
+
   title: string;
+
   description: string;
+
   tone: Tone;
+
   icon: LucideIcon;
 };
+
 
 type ThreatItem = {
   title: string;
+
   status: string;
+
   description: string;
+
   tone: Tone;
+
   icon: LucideIcon;
 };
+
 
 type AuditItem = {
   time: string;
+
   command: string;
+
   actor: string;
+
   direction: string;
+
   signature: string;
+
   status: Tone;
 };
 
+
 type AccessRole = {
   role: string;
+
   command: string;
+
   telemetry: string;
+
   camera: string;
+
   security: string;
 };
 
+
 type SessionNode = {
   name: string;
+
   role: string;
+
   identity: string;
+
   state: string;
+
   tone: Tone;
+
   icon: LucideIcon;
 };
 
+
 /* =========================================================
-   Tone Styling
+   Aerospace Graphite Tone System
    ========================================================= */
 
-const toneClass = {
+const toneClass:
+  Record<
+    Tone,
+    {
+      text: string;
+      border: string;
+      bg: string;
+      dot: string;
+    }
+  > = {
   nominal: {
     text:
       "text-[var(--nominal)]",
 
     border:
-      "border-[rgba(89,217,154,0.28)]",
+      "border-[rgba(100,142,120,0.30)]",
 
     bg:
-      "bg-[rgba(89,217,154,0.08)]",
+      "bg-[rgba(100,142,120,0.11)]",
 
     dot:
       "bg-[var(--nominal)]",
@@ -105,16 +152,16 @@ const toneClass = {
 
   caution: {
     text:
-      "text-[var(--primary)]",
+      "text-[var(--caution)]",
 
     border:
-      "border-[rgba(246,178,60,0.34)]",
+      "border-[rgba(199,155,89,0.30)]",
 
     bg:
-      "bg-[rgba(246,178,60,0.08)]",
+      "bg-[rgba(199,155,89,0.11)]",
 
     dot:
-      "bg-[var(--primary)]",
+      "bg-[var(--caution)]",
   },
 
   critical: {
@@ -122,10 +169,10 @@ const toneClass = {
       "text-[var(--critical)]",
 
     border:
-      "border-[rgba(255,90,99,0.36)]",
+      "border-[rgba(201,105,114,0.32)]",
 
     bg:
-      "bg-[rgba(255,90,99,0.08)]",
+      "bg-[rgba(201,105,114,0.11)]",
 
     dot:
       "bg-[var(--critical)]",
@@ -136,10 +183,10 @@ const toneClass = {
       "text-[var(--info)]",
 
     border:
-      "border-[rgba(90,169,255,0.3)]",
+      "border-[rgba(93,135,163,0.30)]",
 
     bg:
-      "bg-[rgba(90,169,255,0.08)]",
+      "bg-[rgba(93,135,163,0.11)]",
 
     dot:
       "bg-[var(--info)]",
@@ -147,160 +194,163 @@ const toneClass = {
 
   muted: {
     text:
-      "text-[var(--muted)]",
+      "text-[var(--muted-soft)]",
 
     border:
-      "border-[var(--border-soft)]",
+      "border-[var(--border)]",
 
     bg:
-      "bg-[var(--surface-1)]",
+      "bg-[var(--surface-2)]",
 
     dot:
-      "bg-[var(--muted)]",
+      "bg-[var(--muted-soft)]",
   },
 };
 
+
 /* =========================================================
-   Summary
+   Summary Data
    ========================================================= */
 
 const summaryMetrics:
   SummaryMetric[] = [
-    {
-      label:
-        "Secure Link",
+  {
+    label:
+      "Secure Link",
 
-      value:
-        "Active",
+    value:
+      "Active",
 
-      helper:
-        "Authenticated command channel",
+    helper:
+      "Authenticated command channel",
 
-      icon:
-        ShieldCheck,
+    icon:
+      ShieldCheck,
 
-      tone:
-        "nominal",
-    },
+    tone:
+      "nominal",
+  },
 
-    {
-      label:
-        "Session Mode",
+  {
+    label:
+      "Session Mode",
 
-      value:
-        "GW-Proto",
+    value:
+      "GW-Proto",
 
-      helper:
-        "GoblinWisp prototype console",
+    helper:
+      "GoblinWisp prototype console",
 
-      icon:
-        LockKeyhole,
+    icon:
+      LockKeyhole,
 
-      tone:
-        "info",
-    },
+    tone:
+      "info",
+  },
 
-    {
-      label:
-        "Blocked Attempts",
+  {
+    label:
+      "Blocked Attempts",
 
-      value:
-        "02",
+    value:
+      "02",
 
-      helper:
-        "Replay and unsigned command blocks",
+    helper:
+      "Replay and unsigned command blocks",
 
-      icon:
-        ShieldAlert,
+    icon:
+      ShieldAlert,
 
-      tone:
-        "caution",
-    },
+    tone:
+      "caution",
+  },
 
-    {
-      label:
-        "Active Peers",
+  {
+    label:
+      "Active Peers",
 
-      value:
-        "03",
+    value:
+      "03",
 
-      helper:
-        "Controller, gateway, UAV node",
+    helper:
+      "Controller, gateway, UAV node",
 
-      icon:
-        UserCheck,
+    icon:
+      UserCheck,
 
-      tone:
-        "nominal",
-    },
-  ];
+    tone:
+      "nominal",
+  },
+];
+
 
 /* =========================================================
-   Session Nodes
+   Secure Session Nodes
    ========================================================= */
 
 const sessionNodes:
   SessionNode[] = [
-    {
-      name:
-        "Ground Controller",
+  {
+    name:
+      "Ground Controller",
 
-      role:
-        "Operator command origin",
+    role:
+      "Operator command origin",
 
-      identity:
-        "GC-9F2A",
+    identity:
+      "GC-9F2A",
 
-      state:
-        "Trusted",
+    state:
+      "Trusted",
 
-      tone:
-        "nominal",
+    tone:
+      "nominal",
 
-      icon:
-        UserCheck,
-    },
+    icon:
+      UserCheck,
+  },
 
-    {
-      name:
-        "Secure Gateway",
+  {
+    name:
+      "Secure Gateway",
 
-      role:
-        "Telemetry relay + verifier",
+    role:
+      "Telemetry relay + verifier",
 
-      identity:
-        "GW-21C8",
+    identity:
+      "GW-21C8",
 
-      state:
-        "Verified",
+    state:
+      "Verified",
 
-      tone:
-        "info",
+    tone:
+      "info",
 
-      icon:
-        ServerCog,
-    },
+    icon:
+      ServerCog,
+  },
 
-    {
-      name:
-        "UAV Node",
+  {
+    name:
+      "UAV Node",
 
-      role:
-        "Aircraft telemetry endpoint",
+    role:
+      "Aircraft telemetry endpoint",
 
-      identity:
-        "UAV-01",
+    identity:
+      "UAV-01",
 
-      state:
-        "Bound",
+    state:
+      "Bound",
 
-      tone:
-        "nominal",
+    tone:
+      "nominal",
 
-      icon:
-        Radio,
-    },
-  ];
+    icon:
+      Radio,
+  },
+];
+
 
 /* =========================================================
    Protocol Steps
@@ -308,108 +358,109 @@ const sessionNodes:
 
 const protocolSteps:
   ProtocolStep[] = [
-    {
-      step:
-        "01",
+  {
+    step:
+      "01",
 
-      title:
-        "Peer Identity",
+    title:
+      "Peer Identity",
 
-      description:
-        "Persistent peer identity is checked before accepting a secure session.",
+    description:
+      "Persistent peer identity is checked before accepting a secure session.",
 
-      tone:
-        "nominal",
+    tone:
+      "nominal",
 
-      icon:
-        Fingerprint,
-    },
+    icon:
+      Fingerprint,
+  },
 
-    {
-      step:
-        "02",
+  {
+    step:
+      "02",
 
-      title:
-        "Trusted Fingerprint",
+    title:
+      "Trusted Fingerprint",
 
-      description:
-        "Previously trusted peer fingerprint continuity is compared before command exchange.",
+    description:
+      "Previously trusted peer fingerprint continuity is compared before command exchange.",
 
-      tone:
-        "info",
+    tone:
+      "info",
 
-      icon:
-        ShieldCheck,
-    },
+    icon:
+      ShieldCheck,
+  },
 
-    {
-      step:
-        "03",
+  {
+    step:
+      "03",
 
-      title:
-        "Fresh Session Material",
+    title:
+      "Fresh Session Material",
 
-      description:
-        "Fresh session-specific material is used to derive command and telemetry contexts.",
+    description:
+      "Fresh session-specific material is used to derive command and telemetry contexts.",
 
-      tone:
-        "caution",
+    tone:
+      "caution",
 
-      icon:
-        KeyRound,
-    },
+    icon:
+      KeyRound,
+  },
 
-    {
-      step:
-        "04",
+  {
+    step:
+      "04",
 
-      title:
-        "Directional Isolation",
+    title:
+      "Directional Isolation",
 
-      description:
-        "Ground-to-UAV commands and UAV-to-ground telemetry use separate directional contexts.",
+    description:
+      "Ground-to-UAV commands and UAV-to-ground telemetry use separate directional contexts.",
 
-      tone:
-        "nominal",
+    tone:
+      "nominal",
 
-      icon:
-        ArrowRightLeft,
-    },
+    icon:
+      ArrowRightLeft,
+  },
 
-    {
-      step:
-        "05",
+  {
+    step:
+      "05",
 
-      title:
-        "Replay Gate",
+    title:
+      "Replay Gate",
 
-      description:
-        "Monotonic counters and ordered validation reject stale or repeated packets.",
+    description:
+      "Monotonic counters and ordered validation reject stale or repeated packets.",
 
-      tone:
-        "info",
+    tone:
+      "info",
 
-      icon:
-        TimerReset,
-    },
+    icon:
+      TimerReset,
+  },
 
-    {
-      step:
-        "06",
+  {
+    step:
+      "06",
 
-      title:
-        "Rekey / Reset Safety",
+    title:
+      "Rekey / Reset Safety",
 
-      description:
-        "Old state is invalidated after reset or rekey to avoid stale-session reuse.",
+    description:
+      "Old state is invalidated after reset or rekey to avoid stale-session reuse.",
 
-      tone:
-        "nominal",
+    tone:
+      "nominal",
 
-      icon:
-        RotateCcw,
-    },
-  ];
+    icon:
+      RotateCcw,
+  },
+];
+
 
 /* =========================================================
    Threat Coverage
@@ -417,256 +468,331 @@ const protocolSteps:
 
 const threats:
   ThreatItem[] = [
-    {
-      title:
-        "Unsigned Command",
+  {
+    title:
+      "Unsigned Command",
 
-      status:
-        "Blocked",
+    status:
+      "Blocked",
 
-      description:
-        "Command frame rejected because it was not marked as signed by the secure session layer.",
+    description:
+      "Command frame rejected because it was not marked as signed by the secure session layer.",
 
-      tone:
-        "nominal",
+    tone:
+      "nominal",
 
-      icon:
-        ShieldCheck,
-    },
+    icon:
+      ShieldCheck,
+  },
 
-    {
-      title:
-        "Replay Attempt",
+  {
+    title:
+      "Replay Attempt",
 
-      status:
-        "Rejected",
+    status:
+      "Rejected",
 
-      description:
-        "Repeated sequence counter detected. Packet is not allowed to update command state.",
+    description:
+      "Repeated sequence counter detected. Packet is not allowed to update command state.",
 
-      tone:
-        "nominal",
+    tone:
+      "nominal",
 
-      icon:
-        TimerReset,
-    },
+    icon:
+      TimerReset,
+  },
 
-    {
-      title:
-        "Identity Mismatch",
+  {
+    title:
+      "Identity Mismatch",
 
-      status:
-        "Review",
+    status:
+      "Review",
 
-      description:
-        "Unknown peer identity would require operator verification before trust continuity.",
+    description:
+      "Unknown peer identity would require operator verification before trust continuity.",
 
-      tone:
-        "caution",
+    tone:
+      "caution",
 
-      icon:
-        Fingerprint,
-    },
+    icon:
+      Fingerprint,
+  },
 
-    {
-      title:
-        "Link Degradation",
+  {
+    title:
+      "Link Degradation",
 
-      status:
-        "Watched",
+    status:
+      "Watched",
 
-      description:
-        "Telemetry is still active, but low link quality can trigger safe command restrictions.",
+    description:
+      "Telemetry is still active, but low link quality can trigger safe command restrictions.",
 
-      tone:
-        "info",
+    tone:
+      "info",
 
-      icon:
-        Wifi,
-    },
-  ];
+    icon:
+      Wifi,
+  },
+];
+
 
 /* =========================================================
-   Audit
+   Command Audit
    ========================================================= */
 
 const auditItems:
   AuditItem[] = [
-    {
-      time:
-        "14:24:12",
+  {
+    time:
+      "14:24:12",
 
-      command:
-        "ARM",
+    command:
+      "ARM",
 
-      actor:
-        "Operator",
+    actor:
+      "Operator",
 
-      direction:
-        "GC → UAV",
+    direction:
+      "GC → UAV",
 
-      signature:
-        "SIG-7FA2",
+    signature:
+      "SIG-7FA2",
 
-      status:
-        "nominal",
-    },
+    status:
+      "nominal",
+  },
 
-    {
-      time:
-        "14:24:19",
+  {
+    time:
+      "14:24:19",
 
-      command:
-        "TAKEOFF",
+    command:
+      "TAKEOFF",
 
-      actor:
-        "Operator",
+    actor:
+      "Operator",
 
-      direction:
-        "GC → UAV",
+    direction:
+      "GC → UAV",
 
-      signature:
-        "SIG-81C0",
+    signature:
+      "SIG-81C0",
 
-      status:
-        "nominal",
-    },
+    status:
+      "nominal",
+  },
 
-    {
-      time:
-        "14:25:04",
+  {
+    time:
+      "14:25:04",
 
-      command:
-        "REPLAYED-HOLD",
+    command:
+      "REPLAYED-HOLD",
 
-      actor:
-        "Unknown",
+    actor:
+      "Unknown",
 
-      direction:
-        "GC → UAV",
+    direction:
+      "GC → UAV",
 
-      signature:
-        "BLOCKED",
+    signature:
+      "BLOCKED",
 
-      status:
-        "critical",
-    },
+    status:
+      "critical",
+  },
 
-    {
-      time:
-        "14:25:38",
+  {
+    time:
+      "14:25:38",
 
-      command:
-        "TELEMETRY-FRAME",
+    command:
+      "TELEMETRY-FRAME",
 
-      actor:
-        "UAV-01",
+    actor:
+      "UAV-01",
 
-      direction:
-        "UAV → GC",
+    direction:
+      "UAV → GC",
 
-      signature:
-        "MAC-4D2E",
+    signature:
+      "MAC-4D2E",
 
-      status:
-        "info",
-    },
+    status:
+      "info",
+  },
 
-    {
-      time:
-        "14:26:10",
+  {
+    time:
+      "14:26:10",
 
-      command:
-        "REKEY",
+    command:
+      "REKEY",
 
-      actor:
-        "Gateway",
+    actor:
+      "Gateway",
 
-      direction:
-        "GW ↔ UAV",
+    direction:
+      "GW ↔ UAV",
 
-      signature:
-        "SIG-2F90",
+    signature:
+      "SIG-2F90",
 
-      status:
-        "caution",
-    },
-  ];
+    status:
+      "caution",
+  },
+];
+
 
 /* =========================================================
-   Permissions
+   Access Roles
    ========================================================= */
 
 const accessRoles:
   AccessRole[] = [
-    {
-      role:
-        "Mission Admin",
+  {
+    role:
+      "Mission Admin",
 
-      command:
-        "Full",
+    command:
+      "Full",
 
-      telemetry:
-        "Full",
+    telemetry:
+      "Full",
 
-      camera:
-        "Full",
+    camera:
+      "Full",
 
-      security:
-        "Full",
-    },
+    security:
+      "Full",
+  },
 
-    {
-      role:
-        "Pilot Operator",
+  {
+    role:
+      "Pilot Operator",
 
-      command:
-        "Flight",
+    command:
+      "Flight",
 
-      telemetry:
-        "Full",
+    telemetry:
+      "Full",
 
-      camera:
-        "View",
+    camera:
+      "View",
 
-      security:
-        "Limited",
-    },
+    security:
+      "Limited",
+  },
 
-    {
-      role:
-        "Observer",
+  {
+    role:
+      "Observer",
 
-      command:
-        "None",
+    command:
+      "None",
 
-      telemetry:
-        "View",
+    telemetry:
+      "View",
 
-      camera:
-        "View",
+    camera:
+      "View",
 
-      security:
-        "None",
-    },
+    security:
+      "None",
+  },
 
-    {
-      role:
-        "Maintenance",
+  {
+    role:
+      "Maintenance",
 
-      command:
-        "Disabled",
+    command:
+      "Disabled",
 
-      telemetry:
-        "Health",
+    telemetry:
+      "Health",
 
-      camera:
-        "None",
+    camera:
+      "None",
 
-      security:
-        "Audit",
-    },
-  ];
+    security:
+      "Audit",
+  },
+];
+
+
+/* =========================================================
+   Shared UI
+   ========================================================= */
+
+function StatusChip({
+  children,
+  tone,
+}: {
+  children:
+    ReactNode;
+
+  tone:
+    Tone;
+}) {
+  const style =
+    toneClass[
+      tone
+    ];
+
+  return (
+    <span
+      className={[
+        "inline-flex h-9 items-center gap-2",
+
+        "rounded-[7px] border px-3",
+
+        "text-[12px] font-semibold",
+
+        style.border,
+        style.bg,
+        style.text,
+      ].join(" ")}
+    >
+      {children}
+    </span>
+  );
+}
+
+
+function ActionButton({
+  children,
+  primary = false,
+}: {
+  children:
+    ReactNode;
+
+  primary?:
+    boolean;
+}) {
+  return (
+    <button
+      type="button"
+      className={[
+        "inline-flex h-10 items-center justify-center gap-2",
+
+        "rounded-[7px] border px-3.5",
+
+        "text-[13px] font-semibold",
+
+        "transition-[background-color,border-color,color] duration-150",
+
+        primary
+          ? "border-[rgba(176,138,88,0.40)] bg-[rgba(176,138,88,0.14)] text-[var(--primary)] hover:bg-[rgba(176,138,88,0.21)]"
+          : "border-[var(--border)] bg-[var(--surface-2)] text-[var(--muted)] hover:border-[var(--border-strong)] hover:bg-[var(--surface-hover)] hover:text-[var(--foreground)]",
+      ].join(" ")}
+    >
+      {children}
+    </button>
+  );
+}
+
 
 /* =========================================================
    Page Header
@@ -674,60 +800,77 @@ const accessRoles:
 
 function PageHeader() {
   return (
-    <section className="mn-panel p-5">
+    <section
+      className={[
+        "rounded-[10px]",
+
+        "border border-[var(--border)]",
+
+        "bg-[var(--surface-1)]",
+
+        "p-5",
+
+        "shadow-[0_14px_36px_rgba(0,0,0,0.18)]",
+      ].join(" ")}
+    >
       <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
         <div>
-          <p className="mn-eyebrow">
+          <p className="text-[12px] font-semibold uppercase tracking-[0.085em] text-[var(--primary)]">
             Security · Command Integrity
           </p>
 
-          <h1 className="mn-heading mt-2 text-[28px]">
+          <h1 className="mt-2 text-[28px] font-semibold tracking-[-0.035em] text-[var(--foreground)]">
             Security Control Center
           </h1>
 
-          <p className="mt-2 max-w-5xl text-[13px] leading-relaxed text-[var(--muted)]">
-            Monitor peer identity, secure command sessions, directional isolation, replay validation, access control and GoblinWisp prototype state across MissionNexus.
+          <p className="mt-2 max-w-5xl text-[13px] leading-[1.65] text-[var(--muted)]">
+            Monitor peer identity, secure command sessions,
+            directional isolation, replay validation, access
+            control and GoblinWisp prototype state across
+            MissionNexus.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <span className="mn-chip mn-chip-nominal h-10 px-3">
+          <StatusChip tone="nominal">
             <ShieldCheck
-              size={13}
+              size={14}
+              strokeWidth={1.7}
             />
 
             Secure Link Active
-          </span>
+          </StatusChip>
 
-          <button
-            type="button"
-            className="mn-button mn-button-secondary"
-          >
+          <ActionButton>
             <RotateCcw
               size={14}
+              strokeWidth={1.7}
             />
 
             Rekey Session
-          </button>
+          </ActionButton>
 
-          <button
-            type="button"
-            className="mn-button mn-button-primary"
-          >
+          <ActionButton primary>
             <KeyRound
               size={14}
+              strokeWidth={1.7}
             />
 
             Rotate Key
-          </button>
+          </ActionButton>
         </div>
       </div>
     </section>
   );
 }
 
+
 /* =========================================================
-   Section
+   Section Shell
+
+   IMPORTANT:
+   h-full + flex-col makes all cards in a grid row reach
+   exactly the same bottom line.
    ========================================================= */
 
 function SectionShell({
@@ -736,39 +879,123 @@ function SectionShell({
   action,
   children,
 }: {
-  eyebrow: string;
-  title: string;
-  action?: string;
-  children: ReactNode;
+  eyebrow:
+    string;
+
+  title:
+    string;
+
+  action?:
+    string;
+
+  children:
+    ReactNode;
 }) {
   return (
-    <section className="mn-panel overflow-hidden">
-      <div className="border-b border-[var(--border-soft)] px-5 py-4">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+    <section
+      className={[
+        "flex h-full min-w-0 flex-col",
+
+        "overflow-hidden rounded-[10px]",
+
+        "border border-[var(--border)]",
+
+        "bg-[var(--surface-1)]",
+
+        "shadow-[0_12px_30px_rgba(0,0,0,0.16)]",
+      ].join(" ")}
+    >
+      <div
+        className={[
+          "flex min-h-[76px] shrink-0 items-center",
+
+          "border-b border-[var(--border-soft)]",
+
+          "bg-[var(--surface-2)]",
+
+          "px-5 py-3.5",
+        ].join(" ")}
+      >
+        <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="mn-eyebrow">
+            <p className="text-[12px] font-semibold uppercase tracking-[0.075em] text-[var(--primary)]">
               {eyebrow}
             </p>
 
-            <h2 className="mn-heading mt-1 text-[18px]">
+            <h2 className="mt-1 text-[18px] font-semibold tracking-[-0.02em] text-[var(--foreground)]">
               {title}
             </h2>
           </div>
 
           {action ? (
-            <span className="mn-chip mn-chip-primary w-fit">
+            <span
+              className={[
+                "inline-flex w-fit items-center",
+
+                "rounded-[6px] border",
+
+                "border-[rgba(176,138,88,0.27)]",
+
+                "bg-[rgba(176,138,88,0.09)]",
+
+                "px-2.5 py-1",
+
+                "text-[12px] font-semibold",
+
+                "text-[var(--primary)]",
+              ].join(" ")}
+            >
               {action}
             </span>
           ) : null}
         </div>
       </div>
 
-      <div className="p-5">
+      <div className="min-h-0 flex-1 p-5">
         {children}
       </div>
     </section>
   );
 }
+
+
+/* =========================================================
+   Consistent Two Column Layout
+
+   IMPORTANT:
+   Every paired row uses EXACTLY the same 2 / 1 split.
+   Therefore all vertical divider positions match.
+   ========================================================= */
+
+function SecuritySplitRow({
+  left,
+  right,
+}: {
+  left:
+    ReactNode;
+
+  right:
+    ReactNode;
+}) {
+  return (
+    <div
+      className={[
+        "grid items-stretch gap-6",
+
+        "xl:grid-cols-[minmax(0,2fr)_minmax(360px,1fr)]",
+      ].join(" ")}
+    >
+      <div className="min-w-0">
+        {left}
+      </div>
+
+      <div className="min-w-0">
+        {right}
+      </div>
+    </div>
+  );
+}
+
 
 /* =========================================================
    Summary Card
@@ -777,7 +1004,8 @@ function SectionShell({
 function SummaryCard({
   item,
 }: {
-  item: SummaryMetric;
+  item:
+    SummaryMetric;
 }) {
   const Icon =
     item.icon;
@@ -790,27 +1018,36 @@ function SummaryCard({
   return (
     <div
       className={[
-        "mn-card p-4",
+        "flex h-full min-h-[132px] flex-col",
+
+        "rounded-[9px] border",
+
+        "bg-[var(--surface-2)]",
+
+        "p-4",
+
+        "shadow-[0_8px_22px_rgba(0,0,0,0.14)]",
+
         tone.border,
       ].join(" ")}
     >
       <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 font-mono text-[9px] font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
+        <div className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.055em] text-[var(--muted)]">
           <Icon
-            size={14}
+            size={15}
+            strokeWidth={1.65}
             className={
               tone.text
             }
           />
 
-          {
-            item.label
-          }
+          {item.label}
         </div>
 
         <span
           className={[
             "h-2 w-2 rounded-full",
+
             tone.dot,
           ].join(" ")}
         />
@@ -819,18 +1056,73 @@ function SummaryCard({
       <div
         className={[
           "mt-4 font-mono text-[22px] font-semibold",
+
           tone.text,
         ].join(" ")}
       >
         {item.value}
       </div>
 
-      <p className="mt-2 text-[12px] leading-relaxed text-[var(--muted)]">
+      <p className="mt-auto pt-2 text-[12px] leading-[1.55] text-[var(--muted)]">
         {item.helper}
       </p>
     </div>
   );
 }
+
+
+/* =========================================================
+   Key Value
+   ========================================================= */
+
+function KeyValue({
+  label,
+  value,
+  tone,
+}: {
+  label:
+    string;
+
+  value:
+    string;
+
+  tone:
+    Tone;
+}) {
+  const style =
+    toneClass[
+      tone
+    ];
+
+  return (
+    <div
+      className={[
+        "rounded-[7px]",
+
+        "border border-[var(--border-soft)]",
+
+        "bg-[var(--input)]",
+
+        "px-3 py-3",
+      ].join(" ")}
+    >
+      <div className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--muted-soft)]">
+        {label}
+      </div>
+
+      <div
+        className={[
+          "mt-1.5 font-mono text-[13px] font-semibold",
+
+          style.text,
+        ].join(" ")}
+      >
+        {value}
+      </div>
+    </div>
+  );
+}
+
 
 /* =========================================================
    Session Node
@@ -839,7 +1131,8 @@ function SummaryCard({
 function SessionNodeCard({
   node,
 }: {
-  node: SessionNode;
+  node:
+    SessionNode;
 }) {
   const Icon =
     node.icon;
@@ -852,7 +1145,14 @@ function SessionNodeCard({
   return (
     <div
       className={[
-        "mn-card p-4",
+        "flex h-full flex-col",
+
+        "rounded-[9px] border",
+
+        "bg-[var(--surface-2)]",
+
+        "p-4",
+
         tone.border,
       ].join(" ")}
     >
@@ -860,7 +1160,9 @@ function SessionNodeCard({
         <div className="flex min-w-0 items-start gap-3">
           <div
             className={[
-              "rounded-md border p-2",
+              "flex h-9 w-9 shrink-0 items-center justify-center",
+
+              "rounded-[7px] border",
 
               tone.border,
               tone.bg,
@@ -868,6 +1170,7 @@ function SessionNodeCard({
           >
             <Icon
               size={16}
+              strokeWidth={1.7}
               className={
                 tone.text
               }
@@ -879,7 +1182,7 @@ function SessionNodeCard({
               {node.name}
             </h3>
 
-            <p className="mt-1 text-[12px] leading-relaxed text-[var(--muted)]">
+            <p className="mt-1 text-[12px] leading-[1.55] text-[var(--muted)]">
               {node.role}
             </p>
           </div>
@@ -887,76 +1190,46 @@ function SessionNodeCard({
 
         <span
           className={[
-            "shrink-0 rounded-full border px-2.5 py-1 font-mono text-[8px] font-semibold uppercase tracking-[0.1em]",
+            "shrink-0 rounded-full border",
+
+            "px-2.5 py-1",
+
+            "font-mono text-[10px] font-semibold uppercase tracking-[0.07em]",
 
             tone.border,
             tone.bg,
             tone.text,
           ].join(" ")}
         >
-          {
-            node.state
-          }
+          {node.state}
         </span>
       </div>
 
-      <KeyValue
-        label="Peer Identity"
-        value={
-          node.identity
-        }
-        tone={
-          node.tone
-        }
-      />
-    </div>
-  );
-}
-
-/* =========================================================
-   Key Value
-   ========================================================= */
-
-function KeyValue({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: string;
-  tone: Tone;
-}) {
-  const style =
-    toneClass[
-      tone
-    ];
-
-  return (
-    <div className="mt-4 rounded-md border border-[var(--border-soft)] bg-black px-3 py-3">
-      <div className="font-mono text-[8px] font-semibold uppercase tracking-[0.14em] text-[var(--muted-soft)]">
-        {label}
-      </div>
-
-      <div
-        className={[
-          "mt-1 font-mono text-[13px] font-semibold",
-          style.text,
-        ].join(" ")}
-      >
-        {value}
+      <div className="mt-auto">
+        <KeyValue
+          label="Peer Identity"
+          value={
+            node.identity
+          }
+          tone={
+            node.tone
+          }
+        />
       </div>
     </div>
   );
 }
 
+
 /* =========================================================
-   Protocol
+   Protocol Step
    ========================================================= */
 
 function ProtocolStepCard({
   item,
 }: {
-  item: ProtocolStep;
+  item:
+    ProtocolStep;
 }) {
   const Icon =
     item.icon;
@@ -969,45 +1242,51 @@ function ProtocolStepCard({
   return (
     <div
       className={[
-        "mn-card p-4",
+        "flex h-full",
+
+        "rounded-[9px] border",
+
+        "bg-[var(--surface-2)]",
+
+        "p-4",
+
         tone.border,
       ].join(" ")}
     >
       <div className="flex items-start gap-3">
         <div
           className={[
-            "flex h-10 w-10 shrink-0 items-center justify-center rounded-md border font-mono text-[10px] font-semibold",
+            "flex h-10 w-10 shrink-0 items-center justify-center",
+
+            "rounded-[7px] border",
+
+            "font-mono text-[11px] font-semibold",
 
             tone.border,
             tone.bg,
             tone.text,
           ].join(" ")}
         >
-          {
-            item.step
-          }
+          {item.step}
         </div>
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <Icon
               size={14}
+              strokeWidth={1.7}
               className={
                 tone.text
               }
             />
 
             <h3 className="text-[14px] font-semibold text-[var(--foreground)]">
-              {
-                item.title
-              }
+              {item.title}
             </h3>
           </div>
 
-          <p className="mt-2 text-[12px] leading-relaxed text-[var(--muted)]">
-            {
-              item.description
-            }
+          <p className="mt-2 text-[12px] leading-[1.6] text-[var(--muted)]">
+            {item.description}
           </p>
         </div>
       </div>
@@ -1015,13 +1294,214 @@ function ProtocolStepCard({
   );
 }
 
+
 /* =========================================================
-   Directional Isolation
+   Prototype Lab
    ========================================================= */
+
+function GoblinWispPrototypeLab() {
+  return (
+    <div className="grid gap-5">
+      <div className="grid items-stretch gap-4 xl:grid-cols-3">
+        {sessionNodes.map(
+          (
+            node,
+          ) => (
+            <SessionNodeCard
+              key={
+                node.name
+              }
+              node={
+                node
+              }
+            />
+          ),
+        )}
+      </div>
+
+      <div
+        className={[
+          "rounded-[9px]",
+
+          "border border-[var(--border-soft)]",
+
+          "bg-[var(--surface-2)]",
+
+          "p-4",
+        ].join(" ")}
+      >
+        <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
+          <div>
+            <p className="text-[12px] font-semibold uppercase tracking-[0.075em] text-[var(--primary)]">
+              GoblinWisp Prototype
+            </p>
+
+            <h3 className="mt-1 text-[17px] font-semibold text-[var(--foreground)]">
+              Identity-Bound Secure Session Flow
+            </h3>
+
+            <p className="mt-2 max-w-4xl text-[12px] leading-[1.65] text-[var(--muted)]">
+              Prototype view showing peer validation,
+              directional command and telemetry contexts,
+              packet counters, and reset-safe session
+              invalidation.
+            </p>
+          </div>
+
+          <div className="grid shrink-0 gap-2 sm:grid-cols-3">
+            <KeyValue
+              label="Session"
+              value="GW-SESSION-042"
+              tone="info"
+            />
+
+            <KeyValue
+              label="KDF State"
+              value="Bound"
+              tone="nominal"
+            />
+
+            <KeyValue
+              label="Mode"
+              value="Prototype"
+              tone="caution"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="grid items-stretch gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {protocolSteps.map(
+          (
+            item,
+          ) => (
+            <ProtocolStepCard
+              key={
+                item.step
+              }
+              item={
+                item
+              }
+            />
+          ),
+        )}
+      </div>
+    </div>
+  );
+}
+
+
+/* =========================================================
+   Directional Security
+   ========================================================= */
+
+function DirectionCard({
+  eyebrow,
+  title,
+  tone,
+  icon: Icon,
+  fields,
+}: {
+  eyebrow:
+    string;
+
+  title:
+    string;
+
+  tone:
+    Tone;
+
+  icon:
+    LucideIcon;
+
+  fields:
+    Array<
+      [
+        string,
+        string,
+        Tone,
+      ]
+    >;
+}) {
+  const style =
+    toneClass[
+      tone
+    ];
+
+  return (
+    <div
+      className={[
+        "flex h-full flex-col",
+
+        "rounded-[9px] border",
+
+        "bg-[var(--surface-2)]",
+
+        "p-4",
+
+        style.border,
+      ].join(" ")}
+    >
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <p
+            className={[
+              "font-mono text-[11px] font-semibold uppercase tracking-[0.11em]",
+
+              style.text,
+            ].join(" ")}
+          >
+            {eyebrow}
+          </p>
+
+          <h3 className="mt-1 text-[16px] font-semibold text-[var(--foreground)]">
+            {title}
+          </h3>
+        </div>
+
+        <Icon
+          size={20}
+          strokeWidth={1.6}
+          className={
+            style.text
+          }
+        />
+      </div>
+
+      <div className="mt-5 grid flex-1 content-start gap-3 sm:grid-cols-2">
+        {fields.map(
+          (
+            [
+              label,
+              value,
+              fieldTone,
+            ],
+          ) => (
+            <KeyValue
+              key={
+                label
+              }
+              label={
+                label
+              }
+              value={
+                value
+              }
+              tone={
+                fieldTone
+              }
+            />
+          ),
+        )}
+      </div>
+    </div>
+  );
+}
+
 
 function DirectionalIsolationPanel() {
   return (
-    <div className="grid gap-4 xl:grid-cols-2">
+    <div className="grid h-full items-stretch gap-4 xl:grid-cols-2">
       <DirectionCard
         eyebrow="Command Direction"
         title="Ground Controller → UAV"
@@ -1093,24 +1573,32 @@ function DirectionalIsolationPanel() {
   );
 }
 
-function DirectionCard({
-  eyebrow,
-  title,
-  tone,
+
+/* =========================================================
+   Active Session Stack
+   ========================================================= */
+
+function SessionMiniCard({
   icon: Icon,
-  fields,
+  title,
+  value,
+  helper,
+  tone,
 }: {
-  eyebrow: string;
-  title: string;
-  tone: Tone;
-  icon: LucideIcon;
-  fields: Array<
-    [
-      string,
-      string,
-      Tone,
-    ]
-  >;
+  icon:
+    LucideIcon;
+
+  title:
+    string;
+
+  value:
+    string;
+
+  helper:
+    string;
+
+  tone:
+    Tone;
 }) {
   const style =
     toneClass[
@@ -1120,379 +1608,65 @@ function DirectionCard({
   return (
     <div
       className={[
-        "mn-card p-4",
+        "flex h-full",
+
+        "rounded-[9px] border",
+
+        "bg-[var(--surface-2)]",
+
+        "p-4",
+
         style.border,
       ].join(" ")}
     >
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <p
+      <div className="flex items-start gap-3">
+        <div
+          className={[
+            "flex h-9 w-9 shrink-0 items-center justify-center",
+
+            "rounded-[7px] border",
+
+            style.border,
+            style.bg,
+          ].join(" ")}
+        >
+          <Icon
+            size={15}
+            strokeWidth={1.7}
+            className={
+              style.text
+            }
+          />
+        </div>
+
+        <div className="min-w-0">
+          <h3 className="text-[14px] font-semibold text-[var(--foreground)]">
+            {title}
+          </h3>
+
+          <div
             className={[
-              "font-mono text-[9px] font-semibold uppercase tracking-[0.16em]",
+              "mt-1 font-mono text-[12px] font-semibold",
+
               style.text,
             ].join(" ")}
           >
-            {eyebrow}
+            {value}
+          </div>
+
+          <p className="mt-2 text-[12px] leading-[1.6] text-[var(--muted)]">
+            {helper}
           </p>
-
-          <h3 className="mt-1 text-[16px] font-semibold text-[var(--foreground)]">
-            {title}
-          </h3>
-        </div>
-
-        <Icon
-          size={20}
-          className={
-            style.text
-          }
-        />
-      </div>
-
-      <div className="mt-5 grid gap-3 md:grid-cols-2">
-        {fields.map(
-          (
-            [
-              label,
-              value,
-              fieldTone,
-            ],
-          ) => (
-            <KeyValue
-              key={
-                label
-              }
-              label={
-                label
-              }
-              value={
-                value
-              }
-              tone={
-                fieldTone
-              }
-            />
-          ),
-        )}
-      </div>
-    </div>
-  );
-}
-
-/* =========================================================
-   Prototype Lab
-   ========================================================= */
-
-function GoblinWispPrototypeLab() {
-  return (
-    <div className="grid gap-5">
-      <div className="grid gap-4 xl:grid-cols-3">
-        {sessionNodes.map(
-          (
-            node,
-          ) => (
-            <SessionNodeCard
-              key={
-                node.name
-              }
-              node={
-                node
-              }
-            />
-          ),
-        )}
-      </div>
-
-      <div className="rounded-md border border-[var(--border-soft)] bg-[var(--surface-0)] p-4">
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-          <div>
-            <p className="mn-eyebrow">
-              GoblinWisp Prototype
-            </p>
-
-            <h3 className="mt-1 text-[17px] font-semibold text-[var(--foreground)]">
-              Identity-Bound Secure Session Flow
-            </h3>
-
-            <p className="mt-2 max-w-4xl text-[12px] leading-relaxed text-[var(--muted)]">
-              Prototype view showing peer validation, directional command and telemetry contexts, packet counters, and reset-safe session invalidation.
-            </p>
-          </div>
-
-          <div className="grid gap-2 sm:grid-cols-3">
-            <KeyValue
-              label="Session"
-              value="GW-SESSION-042"
-              tone="info"
-            />
-
-            <KeyValue
-              label="KDF State"
-              value="Bound"
-              tone="nominal"
-            />
-
-            <KeyValue
-              label="Mode"
-              value="Prototype"
-              tone="caution"
-            />
-          </div>
         </div>
       </div>
-
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {protocolSteps.map(
-          (
-            item,
-          ) => (
-            <ProtocolStepCard
-              key={
-                item.step
-              }
-              item={
-                item
-              }
-            />
-          ),
-        )}
-      </div>
     </div>
   );
 }
 
-/* =========================================================
-   Threat Coverage
-   ========================================================= */
-
-function ThreatCoveragePanel() {
-  return (
-    <div className="grid gap-4 md:grid-cols-2">
-      {threats.map(
-        (
-          item,
-        ) => {
-          const Icon =
-            item.icon;
-
-          const tone =
-            toneClass[
-              item.tone
-            ];
-
-          return (
-            <div
-              key={
-                item.title
-              }
-              className={[
-                "rounded-md border bg-[var(--surface-0)] p-4",
-                tone.border,
-              ].join(" ")}
-            >
-              <div className="flex items-start gap-3">
-                <div
-                  className={[
-                    "rounded-md border p-2",
-
-                    tone.border,
-                    tone.bg,
-                  ].join(" ")}
-                >
-                  <Icon
-                    size={15}
-                    className={
-                      tone.text
-                    }
-                  />
-                </div>
-
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-start justify-between gap-3">
-                    <h3 className="text-[14px] font-semibold text-[var(--foreground)]">
-                      {
-                        item.title
-                      }
-                    </h3>
-
-                    <span
-                      className={[
-                        "shrink-0 font-mono text-[8px] font-semibold uppercase",
-                        tone.text,
-                      ].join(" ")}
-                    >
-                      {
-                        item.status
-                      }
-                    </span>
-                  </div>
-
-                  <p className="mt-2 text-[12px] leading-relaxed text-[var(--muted)]">
-                    {
-                      item.description
-                    }
-                  </p>
-                </div>
-              </div>
-            </div>
-          );
-        },
-      )}
-    </div>
-  );
-}
-
-/* =========================================================
-   Audit
-   ========================================================= */
-
-function CommandAuditTable() {
-  return (
-    <div className="overflow-x-auto rounded-md border border-[var(--border-soft)] bg-[var(--surface-0)]">
-      <div className="min-w-[800px]">
-        <div className="grid grid-cols-[110px_1.2fr_1fr_1fr_1fr_100px] border-b border-[var(--border-soft)] bg-black px-4 py-3 font-mono text-[9px] font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
-          <span>Time</span>
-          <span>Command</span>
-          <span>Actor</span>
-          <span>Direction</span>
-          <span>Signature</span>
-          <span className="text-right">
-            State
-          </span>
-        </div>
-
-        {auditItems.map(
-          (
-            item,
-          ) => {
-            const tone =
-              toneClass[
-                item.status
-              ];
-
-            return (
-              <div
-                key={`${item.time}-${item.command}`}
-                className="grid grid-cols-[110px_1.2fr_1fr_1fr_1fr_100px] border-b border-[var(--border-soft)] px-4 py-4 text-[12px] last:border-b-0"
-              >
-                <span className="font-mono text-[11px] text-[var(--muted)]">
-                  {
-                    item.time
-                  }
-                </span>
-
-                <span className="font-medium text-[var(--foreground)]">
-                  {
-                    item.command
-                  }
-                </span>
-
-                <span className="text-[var(--muted)]">
-                  {
-                    item.actor
-                  }
-                </span>
-
-                <span className="font-mono text-[11px] text-[var(--info)]">
-                  {
-                    item.direction
-                  }
-                </span>
-
-                <span className="font-mono text-[11px] text-[var(--muted)]">
-                  {
-                    item.signature
-                  }
-                </span>
-
-                <span
-                  className={[
-                    "text-right font-mono text-[11px]",
-                    tone.text,
-                  ].join(" ")}
-                >
-                  {
-                    item.status
-                  }
-                </span>
-              </div>
-            );
-          },
-        )}
-      </div>
-    </div>
-  );
-}
-
-/* =========================================================
-   Access Matrix
-   ========================================================= */
-
-function AccessMatrix() {
-  return (
-    <div className="overflow-x-auto rounded-md border border-[var(--border-soft)] bg-[var(--surface-0)]">
-      <div className="min-w-[720px]">
-        <div className="grid grid-cols-[1.2fr_1fr_1fr_1fr_1fr] border-b border-[var(--border-soft)] bg-black px-4 py-3 font-mono text-[9px] font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
-          <span>Role</span>
-          <span>Command</span>
-          <span>Telemetry</span>
-          <span>Camera</span>
-          <span>Security</span>
-        </div>
-
-        {accessRoles.map(
-          (
-            role,
-          ) => (
-            <div
-              key={
-                role.role
-              }
-              className="grid grid-cols-[1.2fr_1fr_1fr_1fr_1fr] border-b border-[var(--border-soft)] px-4 py-4 text-[12px] last:border-b-0"
-            >
-              <span className="font-medium text-[var(--foreground)]">
-                {
-                  role.role
-                }
-              </span>
-
-              <span className="text-[var(--muted)]">
-                {
-                  role.command
-                }
-              </span>
-
-              <span className="text-[var(--muted)]">
-                {
-                  role.telemetry
-                }
-              </span>
-
-              <span className="text-[var(--muted)]">
-                {
-                  role.camera
-                }
-              </span>
-
-              <span className="text-[var(--muted)]">
-                {
-                  role.security
-                }
-              </span>
-            </div>
-          ),
-        )}
-      </div>
-    </div>
-  );
-}
-
-/* =========================================================
-   Session Stack
-   ========================================================= */
 
 function ActiveSessionStack() {
   return (
-    <div className="grid gap-4">
+    <div className="grid h-full auto-rows-fr gap-4">
       <SessionMiniCard
         icon={
           UserCheck
@@ -1536,69 +1710,328 @@ function ActiveSessionStack() {
   );
 }
 
-function SessionMiniCard({
-  icon: Icon,
-  title,
-  value,
-  helper,
-  tone,
-}: {
-  icon: LucideIcon;
-  title: string;
-  value: string;
-  helper: string;
-  tone: Tone;
-}) {
-  const style =
-    toneClass[
-      tone
-    ];
 
+/* =========================================================
+   Threat Coverage
+   ========================================================= */
+
+function ThreatCoveragePanel() {
+  return (
+    <div className="grid h-full auto-rows-fr gap-4 sm:grid-cols-2">
+      {threats.map(
+        (
+          item,
+        ) => {
+          const Icon =
+            item.icon;
+
+          const tone =
+            toneClass[
+              item.tone
+            ];
+
+          return (
+            <div
+              key={
+                item.title
+              }
+              className={[
+                "flex h-full",
+
+                "rounded-[9px] border",
+
+                "bg-[var(--surface-2)]",
+
+                "p-4",
+
+                tone.border,
+              ].join(" ")}
+            >
+              <div className="flex items-start gap-3">
+                <div
+                  className={[
+                    "flex h-9 w-9 shrink-0 items-center justify-center",
+
+                    "rounded-[7px] border",
+
+                    tone.border,
+                    tone.bg,
+                  ].join(" ")}
+                >
+                  <Icon
+                    size={15}
+                    strokeWidth={1.7}
+                    className={
+                      tone.text
+                    }
+                  />
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-3">
+                    <h3 className="text-[14px] font-semibold text-[var(--foreground)]">
+                      {item.title}
+                    </h3>
+
+                    <span
+                      className={[
+                        "shrink-0 font-mono text-[10px] font-semibold uppercase",
+
+                        tone.text,
+                      ].join(" ")}
+                    >
+                      {item.status}
+                    </span>
+                  </div>
+
+                  <p className="mt-2 text-[12px] leading-[1.6] text-[var(--muted)]">
+                    {item.description}
+                  </p>
+                </div>
+              </div>
+            </div>
+          );
+        },
+      )}
+    </div>
+  );
+}
+
+
+/* =========================================================
+   Command Audit Table
+   ========================================================= */
+
+function CommandAuditTable() {
   return (
     <div
       className={[
-        "rounded-md border bg-[var(--surface-0)] p-4",
-        style.border,
+        "h-full overflow-x-auto",
+
+        "rounded-[8px]",
+
+        "border border-[var(--border-soft)]",
+
+        "bg-[var(--surface-2)]",
       ].join(" ")}
     >
-      <div className="flex items-start gap-3">
+      <div className="min-w-[800px]">
         <div
           className={[
-            "rounded-md border p-2",
-            style.border,
-            style.bg,
+            "grid",
+
+            "grid-cols-[110px_1.2fr_1fr_1fr_1fr_100px]",
+
+            "border-b border-[var(--border)]",
+
+            "bg-[var(--input)]",
+
+            "px-4 py-3",
+
+            "font-mono text-[10px] font-semibold uppercase tracking-[0.09em]",
+
+            "text-[var(--muted-soft)]",
           ].join(" ")}
         >
-          <Icon
-            size={15}
-            className={
-              style.text
-            }
-          />
+          <span>
+            Time
+          </span>
+
+          <span>
+            Command
+          </span>
+
+          <span>
+            Actor
+          </span>
+
+          <span>
+            Direction
+          </span>
+
+          <span>
+            Signature
+          </span>
+
+          <span className="text-right">
+            State
+          </span>
         </div>
 
-        <div>
-          <h3 className="text-[14px] font-semibold text-[var(--foreground)]">
-            {title}
-          </h3>
+        {auditItems.map(
+          (
+            item,
+          ) => {
+            const tone =
+              toneClass[
+                item.status
+              ];
 
-          <div
-            className={[
-              "mt-1 font-mono text-[12px] font-semibold",
-              style.text,
-            ].join(" ")}
-          >
-            {value}
-          </div>
+            return (
+              <div
+                key={`${item.time}-${item.command}`}
+                className={[
+                  "grid",
 
-          <p className="mt-2 text-[12px] leading-relaxed text-[var(--muted)]">
-            {helper}
-          </p>
-        </div>
+                  "grid-cols-[110px_1.2fr_1fr_1fr_1fr_100px]",
+
+                  "border-b border-[var(--border-soft)]",
+
+                  "px-4 py-4",
+
+                  "text-[12px]",
+
+                  "transition-colors",
+
+                  "last:border-b-0",
+
+                  "hover:bg-[var(--surface-hover)]",
+                ].join(" ")}
+              >
+                <span className="font-mono text-[11px] text-[var(--muted)]">
+                  {item.time}
+                </span>
+
+                <span className="font-medium text-[var(--foreground)]">
+                  {item.command}
+                </span>
+
+                <span className="text-[var(--muted)]">
+                  {item.actor}
+                </span>
+
+                <span className="font-mono text-[11px] text-[var(--info)]">
+                  {item.direction}
+                </span>
+
+                <span className="font-mono text-[11px] text-[var(--muted)]">
+                  {item.signature}
+                </span>
+
+                <span
+                  className={[
+                    "text-right font-mono text-[11px]",
+
+                    tone.text,
+                  ].join(" ")}
+                >
+                  {item.status}
+                </span>
+              </div>
+            );
+          },
+        )}
       </div>
     </div>
   );
 }
+
+
+/* =========================================================
+   Access Matrix
+   ========================================================= */
+
+function AccessMatrix() {
+  return (
+    <div
+      className={[
+        "overflow-x-auto",
+
+        "rounded-[8px]",
+
+        "border border-[var(--border-soft)]",
+
+        "bg-[var(--surface-2)]",
+      ].join(" ")}
+    >
+      <div className="min-w-[720px]">
+        <div
+          className={[
+            "grid grid-cols-[1.2fr_1fr_1fr_1fr_1fr]",
+
+            "border-b border-[var(--border)]",
+
+            "bg-[var(--input)]",
+
+            "px-4 py-3",
+
+            "font-mono text-[10px] font-semibold uppercase tracking-[0.09em]",
+
+            "text-[var(--muted-soft)]",
+          ].join(" ")}
+        >
+          <span>
+            Role
+          </span>
+
+          <span>
+            Command
+          </span>
+
+          <span>
+            Telemetry
+          </span>
+
+          <span>
+            Camera
+          </span>
+
+          <span>
+            Security
+          </span>
+        </div>
+
+        {accessRoles.map(
+          (
+            role,
+          ) => (
+            <div
+              key={
+                role.role
+              }
+              className={[
+                "grid grid-cols-[1.2fr_1fr_1fr_1fr_1fr]",
+
+                "border-b border-[var(--border-soft)]",
+
+                "px-4 py-4",
+
+                "text-[12px]",
+
+                "transition-colors",
+
+                "last:border-b-0",
+
+                "hover:bg-[var(--surface-hover)]",
+              ].join(" ")}
+            >
+              <span className="font-medium text-[var(--foreground)]">
+                {role.role}
+              </span>
+
+              <span className="text-[var(--muted)]">
+                {role.command}
+              </span>
+
+              <span className="text-[var(--muted)]">
+                {role.telemetry}
+              </span>
+
+              <span className="text-[var(--muted)]">
+                {role.camera}
+              </span>
+
+              <span className="text-[var(--muted)]">
+                {role.security}
+              </span>
+            </div>
+          ),
+        )}
+      </div>
+    </div>
+  );
+}
+
 
 /* =========================================================
    Security Primitive
@@ -1611,11 +2044,20 @@ function SecurityPrimitive({
   helper,
   tone,
 }: {
-  icon: LucideIcon;
-  label: string;
-  value: string;
-  helper: string;
-  tone: Tone;
+  icon:
+    LucideIcon;
+
+  label:
+    string;
+
+  value:
+    string;
+
+  helper:
+    string;
+
+  tone:
+    Tone;
 }) {
   const style =
     toneClass[
@@ -1625,13 +2067,23 @@ function SecurityPrimitive({
   return (
     <div
       className={[
-        "mn-card p-4",
+        "flex h-full min-h-[154px] flex-col",
+
+        "rounded-[9px] border",
+
+        "bg-[var(--surface-2)]",
+
+        "p-4",
+
+        "shadow-[0_7px_20px_rgba(0,0,0,0.12)]",
+
         style.border,
       ].join(" ")}
     >
-      <div className="flex items-center gap-2 font-mono text-[9px] font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+      <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.065em] text-[var(--muted)]">
         <Icon
-          size={13}
+          size={14}
+          strokeWidth={1.7}
           className={
             style.text
           }
@@ -1643,22 +2095,28 @@ function SecurityPrimitive({
       <div
         className={[
           "mt-3 font-mono text-[18px] font-semibold",
+
           style.text,
         ].join(" ")}
       >
         {value}
       </div>
 
-      <p className="mt-2 text-[12px] leading-relaxed text-[var(--muted)]">
+      <p className="mt-auto pt-2 text-[12px] leading-[1.6] text-[var(--muted)]">
         {helper}
       </p>
     </div>
   );
 }
 
+
+/* =========================================================
+   Security Health
+   ========================================================= */
+
 function SecurityHealthGrid() {
   return (
-    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <div className="grid items-stretch gap-4 md:grid-cols-2 xl:grid-cols-4">
       <SecurityPrimitive
         icon={
           Fingerprint
@@ -1702,17 +2160,33 @@ function SecurityHealthGrid() {
   );
 }
 
+
 /* =========================================================
    Page
    ========================================================= */
 
 export function Security() {
   return (
-    <div className="min-h-screen bg-[var(--background)] px-5 py-6">
-      <div className="mx-auto flex max-w-[1680px] flex-col gap-6">
+    <div className="min-h-[calc(100vh-70px)] bg-transparent px-5 py-6 sm:px-6 lg:px-8">
+      <div
+        className={[
+          "mx-auto flex w-full max-w-[1680px] flex-col",
+
+          "gap-6",
+        ].join(" ")}
+      >
+        {/* ===============================================
+            Header
+            =============================================== */}
+
         <PageHeader />
 
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+
+        {/* ===============================================
+            Summary Metrics
+            =============================================== */}
+
+        <section className="grid items-stretch gap-4 md:grid-cols-2 xl:grid-cols-4">
           {summaryMetrics.map(
             (
               item,
@@ -1729,6 +2203,11 @@ export function Security() {
           )}
         </section>
 
+
+        {/* ===============================================
+            Prototype Lab
+            =============================================== */}
+
         <SectionShell
           eyebrow="Prototype Lab"
           title="GoblinWisp Secure Session Prototype"
@@ -1737,8 +2216,16 @@ export function Security() {
           <GoblinWispPrototypeLab />
         </SectionShell>
 
-        <div className="grid items-start gap-6 xl:grid-cols-12">
-          <div className="xl:col-span-8">
+
+        {/* ===============================================
+            ROW 1
+
+            Same 2 / 1 column ratio used everywhere.
+            Both outer boxes stretch to same height.
+            =============================================== */}
+
+        <SecuritySplitRow
+          left={
             <SectionShell
               eyebrow="Directional Security Context"
               title="Command / Telemetry Isolation"
@@ -1746,9 +2233,8 @@ export function Security() {
             >
               <DirectionalIsolationPanel />
             </SectionShell>
-          </div>
-
-          <div className="xl:col-span-4">
+          }
+          right={
             <SectionShell
               eyebrow="Active Sessions"
               title="Peer Session Stack"
@@ -1756,11 +2242,18 @@ export function Security() {
             >
               <ActiveSessionStack />
             </SectionShell>
-          </div>
-        </div>
+          }
+        />
 
-        <div className="grid items-start gap-6 xl:grid-cols-12">
-          <div className="xl:col-span-7">
+
+        {/* ===============================================
+            ROW 2
+
+            EXACT SAME vertical column divider as row 1.
+            =============================================== */}
+
+        <SecuritySplitRow
+          left={
             <SectionShell
               eyebrow="Command Integrity"
               title="Signed Command Audit"
@@ -1768,9 +2261,8 @@ export function Security() {
             >
               <CommandAuditTable />
             </SectionShell>
-          </div>
-
-          <div className="xl:col-span-5">
+          }
+          right={
             <SectionShell
               eyebrow="Threat Coverage"
               title="Security Resistance View"
@@ -1778,8 +2270,13 @@ export function Security() {
             >
               <ThreatCoveragePanel />
             </SectionShell>
-          </div>
-        </div>
+          }
+        />
+
+
+        {/* ===============================================
+            Authorization
+            =============================================== */}
 
         <SectionShell
           eyebrow="Authorization"
@@ -1789,9 +2286,19 @@ export function Security() {
           <AccessMatrix />
         </SectionShell>
 
+
+        {/* ===============================================
+            Security Health
+            =============================================== */}
+
         <SecurityHealthGrid />
 
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+
+        {/* ===============================================
+            Final Security Primitives
+            =============================================== */}
+
+        <section className="grid items-stretch gap-4 md:grid-cols-2 xl:grid-cols-4">
           <SecurityPrimitive
             icon={
               Network
