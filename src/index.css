@@ -1,205 +1,284 @@
 @import "tailwindcss";
+@import "tailwindcss";
+@import "./styles/mission-typography.css";
 
 
 /* =========================================================
    AERONEXUS / MISSIONNEXUS
-   GLOBAL DESIGN SYSTEM
 
-   BLACK PRODUCT CHROME
-   +
-   AIRCRAFT ALUMINIUM OPERATIONS WORKSPACE
+   DRONE HEALTH THEME
+   Global MissionNexus Visual System
 
-   ---------------------------------------------------------
+   HEADER / FOOTER
+   #050608
 
-   Header / Footer
-   #050607
+   BODY
+   #09090B
 
-   Workspace
-   #DDE3E8
+   MAJOR SECTION SHELL
+   #000000
 
-   Main Surface
-   #EEF2F5
+   METRIC / INNER CARD
+   #070A10
 
-   Elevated Surface
-   #F7F9FA
+   FEATURE / INFORMATION SURFACE
+   #07111F
 
-   Inset Surface
-   #E4E9ED
+   INPUT / DEEP INSET
+   #05080D
 
-   Typography
-   #18232D
+   BORDERS
+   #1D2533
+   #151923
+   #243147
 
-   Mission Blue
-   #3F6E8C
+   PRIMARY AMBER
+   #F6B23C
 
-   Aeronexus Bronze
-   #A37B43
+   MISSION BLUE
+   #5AA9FF
 
-   Nominal
-   #507A65
+   NOMINAL GREEN
+   #49E58F
 
-   Critical
-   #AC5C64
+   CRITICAL RED
+   #FF5A63
    ========================================================= */
-
 
 :root {
   /* =======================================================
      Product Chrome
      ======================================================= */
 
-  --header:
-    #050607;
-
-  --footer:
-    #050607;
+  --header: #050608;
+  --footer: #050608;
 
 
   /* =======================================================
-     Aircraft Aluminium Workspace
+     Workspace
+     EXACT Drone Health background
      ======================================================= */
 
-  --background:
-    #dde3e8;
+  --background: #09090b;
 
-  --background-top:
-    #e7ebef;
+  --background-top: #09090b;
 
-  --background-deep:
-    #d7dee4;
+  --background-deep: #070709;
 
 
   /* =======================================================
-     Surfaces
+     Surface Hierarchy
+
+     Drone Health uses:
+     black section shells
+     #070A10 metric cards
+     #07111F highlighted / information surfaces
      ======================================================= */
 
-  --surface:
-    #eef2f5;
+  --surface: #000000;
 
-  --surface-soft:
-    #e4e9ed;
+  --surface-0: #09090b;
 
-  --surface-elevated:
-    #f7f9fa;
+  --surface-1: #000000;
 
-  --surface-white:
-    #fbfcfd;
+  --surface-2: #070a10;
 
-  --surface-hover:
-    #d7e1e8;
+  --surface-3: #07111f;
 
-  --input:
-    #f9fafb;
+  --surface-soft: #070a10;
+
+  --surface-elevated: #07111f;
+
+  --surface-hover: #0b1420;
+
+
+  /* =======================================================
+     Shared Panel Aliases
+     ======================================================= */
+
+  --panel: #000000;
+
+  --panel-elevated: #070a10;
+
+  --panel-hover: #0b1420;
+
+
+  /* =======================================================
+     Controls
+     ======================================================= */
+
+  --input: #05080d;
 
 
   /* =======================================================
      Typography
      ======================================================= */
 
-  --foreground:
-    #18232d;
+  --foreground: #f2f4f7;
 
-  --foreground-soft:
-    #394651;
+  --foreground-soft: #d4dae1;
 
-  --muted:
-    #4f5d69;
+  --muted: #9098a2;
 
-  --muted-strong:
-    #65727e;
+  --muted-soft: #747e8b;
 
-  --subtle:
-    #76838e;
+  --muted-strong: #a6afb9;
+
+  --subtle: #606a76;
 
 
   /* =======================================================
      Borders
+
+     Extracted from Drone Health
      ======================================================= */
 
-  --border:
-    #c5cdd5;
+  --border: #1d2533;
 
-  --border-soft:
-    #d3dae0;
+  --border-soft: #151923;
 
-  --border-strong:
-    #b5bfc8;
+  --border-strong: #243147;
 
 
   /* =======================================================
-     Aeronexus / Mission Colors
+     Aeronexus Amber
      ======================================================= */
 
-  --primary:
-    #a37b43;
+  --primary: #f6b23c;
+
+  --primary-hover: #ffc35a;
 
   --primary-soft:
-    #eee3d3;
+    rgba(
+      246,
+      178,
+      60,
+      0.08
+    );
 
-  --hud:
-    #a37b43;
+  --hud: #f6b23c;
 
 
-  --info:
-    #3f6e8c;
+  /* =======================================================
+     Information Blue
+     ======================================================= */
+
+  --info: #5aa9ff;
 
   --info-soft:
-    #dce8ef;
+    rgba(
+      90,
+      169,
+      255,
+      0.08
+    );
 
-  --cyan:
-    #527f99;
+  --cyan: #69c7e8;
 
 
-  --nominal:
-    #507a65;
+  /* =======================================================
+     Nominal Green
+     ======================================================= */
+
+  --nominal: #49e58f;
 
   --nominal-soft:
-    #ddebe4;
+    rgba(
+      73,
+      229,
+      143,
+      0.08
+    );
 
 
-  --caution:
-    #a57a3b;
+  /* =======================================================
+     Caution
+     ======================================================= */
+
+  --caution: #f6b23c;
 
   --caution-soft:
-    #f2e7d5;
+    rgba(
+      246,
+      178,
+      60,
+      0.08
+    );
 
 
-  --critical:
-    #ac5c64;
+  /* =======================================================
+     Critical
+     ======================================================= */
+
+  --critical: #ff5a63;
 
   --critical-soft:
-    #f2dfe2;
+    rgba(
+      255,
+      90,
+      99,
+      0.08
+    );
+
+
+  /* =======================================================
+     Legacy Compatibility
+     ======================================================= */
+
+  --accent: #f6b23c;
+
+  --accent-bg:
+    rgba(
+      246,
+      178,
+      60,
+      0.08
+    );
+
+  --accent-border:
+    rgba(
+      246,
+      178,
+      60,
+      0.30
+    );
+
+  --text-h: #f2f4f7;
+
+  --social-bg: #070a10;
+
+  --shadow:
+    0 18px 50px
+    rgba(
+      0,
+      0,
+      0,
+      0.28
+    );
 
 
   /* =======================================================
      Layout
      ======================================================= */
 
-  --header-height:
-    70px;
+  --header-height: 70px;
 
-  --content-width:
-    1460px;
+  --content-width: 1460px;
 
-  --content-wide:
-    1540px;
+  --content-wide: 1680px;
 
 
   /* =======================================================
      Radius
      ======================================================= */
 
-  --radius-xs:
-    4px;
+  --radius-xs: 4px;
 
-  --radius-sm:
-    6px;
+  --radius-sm: 6px;
 
-  --radius-md:
-    9px;
+  --radius-md: 12px;
 
-  --radius-lg:
-    12px;
+  --radius-lg: 12px;
 }
 
 
@@ -207,50 +286,37 @@
    Reset
    ========================================================= */
 
-
 * {
-  box-sizing:
-    border-box;
+  box-sizing: border-box;
 }
 
 
 html,
 body,
 #root {
-  min-height:
-    100%;
+  min-height: 100%;
 
-  margin:
-    0;
+  margin: 0;
 }
 
 
 html {
-  background:
-    var(--background);
+  background: #09090b;
 
-  scroll-behavior:
-    smooth;
+  scroll-behavior: smooth;
+
+  color-scheme: dark;
 }
 
 
 body {
-  min-width:
-    320px;
+  min-width: 320px;
 
-  overflow-x:
-    hidden;
+  overflow-x: hidden;
 
-  background:
-    linear-gradient(
-      180deg,
-      #e7ebef 0%,
-      #dde3e8 42%,
-      #d7dee4 100%
-    );
+  background: #09090b;
 
-  color:
-    var(--foreground);
+  color: var(--foreground);
 
   font-family:
     Inter,
@@ -260,27 +326,111 @@ body {
     system-ui,
     sans-serif;
 
-  font-size:
-    14px;
+  font-size: 14px;
 
-  line-height:
-    1.55;
+  line-height: 1.55;
 
-  text-rendering:
-    optimizeLegibility;
+  text-rendering: optimizeLegibility;
 
-  -webkit-font-smoothing:
-    antialiased;
+  -webkit-font-smoothing: antialiased;
 
-  -moz-osx-font-smoothing:
-    grayscale;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+
+/* =========================================================
+   MissionNexus Workspace
+
+   IMPORTANT:
+   No gray-blue gradient anymore.
+
+   This now uses the exact flat Drone Health body.
+   ========================================================= */
+
+.mn-workspace {
+  position: relative;
+
+  isolation: isolate;
+
+  min-height:
+    calc(
+      100vh -
+      var(--header-height)
+    );
+
+  background: #09090b;
+
+  color: var(--foreground);
+}
+
+
+/* =========================================================
+   Remove previous blue atmospheric treatment
+   ========================================================= */
+
+.mn-workspace::before {
+  content: "";
+
+  position: absolute;
+
+  inset: 0;
+
+  z-index: -1;
+
+  pointer-events: none;
+
+  background: transparent;
+
+  opacity: 0;
+}
+
+
+/* =========================================================
+   Standard Mission Page
+   ========================================================= */
+
+.mn-page {
+  position: relative;
+
+  min-height:
+    calc(
+      100vh -
+      var(--header-height)
+    );
+
+  background: transparent;
+
+  color: var(--foreground);
+}
+
+
+.mn-page-width {
+  width: 100%;
+
+  max-width: var(--content-width);
+
+  margin: 0 auto;
+
+  padding:
+    28px 40px 40px;
+}
+
+
+.mn-page-width-wide {
+  width: 100%;
+
+  max-width: var(--content-wide);
+
+  margin: 0 auto;
+
+  padding:
+    26px 32px 40px;
 }
 
 
 /* =========================================================
    Typography
    ========================================================= */
-
 
 h1,
 h2,
@@ -289,8 +439,7 @@ h4,
 h5,
 h6,
 p {
-  margin:
-    0;
+  margin: 0;
 }
 
 
@@ -306,204 +455,77 @@ h6 {
     system-ui,
     sans-serif;
 
-  color:
-    var(--foreground);
+  color: var(--foreground);
 }
 
 
 h1 {
-  font-size:
-    27px;
+  font-size: 28px;
 
-  font-weight:
-    650;
+  font-weight: 650;
 
-  line-height:
-    1.15;
+  line-height: 1.15;
 
-  letter-spacing:
-    -0.035em;
+  letter-spacing: -0.035em;
 }
 
 
 h2 {
-  font-size:
-    18px;
+  font-size: 18px;
 
-  font-weight:
-    650;
+  font-weight: 650;
 
-  line-height:
-    1.25;
+  line-height: 1.25;
 
-  letter-spacing:
-    -0.02em;
+  letter-spacing: -0.02em;
 }
 
 
 h3 {
-  font-size:
-    16px;
+  font-size: 16px;
 
-  font-weight:
-    620;
+  font-weight: 620;
 
-  line-height:
-    1.3;
+  line-height: 1.3;
 
-  letter-spacing:
-    -0.015em;
+  letter-spacing: -0.015em;
 }
 
 
 p {
-  font-size:
-    14px;
+  font-size: 14px;
 
-  line-height:
-    1.6;
+  line-height: 1.6;
 }
 
 
 small {
-  font-size:
-    12px;
+  font-size: 12px;
 
-  line-height:
-    1.45;
+  line-height: 1.45;
 }
 
 
 /* =========================================================
-   Forms
+   Mission Typography Utilities
    ========================================================= */
 
+.mn-heading {
+  color: var(--foreground);
 
-button,
-input,
-textarea,
-select {
-  font:
-    inherit;
+  font-family:
+    Manrope,
+    Inter,
+    sans-serif;
+
+  font-weight: 650;
+
+  letter-spacing: -0.025em;
 }
-
-
-button {
-  cursor:
-    pointer;
-}
-
-
-button:disabled {
-  cursor:
-    not-allowed;
-}
-
-
-a {
-  color:
-    inherit;
-
-  text-decoration:
-    none;
-}
-
-
-input,
-textarea,
-select {
-  color:
-    var(--foreground);
-}
-
-
-::selection {
-  background:
-    rgba(
-      63,
-      110,
-      140,
-      0.20
-    );
-
-  color:
-    #10171d;
-}
-
-
-:focus-visible {
-  outline:
-    2px solid
-    rgba(
-      163,
-      123,
-      67,
-      0.42
-    );
-
-  outline-offset:
-    2px;
-}
-
-
-/* =========================================================
-   Global MissionNexus Page
-   ========================================================= */
-
-
-.mn-page {
-  min-height:
-    calc(
-      100vh -
-      var(--header-height)
-    );
-
-  color:
-    var(--foreground);
-
-  background:
-    transparent;
-}
-
-
-.mn-page-width {
-  width:
-    100%;
-
-  max-width:
-    var(--content-width);
-
-  margin:
-    0 auto;
-
-  padding:
-    28px 40px 40px;
-}
-
-
-.mn-page-width-wide {
-  width:
-    100%;
-
-  max-width:
-    var(--content-wide);
-
-  margin:
-    0 auto;
-
-  padding:
-    26px 36px 40px;
-}
-
-
-/* =========================================================
-   Page Typography Utilities
-   ========================================================= */
 
 
 .mn-page-title {
-  color:
-    var(--foreground);
+  color: var(--foreground);
 
   font-family:
     Manrope,
@@ -514,98 +536,79 @@ select {
     clamp(
       25px,
       1.55vw,
-      29px
+      30px
     );
 
-  font-weight:
-    650;
+  font-weight: 650;
 
-  line-height:
-    1.14;
+  line-height: 1.14;
 
-  letter-spacing:
-    -0.035em;
+  letter-spacing: -0.035em;
 }
 
 
 .mn-page-subtitle {
-  margin-top:
-    6px;
+  margin-top: 6px;
 
-  color:
-    var(--muted-strong);
+  color: var(--muted-strong);
 
-  font-size:
-    14px;
+  font-size: 14px;
 
-  line-height:
-    1.55;
+  line-height: 1.55;
 }
 
 
 .mn-section-title {
-  color:
-    var(--foreground);
+  color: var(--foreground);
 
-  font-size:
-    18px;
+  font-size: 18px;
 
-  font-weight:
-    650;
+  font-weight: 650;
 
-  letter-spacing:
-    -0.02em;
+  letter-spacing: -0.02em;
 }
 
 
 .mn-card-title {
-  color:
-    var(--foreground);
+  color: var(--foreground);
 
-  font-size:
-    15px;
+  font-size: 15px;
 
-  font-weight:
-    620;
+  font-weight: 620;
 }
 
 
 .mn-label {
-  color:
-    var(--muted);
+  color: var(--muted);
 
-  font-size:
-    13px;
+  font-size: 13px;
 
-  font-weight:
-    550;
+  font-weight: 550;
 }
 
 
 .mn-meta {
-  color:
-    var(--subtle);
+  color: var(--muted-soft);
 
-  font-size:
-    12px;
+  font-size: 12px;
 }
 
 
 .mn-eyebrow {
-  color:
-    var(--primary);
+  color: var(--primary);
 
-  font-size:
-    12px;
+  font-family:
+    "JetBrains Mono",
+    Consolas,
+    monospace;
 
-  font-weight:
-    650;
+  font-size: 10px;
 
-  letter-spacing:
-    0.075em;
+  font-weight: 700;
 
-  text-transform:
-    uppercase;
+  letter-spacing: 0.16em;
+
+  text-transform: uppercase;
 }
 
 
@@ -615,8 +618,7 @@ select {
     Consolas,
     monospace;
 
-  letter-spacing:
-    0.03em;
+  letter-spacing: 0.03em;
 }
 
 
@@ -626,197 +628,348 @@ select {
     Consolas,
     monospace;
 
-  font-variant-numeric:
-    tabular-nums;
+  font-variant-numeric: tabular-nums;
 
-  letter-spacing:
-    -0.03em;
+  letter-spacing: -0.03em;
 }
 
 
 /* =========================================================
-   Surface System
+   Controls
    ========================================================= */
 
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+
+button {
+  cursor: pointer;
+}
+
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+
+a {
+  color: inherit;
+
+  text-decoration: none;
+}
+
+
+input,
+textarea,
+select {
+  color: var(--foreground);
+}
+
+
+::placeholder {
+  color: var(--muted-soft);
+}
+
+
+::selection {
+  background:
+    rgba(
+      90,
+      169,
+      255,
+      0.28
+    );
+
+  color: #ffffff;
+}
+
+
+:focus-visible {
+  outline:
+    2px solid
+    rgba(
+      246,
+      178,
+      60,
+      0.5
+    );
+
+  outline-offset: 2px;
+}
+
+
+/* =========================================================
+   Shared Drone Health Surface System
+   ========================================================= */
+
+
+/* Main black section */
 
 .mn-surface {
   border:
     1px solid
-    var(--border);
+    #1d2533;
 
   border-radius:
-    var(--radius-md);
+    12px;
 
   background:
-    var(--surface);
+    #000000;
 
   box-shadow:
-    0 10px 28px
+    0 18px 50px
     rgba(
-      34,
-      48,
-      60,
-      0.07
+      0,
+      0,
+      0,
+      0.28
     );
 }
 
+
+/* Standard black panel */
 
 .mn-panel {
   border:
     1px solid
-    var(--border);
+    #1d2533;
 
   border-radius:
-    var(--radius-md);
+    12px;
 
   background:
-    var(--surface);
+    #000000;
 
   box-shadow:
-    0 6px 20px
+    0 18px 50px
     rgba(
-      34,
-      48,
-      60,
-      0.05
+      0,
+      0,
+      0,
+      0.24
     );
 }
 
+
+/* Feature / header panel */
 
 .mn-panel-elevated {
   border:
     1px solid
-    var(--border-soft);
+    #1d2533;
 
   border-radius:
-    var(--radius-md);
+    12px;
 
   background:
-    var(--surface-elevated);
+    #07111f;
 
   box-shadow:
-    0 6px 18px
+    0 18px 50px
     rgba(
-      34,
-      48,
-      60,
-      0.045
+      0,
+      0,
+      0,
+      0.28
     );
 }
 
 
+/* Inner metric / telemetry */
+
 .mn-inset {
   border:
     1px solid
-    var(--border-soft);
+    #1d2533;
 
   border-radius:
-    var(--radius-sm);
+    10px;
 
   background:
-    var(--surface-soft);
+    #070a10;
 }
 
 
 .mn-divider {
-  height:
-    1px;
+  height: 1px;
 
-  border:
-    0;
+  border: 0;
 
   background:
-    var(--border-soft);
+    #151923;
 }
 
 
 /* =========================================================
-   Mission States
+   State Styling
    ========================================================= */
+
+.mn-state-primary {
+  border-color:
+    rgba(
+      246,
+      178,
+      60,
+      0.30
+    );
+
+  background:
+    rgba(
+      246,
+      178,
+      60,
+      0.08
+    );
+
+  color: var(--primary);
+}
 
 
 .mn-state-info {
   border-color:
     rgba(
-      63,
-      110,
-      140,
-      0.24
+      90,
+      169,
+      255,
+      0.28
     );
 
   background:
-    var(--info-soft);
-
-  color:
-    var(--info);
-}
-
-
-.mn-state-primary {
-  border-color:
     rgba(
-      163,
-      123,
-      67,
-      0.26
+      90,
+      169,
+      255,
+      0.08
     );
 
-  background:
-    var(--primary-soft);
-
-  color:
-    #815e30;
+  color: var(--info);
 }
 
 
 .mn-state-nominal {
   border-color:
     rgba(
-      80,
-      122,
-      101,
-      0.25
+      73,
+      229,
+      143,
+      0.28
     );
 
   background:
-    var(--nominal-soft);
+    rgba(
+      73,
+      229,
+      143,
+      0.08
+    );
 
-  color:
-    var(--nominal);
+  color: var(--nominal);
 }
 
 
 .mn-state-caution {
   border-color:
     rgba(
-      165,
-      122,
-      59,
-      0.26
+      246,
+      178,
+      60,
+      0.30
     );
 
   background:
-    var(--caution-soft);
+    rgba(
+      246,
+      178,
+      60,
+      0.08
+    );
 
-  color:
-    #8c642d;
+  color: var(--caution);
 }
 
 
 .mn-state-critical {
   border-color:
     rgba(
-      172,
-      92,
-      100,
-      0.25
+      255,
+      90,
+      99,
+      0.30
     );
 
   background:
-    var(--critical-soft);
+    rgba(
+      255,
+      90,
+      99,
+      0.08
+    );
 
-  color:
-    var(--critical);
+  color: var(--critical);
+}
+
+
+/* =========================================================
+   Inputs
+   ========================================================= */
+
+.mn-input {
+  width: 100%;
+
+  height: 40px;
+
+  border:
+    1px solid
+    #1d2533;
+
+  border-radius: 7px;
+
+  background:
+    #05080d;
+
+  padding:
+    0 12px;
+
+  color: var(--foreground);
+
+  font-size: 14px;
+
+  outline: none;
+
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+
+.mn-input:hover {
+  border-color: #243147;
+
+  background:
+    #070a10;
+}
+
+
+.mn-input:focus {
+  border-color:
+    var(--primary);
+
+  background:
+    #070a10;
+
+  box-shadow:
+    0 0 0 3px
+    rgba(
+      246,
+      178,
+      60,
+      0.09
+    );
 }
 
 
@@ -824,91 +977,78 @@ select {
    Tables
    ========================================================= */
 
-
 .mn-table {
-  width:
-    100%;
+  width: 100%;
 
-  border-collapse:
-    separate;
+  border-collapse: separate;
 
-  border-spacing:
-    0;
+  border-spacing: 0;
 
-  overflow:
-    hidden;
+  overflow: hidden;
 
   border:
     1px solid
-    var(--border-soft);
+    #1d2533;
 
-  border-radius:
-    8px;
+  border-radius: 10px;
 
   background:
-    var(--surface-elevated);
+    #070a10;
 }
 
 
 .mn-table thead {
   background:
-    var(--surface-soft);
+    #07111f;
 }
 
 
 .mn-table th {
   padding:
-    11px 14px;
-
-  color:
-    var(--subtle);
-
-  font-size:
-    12px;
-
-  font-weight:
-    650;
-
-  text-align:
-    left;
-
-  letter-spacing:
-    0.045em;
-
-  text-transform:
-    uppercase;
+    12px 14px;
 
   border-bottom:
     1px solid
-    var(--border);
+    #1d2533;
+
+  color:
+    var(--muted-soft);
+
+  font-family:
+    "JetBrains Mono",
+    Consolas,
+    monospace;
+
+  font-size: 10px;
+
+  font-weight: 700;
+
+  text-align: left;
+
+  text-transform: uppercase;
+
+  letter-spacing: 0.1em;
 }
 
 
 .mn-table td {
   padding:
-    13px 14px;
+    14px;
+
+  border-bottom:
+    1px solid
+    #151923;
 
   color:
     var(--foreground-soft);
 
-  font-size:
-    13px;
-
-  border-bottom:
-    1px solid
-    var(--border-soft);
-}
-
-
-.mn-table tbody tr:last-child td {
-  border-bottom:
-    0;
+  font-size: 13px;
 }
 
 
 .mn-table tbody tr {
   background:
-    var(--surface-elevated);
+    #070a10;
 
   transition:
     background-color
@@ -918,111 +1058,48 @@ select {
 
 .mn-table tbody tr:nth-child(even) {
   background:
-    #f2f5f7;
+    #080c13;
 }
 
 
 .mn-table tbody tr:hover {
   background:
-    var(--surface-hover);
+    #0b1420;
+}
+
+
+.mn-table tbody tr:last-child td {
+  border-bottom: 0;
 }
 
 
 /* =========================================================
-   Inputs
+   Tactical Background Helpers
    ========================================================= */
-
-
-.mn-input {
-  width:
-    100%;
-
-  height:
-    40px;
-
-  border:
-    1px solid
-    var(--border);
-
-  border-radius:
-    6px;
-
-  background:
-    var(--input);
-
-  padding:
-    0 12px;
-
-  color:
-    var(--foreground);
-
-  font-size:
-    14px;
-
-  outline:
-    none;
-
-  transition:
-    border-color
-      150ms ease,
-    box-shadow
-      150ms ease,
-    background-color
-      150ms ease;
-}
-
-
-.mn-input:hover {
-  border-color:
-    var(--border-strong);
-}
-
-
-.mn-input:focus {
-  border-color:
-    var(--primary);
-
-  box-shadow:
-    0 0 0 3px
-    rgba(
-      163,
-      123,
-      67,
-      0.10
-    );
-}
-
-
-/* =========================================================
-   Tactical Grid
-   ========================================================= */
-
 
 .bg-tactical-grid {
   background-image:
     linear-gradient(
       to right,
       rgba(
-        44,
-        62,
-        78,
-        0.035
+        90,
+        169,
+        255,
+        0.018
       )
       1px,
-      transparent
-      1px
+      transparent 1px
     ),
     linear-gradient(
       to bottom,
       rgba(
-        44,
-        62,
-        78,
-        0.035
+        90,
+        169,
+        255,
+        0.018
       )
       1px,
-      transparent
-      1px
+      transparent 1px
     );
 
   background-size:
@@ -1035,26 +1112,24 @@ select {
     linear-gradient(
       to right,
       rgba(
-        44,
-        62,
-        78,
-        0.025
+        90,
+        169,
+        255,
+        0.012
       )
       1px,
-      transparent
-      1px
+      transparent 1px
     ),
     linear-gradient(
       to bottom,
       rgba(
-        44,
-        62,
-        78,
-        0.025
+        90,
+        169,
+        255,
+        0.012
       )
       1px,
-      transparent
-      1px
+      transparent 1px
     );
 
   background-size:
@@ -1063,23 +1138,16 @@ select {
 
 
 /* =========================================================
-   Existing Animations
+   Animations
    ========================================================= */
-
 
 @keyframes sweep {
   from {
-    transform:
-      rotate(
-        0deg
-      );
+    transform: rotate(0deg);
   }
 
   to {
-    transform:
-      rotate(
-        360deg
-      );
+    transform: rotate(360deg);
   }
 }
 
@@ -1091,52 +1159,37 @@ select {
     linear
     infinite;
 
-  transform-origin:
-    center;
+  transform-origin: center;
 }
 
 
 @keyframes pulse-ring {
   from {
-    transform:
-      scale(
-        0.72
-      );
+    transform: scale(0.72);
 
-    opacity:
-      0.24;
+    opacity: 0.24;
   }
 
   to {
-    transform:
-      scale(
-        1.65
-      );
+    transform: scale(1.65);
 
-    opacity:
-      0;
+    opacity: 0;
   }
 }
 
 
 .pulse-dot::before {
-  content:
-    "";
+  content: "";
 
-  position:
-    absolute;
+  position: absolute;
 
-  inset:
-    -5px;
+  inset: -5px;
 
-  border-radius:
-    9999px;
+  border-radius: 9999px;
 
-  background:
-    currentColor;
+  background: currentColor;
 
-  opacity:
-    0.22;
+  opacity: 0.22;
 
   animation:
     pulse-ring
@@ -1150,29 +1203,25 @@ select {
    Scrollbars
    ========================================================= */
 
-
 * {
-  scrollbar-width:
-    thin;
+  scrollbar-width: thin;
 
   scrollbar-color:
-    #9da8b1
-    #dbe1e6;
+    #243147
+    #09090b;
 }
 
 
 ::-webkit-scrollbar {
-  width:
-    8px;
+  width: 8px;
 
-  height:
-    8px;
+  height: 8px;
 }
 
 
 ::-webkit-scrollbar-track {
   background:
-    #dbe1e6;
+    #09090b;
 }
 
 
@@ -1185,7 +1234,7 @@ select {
     999px;
 
   background:
-    #9da8b1;
+    #243147;
 
   background-clip:
     padding-box;
@@ -1194,7 +1243,7 @@ select {
 
 ::-webkit-scrollbar-thumb:hover {
   background:
-    #84919b;
+    #33435c;
 
   background-clip:
     padding-box;
@@ -1202,13 +1251,12 @@ select {
 
 
 /* =========================================================
-   Leaflet
+   Leaflet / Map Controls
    ========================================================= */
-
 
 .leaflet-container {
   background:
-    #d6dde2
+    #09090b
     !important;
 
   font-family:
@@ -1217,31 +1265,29 @@ select {
     sans-serif
     !important;
 
-  font-size:
-    13px;
+  font-size: 13px;
 }
 
 
 .leaflet-control-zoom {
-  overflow:
-    hidden;
+  overflow: hidden;
 
   border:
     1px solid
-    #bec7ce
+    #1d2533
     !important;
 
   border-radius:
-    7px
+    8px
     !important;
 
   box-shadow:
-    0 6px 18px
+    0 10px 30px
     rgba(
-      34,
-      48,
-      60,
-      0.12
+      0,
+      0,
+      0,
+      0.42
     )
     !important;
 }
@@ -1249,27 +1295,27 @@ select {
 
 .leaflet-control-zoom a {
   border-color:
-    #d5dce1
+    #151923
     !important;
 
   background:
     rgba(
-      247,
-      249,
-      250,
+      7,
+      10,
+      16,
       0.97
     )
     !important;
 
   color:
-    #24313b
+    var(--foreground)
     !important;
 }
 
 
 .leaflet-control-zoom a:hover {
   background:
-    #e7ecef
+    #07111f
     !important;
 
   color:
@@ -1281,12 +1327,7 @@ select {
 .leaflet-control-attribution {
   border:
     1px solid
-    rgba(
-      190,
-      199,
-      206,
-      0.9
-    )
+    #1d2533
     !important;
 
   border-radius:
@@ -1294,19 +1335,19 @@ select {
 
   background:
     rgba(
-      247,
-      249,
-      250,
-      0.94
+      0,
+      0,
+      0,
+      0.90
     )
     !important;
 
   color:
-    #65727e
+    var(--muted-soft)
     !important;
 
   font-size:
-    12px
+    11px
     !important;
 
   padding:
@@ -1325,10 +1366,11 @@ select {
 .leaflet-popup-tip {
   border:
     1px solid
-    var(--border);
+    #1d2533
+    !important;
 
   background:
-    var(--surface-elevated)
+    #070a10
     !important;
 
   color:
@@ -1336,12 +1378,12 @@ select {
     !important;
 
   box-shadow:
-    0 12px 34px
+    0 16px 42px
     rgba(
-      34,
-      48,
-      60,
-      0.16
+      0,
+      0,
+      0,
+      0.50
     )
     !important;
 }
@@ -1349,7 +1391,7 @@ select {
 
 .leaflet-popup-content-wrapper {
   border-radius:
-    8px
+    10px
     !important;
 }
 
@@ -1359,18 +1401,615 @@ select {
     var(--foreground)
     !important;
 
-  font-size:
-    13px;
+  font-size: 13px;
 
-  line-height:
-    1.55;
+  line-height: 1.55;
+}
+
+
+.leaflet-popup-close-button {
+  color:
+    var(--muted)
+    !important;
+}
+
+
+.leaflet-popup-close-button:hover {
+  color:
+    var(--foreground)
+    !important;
+}
+
+
+/* =========================================================
+   MISSIONNEXUS THEME BRIDGE
+
+   This converts older UI generations to the Drone Health
+   theme while we progressively clean their TSX files.
+
+   Everything is scoped to .mn-workspace so the header and
+   footer remain untouched.
+   ========================================================= */
+
+
+/* =========================================================
+   CURRENT AEROSPACE GRAPHITE SURFACES
+   Convert them into Drone Health surfaces.
+   ========================================================= */
+
+.mn-workspace [class*="bg-[#171D23]"],
+.mn-workspace [class*="bg-[#171d23]"] {
+  background-color:
+    #000000
+    !important;
+}
+
+
+.mn-workspace [class*="bg-[#1D252D]"],
+.mn-workspace [class*="bg-[#1d252d]"] {
+  background-color:
+    #070a10
+    !important;
+}
+
+
+.mn-workspace [class*="bg-[#232C35]"],
+.mn-workspace [class*="bg-[#232c35]"] {
+  background-color:
+    #07111f
+    !important;
+}
+
+
+.mn-workspace [class*="bg-[#29343E]"],
+.mn-workspace [class*="bg-[#29343e]"] {
+  background-color:
+    #0b1420
+    !important;
+}
+
+
+.mn-workspace [class*="bg-[#11171D]"],
+.mn-workspace [class*="bg-[#11171d]"] {
+  background-color:
+    #05080d
+    !important;
+}
+
+
+/* =========================================================
+   Pure White Surfaces
+   ========================================================= */
+
+.mn-workspace [class~="bg-white"] {
+  background-color:
+    #070a10
+    !important;
+}
+
+
+/* =========================================================
+   Old Light Theme
+   ========================================================= */
+
+.mn-workspace [class*="bg-[#EEF2F5]"],
+.mn-workspace [class*="bg-[#eef2f5]"] {
+  background-color:
+    #000000
+    !important;
+}
+
+
+.mn-workspace [class*="bg-[#F7F9FA]"],
+.mn-workspace [class*="bg-[#f7f9fa]"],
+.mn-workspace [class*="bg-[#F8FAFB]"],
+.mn-workspace [class*="bg-[#f8fafb]"],
+.mn-workspace [class*="bg-[#F8F9FB]"],
+.mn-workspace [class*="bg-[#f8f9fb]"] {
+  background-color:
+    #070a10
+    !important;
+}
+
+
+.mn-workspace [class*="bg-[#E4E9ED]"],
+.mn-workspace [class*="bg-[#e4e9ed]"],
+.mn-workspace [class*="bg-[#E9EEF1]"],
+.mn-workspace [class*="bg-[#e9eef1]"],
+.mn-workspace [class*="bg-[#EDF0F3]"],
+.mn-workspace [class*="bg-[#edf0f3]"],
+.mn-workspace [class*="bg-[#F2F5F7]"],
+.mn-workspace [class*="bg-[#f2f5f7]"],
+.mn-workspace [class*="bg-[#F4F6F8]"],
+.mn-workspace [class*="bg-[#f4f6f8]"] {
+  background-color:
+    #07111f
+    !important;
+}
+
+
+/* =========================================================
+   Previous Grey Workspace Colors
+   ========================================================= */
+
+.mn-workspace [class*="bg-[#DDE3E8]"],
+.mn-workspace [class*="bg-[#dde3e8]"],
+.mn-workspace [class*="bg-[#D7DEE4]"],
+.mn-workspace [class*="bg-[#d7dee4]"],
+.mn-workspace [class*="bg-[#E7EBEF]"],
+.mn-workspace [class*="bg-[#e7ebef]"] {
+  background-color:
+    #09090b
+    !important;
+}
+
+
+/* =========================================================
+   Previous Dark UI Surfaces
+   ========================================================= */
+
+.mn-workspace [class*="bg-[#020304]"],
+.mn-workspace [class*="bg-[#030405]"],
+.mn-workspace [class*="bg-[#05060D]"],
+.mn-workspace [class*="bg-[#05060d]"],
+.mn-workspace [class*="bg-[#06080B]"],
+.mn-workspace [class*="bg-[#06080b]"],
+.mn-workspace [class*="bg-[#07090D]"],
+.mn-workspace [class*="bg-[#07090d]"],
+.mn-workspace [class*="bg-[#080A0C]"],
+.mn-workspace [class*="bg-[#080a0c]"],
+.mn-workspace [class*="bg-[#090B0E]"],
+.mn-workspace [class*="bg-[#090b0e]"] {
+  background-color:
+    #000000
+    !important;
+}
+
+
+.mn-workspace [class*="bg-[#0A0C0F]"],
+.mn-workspace [class*="bg-[#0a0c0f]"],
+.mn-workspace [class*="bg-[#0C0F12]"],
+.mn-workspace [class*="bg-[#0c0f12]"] {
+  background-color:
+    #070a10
+    !important;
+}
+
+
+/* =========================================================
+   Old Light Text
+   ========================================================= */
+
+.mn-workspace [class*="text-[#151A21]"],
+.mn-workspace [class*="text-[#151a21]"],
+.mn-workspace [class*="text-[#18232D]"],
+.mn-workspace [class*="text-[#18232d]"],
+.mn-workspace [class*="text-[#24313B]"],
+.mn-workspace [class*="text-[#24313b]"],
+.mn-workspace [class*="text-[#25313B]"],
+.mn-workspace [class*="text-[#25313b]"],
+.mn-workspace [class*="text-[#26303A]"],
+.mn-workspace [class*="text-[#26303a]"],
+.mn-workspace [class*="text-[#26323C]"],
+.mn-workspace [class*="text-[#26323c]"] {
+  color:
+    var(--foreground)
+    !important;
+}
+
+
+.mn-workspace [class*="text-[#343D48]"],
+.mn-workspace [class*="text-[#343d48]"],
+.mn-workspace [class*="text-[#394651]"],
+.mn-workspace [class*="text-[#43515D]"],
+.mn-workspace [class*="text-[#43515d]"] {
+  color:
+    var(--foreground-soft)
+    !important;
+}
+
+
+/* =========================================================
+   Old Muted Text
+   ========================================================= */
+
+.mn-workspace [class*="text-[#596672]"],
+.mn-workspace [class*="text-[#5E6B76]"],
+.mn-workspace [class*="text-[#5e6b76]"],
+.mn-workspace [class*="text-[#63707B]"],
+.mn-workspace [class*="text-[#63707b]"],
+.mn-workspace [class*="text-[#64717D]"],
+.mn-workspace [class*="text-[#64717d]"],
+.mn-workspace [class*="text-[#66717D]"],
+.mn-workspace [class*="text-[#66717d]"],
+.mn-workspace [class*="text-[#67747F]"],
+.mn-workspace [class*="text-[#67747f]"],
+.mn-workspace [class*="text-[#6A7782]"],
+.mn-workspace [class*="text-[#6a7782]"],
+.mn-workspace [class*="text-[#6D7A85]"],
+.mn-workspace [class*="text-[#6d7a85]"],
+.mn-workspace [class*="text-[#6E7B86]"],
+.mn-workspace [class*="text-[#6e7b86]"] {
+  color:
+    var(--muted)
+    !important;
+}
+
+
+/* =========================================================
+   Old Light Borders
+   ========================================================= */
+
+.mn-workspace [class*="border-[#BFC8D0]"],
+.mn-workspace [class*="border-[#bfc8d0]"],
+.mn-workspace [class*="border-[#BCC6CE]"],
+.mn-workspace [class*="border-[#bcc6ce]"],
+.mn-workspace [class*="border-[#BEC7CF]"],
+.mn-workspace [class*="border-[#bec7cf]"],
+.mn-workspace [class*="border-[#C5CDD5]"],
+.mn-workspace [class*="border-[#c5cdd5]"],
+.mn-workspace [class*="border-[#C7D0D7]"],
+.mn-workspace [class*="border-[#c7d0d7]"],
+.mn-workspace [class*="border-[#C8D0D7]"],
+.mn-workspace [class*="border-[#c8d0d7]"],
+.mn-workspace [class*="border-[#C8D0D9]"],
+.mn-workspace [class*="border-[#c8d0d9]"],
+.mn-workspace [class*="border-[#C9D1D7]"],
+.mn-workspace [class*="border-[#c9d1d7]"],
+.mn-workspace [class*="border-[#CAD2D9]"],
+.mn-workspace [class*="border-[#cad2d9]"],
+.mn-workspace [class*="border-[#CBD3D9]"],
+.mn-workspace [class*="border-[#cbd3d9]"],
+.mn-workspace [class*="border-[#CBD3DA]"],
+.mn-workspace [class*="border-[#cbd3da]"],
+.mn-workspace [class*="border-[#CCD4DA]"],
+.mn-workspace [class*="border-[#ccd4da]"],
+.mn-workspace [class*="border-[#CDD5DB]"],
+.mn-workspace [class*="border-[#cdd5db]"],
+.mn-workspace [class*="border-[#CED5DB]"],
+.mn-workspace [class*="border-[#ced5db]"],
+.mn-workspace [class*="border-[#CED5DC]"],
+.mn-workspace [class*="border-[#ced5dc]"],
+.mn-workspace [class*="border-[#D0D7DD]"],
+.mn-workspace [class*="border-[#d0d7dd]"],
+.mn-workspace [class*="border-[#D2D8DF]"],
+.mn-workspace [class*="border-[#d2d8df]"],
+.mn-workspace [class*="border-[#D4DAE1]"],
+.mn-workspace [class*="border-[#d4dae1]"],
+.mn-workspace [class*="border-[#D7DDE4]"],
+.mn-workspace [class*="border-[#d7dde4]"],
+.mn-workspace [class*="border-[#DCE2E8]"],
+.mn-workspace [class*="border-[#dce2e8]"],
+.mn-workspace [class*="border-[#DDE2E8]"],
+.mn-workspace [class*="border-[#dde2e8]"],
+.mn-workspace [class*="border-[#DDE3E8]"],
+.mn-workspace [class*="border-[#dde3e8]"],
+.mn-workspace [class*="border-[#E0E5EA]"],
+.mn-workspace [class*="border-[#e0e5ea]"],
+.mn-workspace [class*="border-[#E4E8ED]"],
+.mn-workspace [class*="border-[#e4e8ed]"] {
+  border-color:
+    #1d2533
+    !important;
+}
+
+
+/* =========================================================
+   Current Graphite Borders
+   ========================================================= */
+
+.mn-workspace [class*="border-[#2C3741]"],
+.mn-workspace [class*="border-[#2c3741]"],
+.mn-workspace [class*="border-[#313B45]"],
+.mn-workspace [class*="border-[#313b45]"] {
+  border-color:
+    #1d2533
+    !important;
+}
+
+
+/* =========================================================
+   White Overlay Compatibility
+   ========================================================= */
+
+.mn-workspace [class~="text-white"] {
+  color:
+    var(--foreground)
+    !important;
+}
+
+
+.mn-workspace [class*="border-white/"] {
+  border-color:
+    #1d2533
+    !important;
+}
+
+
+.mn-workspace [class*="bg-white/"] {
+  background-color:
+    rgba(
+      90,
+      169,
+      255,
+      0.025
+    )
+    !important;
+}
+
+
+/* =========================================================
+   Previous Bronze → Drone Health Amber
+   ========================================================= */
+
+.mn-workspace [class*="text-[#B08A58]"],
+.mn-workspace [class*="text-[#b08a58]"],
+.mn-workspace [class*="text-[#C09A63]"],
+.mn-workspace [class*="text-[#c09a63]"],
+.mn-workspace [class*="text-[#A37B43]"],
+.mn-workspace [class*="text-[#a37b43]"],
+.mn-workspace [class*="text-[#8D6427]"],
+.mn-workspace [class*="text-[#8d6427]"],
+.mn-workspace [class*="text-[#F6B23C]"],
+.mn-workspace [class*="text-[#f6b23c]"] {
+  color:
+    #f6b23c
+    !important;
+}
+
+
+/* =========================================================
+   Previous Blue → Drone Health Blue
+   ========================================================= */
+
+.mn-workspace [class*="text-[#5D87A3]"],
+.mn-workspace [class*="text-[#5d87a3]"],
+.mn-workspace [class*="text-[#5AA9FF]"],
+.mn-workspace [class*="text-[#5aa9ff]"],
+.mn-workspace [class*="text-[#316F9F]"],
+.mn-workspace [class*="text-[#316f9f]"] {
+  color:
+    #5aa9ff
+    !important;
+}
+
+
+/* =========================================================
+   Previous Green → Drone Health Green
+   ========================================================= */
+
+.mn-workspace [class*="text-[#648E78]"],
+.mn-workspace [class*="text-[#648e78]"],
+.mn-workspace [class*="text-[#59D99A]"],
+.mn-workspace [class*="text-[#59d99a]"],
+.mn-workspace [class*="text-[#337D5C]"],
+.mn-workspace [class*="text-[#337d5c]"] {
+  color:
+    #49e58f
+    !important;
+}
+
+
+/* =========================================================
+   Previous Critical → Drone Health Red
+   ========================================================= */
+
+.mn-workspace [class*="text-[#C96972]"],
+.mn-workspace [class*="text-[#c96972]"],
+.mn-workspace [class*="text-[#FF5A63]"],
+.mn-workspace [class*="text-[#ff5a63]"],
+.mn-workspace [class*="text-[#FF315A]"],
+.mn-workspace [class*="text-[#ff315a]"],
+.mn-workspace [class*="text-[#FF5A72]"],
+.mn-workspace [class*="text-[#ff5a72]"] {
+  color:
+    #ff5a63
+    !important;
+}
+
+
+/* =========================================================
+   Previous RGBA Amber Surfaces
+   ========================================================= */
+
+.mn-workspace [class*="bg-[rgba(176,138,88"],
+.mn-workspace [class*="bg-[rgba(246,178,60"] {
+  background-color:
+    rgba(
+      246,
+      178,
+      60,
+      0.08
+    )
+    !important;
+}
+
+
+.mn-workspace [class*="border-[rgba(176,138,88"],
+.mn-workspace [class*="border-[rgba(246,178,60"] {
+  border-color:
+    rgba(
+      246,
+      178,
+      60,
+      0.30
+    )
+    !important;
+}
+
+
+/* =========================================================
+   Previous RGBA Blue Surfaces
+   ========================================================= */
+
+.mn-workspace [class*="bg-[rgba(93,135,163"],
+.mn-workspace [class*="bg-[rgba(90,169,255"] {
+  background-color:
+    rgba(
+      90,
+      169,
+      255,
+      0.08
+    )
+    !important;
+}
+
+
+.mn-workspace [class*="border-[rgba(93,135,163"],
+.mn-workspace [class*="border-[rgba(90,169,255"] {
+  border-color:
+    rgba(
+      90,
+      169,
+      255,
+      0.28
+    )
+    !important;
+}
+
+
+/* =========================================================
+   Previous RGBA Green Surfaces
+   ========================================================= */
+
+.mn-workspace [class*="bg-[rgba(100,142,120"],
+.mn-workspace [class*="bg-[rgba(73,229,143"] {
+  background-color:
+    rgba(
+      73,
+      229,
+      143,
+      0.08
+    )
+    !important;
+}
+
+
+.mn-workspace [class*="border-[rgba(100,142,120"],
+.mn-workspace [class*="border-[rgba(73,229,143"] {
+  border-color:
+    rgba(
+      73,
+      229,
+      143,
+      0.28
+    )
+    !important;
+}
+
+
+/* =========================================================
+   Previous RGBA Critical Surfaces
+   ========================================================= */
+
+.mn-workspace [class*="bg-[rgba(201,105,114"],
+.mn-workspace [class*="bg-[rgba(255,90,99"] {
+  background-color:
+    rgba(
+      255,
+      90,
+      99,
+      0.08
+    )
+    !important;
+}
+
+
+.mn-workspace [class*="border-[rgba(201,105,114"],
+.mn-workspace [class*="border-[rgba(255,90,99"] {
+  border-color:
+    rgba(
+      255,
+      90,
+      99,
+      0.30
+    )
+    !important;
+}
+
+
+/* =========================================================
+   Workspace Inputs
+   ========================================================= */
+
+.mn-workspace input,
+.mn-workspace select,
+.mn-workspace textarea {
+  border-color:
+    #1d2533;
+
+  background-color:
+    #05080d;
+
+  color:
+    var(--foreground);
+}
+
+
+.mn-workspace input:hover,
+.mn-workspace select:hover,
+.mn-workspace textarea:hover {
+  border-color:
+    #243147;
+
+  background-color:
+    #070a10;
+}
+
+
+.mn-workspace input:focus,
+.mn-workspace select:focus,
+.mn-workspace textarea:focus {
+  border-color:
+    var(--primary);
+
+  background-color:
+    #070a10;
+
+  box-shadow:
+    0 0 0 3px
+    rgba(
+      246,
+      178,
+      60,
+      0.09
+    );
+}
+
+
+.mn-workspace option {
+  background:
+    #070a10;
+
+  color:
+    var(--foreground);
+}
+
+
+/* =========================================================
+   Natural Media
+
+   Do NOT recolor video, maps, imagery or canvas.
+   ========================================================= */
+
+video,
+canvas {
+  max-width: 100%;
+}
+
+
+.mn-workspace video,
+.mn-workspace canvas,
+.mn-workspace img,
+.mn-workspace .leaflet-container,
+.mn-workspace .leaflet-tile-pane {
+  color-scheme: normal;
 }
 
 
 /* =========================================================
    Responsive
    ========================================================= */
-
 
 @media (
   max-width:
@@ -1400,7 +2039,6 @@ select {
    Reduced Motion
    ========================================================= */
 
-
 @media (
   prefers-reduced-motion:
     reduce
@@ -1409,6 +2047,7 @@ select {
     scroll-behavior:
       auto;
   }
+
 
   *,
   *::before,
