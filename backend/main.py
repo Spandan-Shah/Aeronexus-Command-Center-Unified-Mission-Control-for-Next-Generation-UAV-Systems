@@ -74,6 +74,11 @@ from missionnexus.devices.device_router import (
     websocket_router as missionnexus_device_websocket_router,
 )
 
+from aeronexus_core.event_router import (
+    router as aeronexus_event_router,
+    websocket_router as aeronexus_event_websocket_router,
+)
+
 
 # ============================================================
 # FastAPI Application
@@ -81,7 +86,7 @@ from missionnexus.devices.device_router import (
 
 app = FastAPI(
     title="AeroNexus Backend",
-    version="3.2.0",
+    version="3.3.0",
 )
 
 
@@ -148,6 +153,19 @@ app.include_router(
 
 
 # ============================================================
+# Aeronexus Data Fabric
+# ============================================================
+
+app.include_router(
+    aeronexus_event_router
+)
+
+app.include_router(
+    aeronexus_event_websocket_router
+)
+
+
+# ============================================================
 # Existing MAVLink Adapter
 # ============================================================
 
@@ -175,7 +193,7 @@ class CommandRequest(
 )
 def startup():
     """
-    Existing AeroNexus services.
+    Start existing AeroNexus services.
     """
 
     init_database()
@@ -210,6 +228,7 @@ async def startup_missionnexus_hardware():
         MAVLink Serial
         MAVLink UDP
         MAVLink TCP
+        GoblinWisp
         Companion Computer
         Payload / Sensor adapters
     """
@@ -261,10 +280,10 @@ def root():
             "running",
 
         "mode":
-            "hardware-integration",
+            "integrated-platform",
 
         "version":
-            "3.2.0",
+            "3.3.0",
 
         "services": {
             "camera_ai":
@@ -289,6 +308,9 @@ def root():
                 "enabled",
 
             "missionnexus_hardware_integration":
+                "enabled",
+
+            "aeronexus_data_fabric":
                 "enabled",
 
             "missionnexus_default_device":
