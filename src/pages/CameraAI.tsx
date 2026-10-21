@@ -92,7 +92,6 @@ import {
    Configuration
    ========================================================= */
 
-
 const BACKEND_URL =
   "http://127.0.0.1:8000";
 
@@ -103,7 +102,6 @@ const STREAM_CONFIDENCE_THRESHOLD =
 /* =========================================================
    Video Sources
    ========================================================= */
-
 
 const defaultVideoSource:
   CameraVideoSource = {
@@ -292,7 +290,6 @@ const videoSources:
    Types
    ========================================================= */
 
-
 type Tone =
   | "nominal"
   | "caution"
@@ -336,9 +333,8 @@ type VisionMetric = {
 
 
 /* =========================================================
-   Tone System
+   Aerospace Graphite Tone System
    ========================================================= */
-
 
 const toneClass:
   Record<
@@ -359,72 +355,72 @@ const toneClass:
   > = {
   nominal: {
     text:
-      "text-[#507A65]",
+      "text-[var(--nominal)]",
 
     border:
-      "border-[rgba(80,122,101,0.25)]",
+      "border-[rgba(100,142,120,0.30)]",
 
     bg:
-      "bg-[#DDEBE4]",
+      "bg-[rgba(100,142,120,0.11)]",
 
     dot:
-      "bg-[#507A65]",
+      "bg-[var(--nominal)]",
   },
 
   caution: {
     text:
-      "text-[#8C642D]",
+      "text-[var(--caution)]",
 
     border:
-      "border-[rgba(165,122,59,0.26)]",
+      "border-[rgba(199,155,89,0.30)]",
 
     bg:
-      "bg-[#F2E7D5]",
+      "bg-[rgba(199,155,89,0.11)]",
 
     dot:
-      "bg-[#A57A3B]",
+      "bg-[var(--caution)]",
   },
 
   critical: {
     text:
-      "text-[#AC5C64]",
+      "text-[var(--critical)]",
 
     border:
-      "border-[rgba(172,92,100,0.26)]",
+      "border-[rgba(201,105,114,0.32)]",
 
     bg:
-      "bg-[#F2DFE2]",
+      "bg-[rgba(201,105,114,0.11)]",
 
     dot:
-      "bg-[#AC5C64]",
+      "bg-[var(--critical)]",
   },
 
   info: {
     text:
-      "text-[#3F6E8C]",
+      "text-[var(--info)]",
 
     border:
-      "border-[rgba(63,110,140,0.25)]",
+      "border-[rgba(93,135,163,0.30)]",
 
     bg:
-      "bg-[#DCE8EF]",
+      "bg-[rgba(93,135,163,0.11)]",
 
     dot:
-      "bg-[#3F6E8C]",
+      "bg-[var(--info)]",
   },
 
   muted: {
     text:
-      "text-[#6E7B86]",
+      "text-[var(--muted-soft)]",
 
     border:
-      "border-[#C7D0D7]",
+      "border-[var(--border)]",
 
     bg:
-      "bg-[#E4E9ED]",
+      "bg-[var(--surface-2)]",
 
     dot:
-      "bg-[#929EA7]",
+      "bg-[var(--muted-soft)]",
   },
 };
 
@@ -435,23 +431,22 @@ const sourceToneClass:
     string
   > = {
   surveillance:
-    "border-[rgba(63,110,140,0.25)] bg-[#DCE8EF] text-[#3F6E8C]",
+    "border-[rgba(93,135,163,0.30)] bg-[rgba(93,135,163,0.11)] text-[var(--info)]",
 
   disaster:
-    "border-[rgba(172,92,100,0.25)] bg-[#F2DFE2] text-[#AC5C64]",
+    "border-[rgba(201,105,114,0.30)] bg-[rgba(201,105,114,0.11)] text-[var(--critical)]",
 
   patrol:
-    "border-[rgba(80,122,101,0.25)] bg-[#DDEBE4] text-[#507A65]",
+    "border-[rgba(100,142,120,0.30)] bg-[rgba(100,142,120,0.11)] text-[var(--nominal)]",
 
   simulation:
-    "border-[rgba(163,123,67,0.26)] bg-[#EEE3D3] text-[#815E30]",
+    "border-[rgba(176,138,88,0.30)] bg-[rgba(176,138,88,0.11)] text-[var(--primary)]",
 };
 
 
 /* =========================================================
    Helpers
    ========================================================= */
-
 
 function getRiskTone(
   risk?:
@@ -639,7 +634,6 @@ function playDashboardAlertSound() {
    Metric Card
    ========================================================= */
 
-
 function VisionMetricCell({
   metric,
 }: {
@@ -657,30 +651,26 @@ function VisionMetricCell({
   return (
     <div
       className={[
-        "flex min-h-[94px] min-w-0 items-center justify-between gap-3",
+        "flex min-h-[102px] min-w-0 items-center justify-between gap-3",
 
-        "rounded-[9px]",
+        "rounded-[9px] border",
 
-        "border border-[#C5CDD5]",
+        "border-[var(--border)]",
 
-        "bg-[#EEF2F5]",
+        "bg-[var(--surface-2)]",
 
         "px-4 py-3.5",
 
-        "shadow-[0_5px_16px_rgba(34,48,60,0.055)]",
+        "shadow-[0_8px_22px_rgba(0,0,0,0.14)]",
       ].join(" ")}
     >
       <div className="min-w-0">
-        <div className="truncate text-[12px] font-semibold uppercase tracking-[0.05em] text-[#6E7B86]">
-          {
-            metric.label
-          }
+        <div className="truncate text-[12px] font-semibold uppercase tracking-[0.055em] text-[var(--muted-soft)]">
+          {metric.label}
         </div>
 
-        <div className="mt-2 truncate font-mono text-[16px] font-semibold leading-none text-[#18232D]">
-          {
-            metric.value
-          }
+        <div className="mt-2 truncate font-mono text-[17px] font-semibold leading-none text-[var(--foreground)]">
+          {metric.value}
         </div>
       </div>
 
@@ -696,12 +686,8 @@ function VisionMetricCell({
         ].join(" ")}
       >
         <Icon
-          size={
-            18
-          }
-          strokeWidth={
-            1.65
-          }
+          size={18}
+          strokeWidth={1.65}
         />
       </div>
     </div>
@@ -710,9 +696,8 @@ function VisionMetricCell({
 
 
 /* =========================================================
-   Rail Header
+   Shared Rail Header
    ========================================================= */
-
 
 function RailHeader({
   eyebrow,
@@ -729,39 +714,45 @@ function RailHeader({
     ReactNode;
 }) {
   return (
-    <div className="flex min-h-[50px] items-center justify-between gap-3 border-b border-[#CED5DB] px-4">
+    <div
+      className={[
+        "flex min-h-[54px] items-center justify-between gap-3",
+
+        "border-b border-[var(--border-soft)]",
+
+        "bg-[var(--surface-2)]",
+
+        "px-4",
+      ].join(" ")}
+    >
       <div className="min-w-0">
-        <span className="text-[12px] font-semibold uppercase tracking-[0.055em] text-[#815E30]">
-          {
-            eyebrow
-          }
+        <span className="text-[12px] font-semibold uppercase tracking-[0.055em] text-[var(--primary)]">
+          {eyebrow}
         </span>
 
-        <span className="ml-2 text-[14px] font-semibold text-[#25313B]">
-          {
-            title
-          }
+        <span className="ml-2 text-[14px] font-semibold text-[var(--foreground)]">
+          {title}
         </span>
       </div>
 
-      {
-        right
-      }
+      {right}
     </div>
   );
 }
 
 
 /* =========================================================
-   Secondary Section
-   ========================================================= */
+   Section Shell
 
+   IMPORTANT:
+   h-full + flex-col means every paired card reaches the
+   same bottom line.
+   ========================================================= */
 
 function SectionShell({
   eyebrow,
   title,
   action,
-  compact = false,
   children,
 }: {
   eyebrow:
@@ -773,60 +764,71 @@ function SectionShell({
   action?:
     string;
 
-  compact?:
-    boolean;
-
   children:
     ReactNode;
 }) {
   return (
     <section
       className={[
-        "overflow-hidden",
+        "flex h-full min-w-0 flex-col",
 
-        "rounded-[10px]",
+        "overflow-hidden rounded-[10px]",
 
-        "border border-[#C5CDD5]",
+        "border border-[var(--border)]",
 
-        "bg-[#EEF2F5]",
+        "bg-[var(--surface-1)]",
 
-        "shadow-[0_8px_24px_rgba(34,48,60,0.065)]",
+        "shadow-[0_12px_30px_rgba(0,0,0,0.16)]",
       ].join(" ")}
     >
-      <div className="flex min-h-[64px] items-center justify-between gap-4 border-b border-[#D0D7DD] bg-[#E9EEF1] px-5">
-        <div>
-          <div className="text-[12px] font-semibold uppercase tracking-[0.07em] text-[#815E30]">
-            {
-              eyebrow
-            }
+      <div
+        className={[
+          "flex min-h-[76px] shrink-0 items-center",
+
+          "border-b border-[var(--border-soft)]",
+
+          "bg-[var(--surface-2)]",
+
+          "px-5 py-3.5",
+        ].join(" ")}
+      >
+        <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-[12px] font-semibold uppercase tracking-[0.075em] text-[var(--primary)]">
+              {eyebrow}
+            </p>
+
+            <h2 className="mt-1 text-[18px] font-semibold tracking-[-0.02em] text-[var(--foreground)]">
+              {title}
+            </h2>
           </div>
 
-          <h2 className="mt-1 text-[17px] font-semibold tracking-[-0.015em] text-[#18232D]">
-            {
-              title
-            }
-          </h2>
-        </div>
+          {action ? (
+            <span
+              className={[
+                "inline-flex w-fit items-center",
 
-        {action ? (
-          <span className="rounded-[5px] border border-[rgba(63,110,140,0.18)] bg-[#DCE8EF] px-2.5 py-1 text-[12px] font-semibold text-[#3F6E8C]">
-            {
-              action
-            }
-          </span>
-        ) : null}
+                "rounded-[6px] border",
+
+                "border-[rgba(93,135,163,0.28)]",
+
+                "bg-[rgba(93,135,163,0.10)]",
+
+                "px-2.5 py-1",
+
+                "text-[12px] font-semibold",
+
+                "text-[var(--info)]",
+              ].join(" ")}
+            >
+              {action}
+            </span>
+          ) : null}
+        </div>
       </div>
 
-      <div
-        className={
-          compact
-            ? "p-4"
-            : "p-5"
-        }
-      >
-        {
-          children
-        }
+      <div className="min-h-0 flex-1 p-5">
+        {children}
       </div>
     </section>
   );
@@ -834,9 +836,45 @@ function SectionShell({
 
 
 /* =========================================================
-   Emergency Alert
+   Consistent Vision Split Row
+
+   Every paired secondary section uses this exact grid.
+   Therefore vertical divider positions remain aligned.
    ========================================================= */
 
+function VisionSplitRow({
+  left,
+  right,
+}: {
+  left:
+    ReactNode;
+
+  right:
+    ReactNode;
+}) {
+  return (
+    <div
+      className={[
+        "grid items-stretch gap-6",
+
+        "xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]",
+      ].join(" ")}
+    >
+      <div className="min-w-0">
+        {left}
+      </div>
+
+      <div className="min-w-0">
+        {right}
+      </div>
+    </div>
+  );
+}
+
+
+/* =========================================================
+   Emergency Alert
+   ========================================================= */
 
 function EmergencyAlertToast({
   alert,
@@ -849,60 +887,71 @@ function EmergencyAlertToast({
     () => void;
 }) {
   return (
-    <div className="fixed right-5 top-[88px] z-[4500] w-[min(500px,calc(100vw-2rem))] overflow-hidden rounded-[9px] border border-[rgba(172,92,100,0.32)] bg-[#F7F9FA] shadow-[0_20px_60px_rgba(34,48,60,0.22)]">
+    <div
+      className={[
+        "fixed right-5 top-[88px] z-[4500]",
+
+        "w-[min(500px,calc(100vw-2rem))]",
+
+        "overflow-hidden rounded-[9px]",
+
+        "border border-[rgba(201,105,114,0.34)]",
+
+        "bg-[var(--surface-2)]",
+
+        "shadow-[0_22px_65px_rgba(0,0,0,0.42)]",
+      ].join(" ")}
+    >
       <div className="flex items-start gap-3 p-4">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[7px] border border-[rgba(172,92,100,0.24)] bg-[#F2DFE2]">
+        <div
+          className={[
+            "flex h-9 w-9 shrink-0 items-center justify-center",
+
+            "rounded-[7px] border",
+
+            "border-[rgba(201,105,114,0.28)]",
+
+            "bg-[rgba(201,105,114,0.11)]",
+          ].join(" ")}
+        >
           <BellRing
-            size={
-              17
-            }
-            className="text-[#AC5C64]"
+            size={17}
+            strokeWidth={1.7}
+            className="text-[var(--critical)]"
           />
         </div>
 
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span className="text-[12px] font-semibold uppercase tracking-[0.05em] text-[#AC5C64]">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[12px] font-semibold uppercase tracking-[0.055em] text-[var(--critical)]">
               Visual Alert
             </span>
 
-            <span className="font-mono text-[12px] text-[#7A8792]">
-              {
-                alert.time
-              }
+            <span className="font-mono text-[12px] text-[var(--muted-soft)]">
+              {alert.time}
             </span>
           </div>
 
-          <div className="mt-1.5 text-[14px] font-semibold text-[#18232D]">
-            {
-              alert.title
-            }
+          <div className="mt-1.5 text-[14px] font-semibold text-[var(--foreground)]">
+            {alert.title}
           </div>
 
-          <p className="mt-1.5 text-[13px] leading-[1.55] text-[#596672]">
-            {
-              alert.message
-            }
+          <p className="mt-1.5 text-[13px] leading-[1.55] text-[var(--muted)]">
+            {alert.message}
           </p>
 
-          <div className="mt-3 flex flex-wrap gap-2">
-            <span className="rounded-[4px] bg-[#E4E9ED] px-2 py-1 text-[12px] text-[#596672]">
-              {
-                alert.source
-              }
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <span className="rounded-[4px] bg-[var(--surface-3)] px-2 py-1 text-[12px] text-[var(--muted)]">
+              {alert.source}
             </span>
 
-            <span className="rounded-[4px] bg-[#F2DFE2] px-2 py-1 text-[12px] font-semibold uppercase text-[#AC5C64]">
-              {
-                alert.severity
-              }
+            <span className="rounded-[4px] bg-[rgba(201,105,114,0.11)] px-2 py-1 text-[12px] font-semibold uppercase text-[var(--critical)]">
+              {alert.severity}
             </span>
 
-            <span className="flex items-center gap-1 rounded-[4px] bg-[#EEE3D3] px-2 py-1 text-[12px] text-[#815E30]">
+            <span className="flex items-center gap-1 rounded-[4px] bg-[rgba(176,138,88,0.11)] px-2 py-1 text-[12px] text-[var(--primary)]">
               <Volume2
-                size={
-                  12
-                }
+                size={12}
               />
 
               Audio
@@ -915,12 +964,27 @@ function EmergencyAlertToast({
           onClick={
             onDismiss
           }
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[6px] border border-[#C5CDD5] bg-[#E4E9ED] text-[#67747F] hover:bg-[#D7DEE4]"
+          className={[
+            "flex h-8 w-8 shrink-0 items-center justify-center",
+
+            "rounded-[6px] border",
+
+            "border-[var(--border)]",
+
+            "bg-[var(--surface-3)]",
+
+            "text-[var(--muted)]",
+
+            "hover:border-[var(--border-strong)]",
+
+            "hover:bg-[var(--surface-hover)]",
+
+            "hover:text-[var(--foreground)]",
+          ].join(" ")}
+          aria-label="Dismiss alert"
         >
           <X
-            size={
-              14
-            }
+            size={14}
           />
         </button>
       </div>
@@ -932,7 +996,6 @@ function EmergencyAlertToast({
 /* =========================================================
    Summary Card
    ========================================================= */
-
 
 function SummaryCard({
   icon:
@@ -969,9 +1032,15 @@ function SummaryCard({
   return (
     <div
       className={[
-        "rounded-[8px] border bg-[#F7F9FA] p-4",
+        "flex h-full min-h-[144px] flex-col",
 
-        "shadow-[0_4px_14px_rgba(34,48,60,0.04)]",
+        "rounded-[8px] border",
+
+        "bg-[var(--surface-2)]",
+
+        "p-4",
+
+        "shadow-[0_7px_20px_rgba(0,0,0,0.13)]",
 
         style.border,
       ].join(" ")}
@@ -980,23 +1049,23 @@ function SummaryCard({
         <div className="flex items-center gap-2.5">
           <div
             className={[
-              "flex h-8 w-8 items-center justify-center rounded-[6px]",
+              "flex h-8 w-8 items-center justify-center",
 
+              "rounded-[6px] border",
+
+              style.border,
               style.bg,
               style.text,
             ].join(" ")}
           >
             <Icon
-              size={
-                15
-              }
+              size={15}
+              strokeWidth={1.7}
             />
           </div>
 
-          <span className="text-[12px] font-semibold uppercase tracking-[0.045em] text-[#6F7C87]">
-            {
-              label
-            }
+          <span className="text-[12px] font-semibold uppercase tracking-[0.045em] text-[var(--muted-soft)]">
+            {label}
           </span>
         </div>
 
@@ -1009,16 +1078,12 @@ function SummaryCard({
         />
       </div>
 
-      <div className="mt-3 text-[16px] font-semibold capitalize text-[#18232D]">
-        {
-          value
-        }
+      <div className="mt-3 text-[16px] font-semibold capitalize text-[var(--foreground)]">
+        {value}
       </div>
 
-      <p className="mt-1.5 text-[13px] leading-[1.5] text-[#64717D]">
-        {
-          helper
-        }
+      <p className="mt-auto pt-2 text-[13px] leading-[1.5] text-[var(--muted)]">
+        {helper}
       </p>
     </div>
   );
@@ -1028,7 +1093,6 @@ function SummaryCard({
 /* =========================================================
    Source Selector
    ========================================================= */
-
 
 function VideoSourceSelector({
   videos,
@@ -1047,7 +1111,7 @@ function VideoSourceSelector({
   ) => void;
 }) {
   return (
-    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+    <div className="grid items-stretch gap-3 md:grid-cols-2 xl:grid-cols-4">
       {videos.map(
         (
           video,
@@ -1068,7 +1132,7 @@ function VideoSourceSelector({
                 )
               }
               className={[
-                "min-h-[116px]",
+                "flex min-h-[128px] flex-col",
 
                 "rounded-[8px] border",
 
@@ -1077,62 +1141,54 @@ function VideoSourceSelector({
                 "transition-[background-color,border-color,box-shadow] duration-150",
 
                 selected
-                  ? "border-[rgba(163,123,67,0.38)] bg-[#EEE3D3] shadow-[0_5px_16px_rgba(75,55,25,0.07)]"
-                  : "border-[#CBD3D9] bg-[#F7F9FA] hover:border-[#AFBAC2] hover:bg-[#EEF2F5]",
+                  ? "border-[rgba(176,138,88,0.40)] bg-[rgba(176,138,88,0.12)] shadow-[0_7px_20px_rgba(0,0,0,0.15)]"
+                  : "border-[var(--border)] bg-[var(--surface-2)] hover:border-[var(--border-strong)] hover:bg-[var(--surface-hover)]",
               ].join(" ")}
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex min-w-0 items-start gap-2.5">
                   <div
                     className={[
-                      "flex h-8 w-8 shrink-0 items-center justify-center rounded-[6px]",
+                      "flex h-8 w-8 shrink-0 items-center justify-center",
+
+                      "rounded-[6px] border",
 
                       video.src
-                        ? "bg-[#EEE3D3] text-[#815E30]"
-                        : "bg-[#DCE8EF] text-[#3F6E8C]",
+                        ? "border-[rgba(176,138,88,0.28)] bg-[rgba(176,138,88,0.10)] text-[var(--primary)]"
+                        : "border-[rgba(93,135,163,0.28)] bg-[rgba(93,135,163,0.10)] text-[var(--info)]",
                     ].join(" ")}
                   >
                     {video.src ? (
                       <Film
-                        size={
-                          15
-                        }
+                        size={15}
                       />
                     ) : (
                       <Camera
-                        size={
-                          15
-                        }
+                        size={15}
                       />
                     )}
                   </div>
 
                   <div className="min-w-0">
-                    <div className="truncate text-[14px] font-semibold text-[#18232D]">
-                      {
-                        video.title
-                      }
+                    <div className="truncate text-[14px] font-semibold text-[var(--foreground)]">
+                      {video.title}
                     </div>
 
-                    <div className="mt-1 line-clamp-2 text-[12px] leading-[1.5] text-[#6A7782]">
-                      {
-                        video.description
-                      }
+                    <div className="mt-1 line-clamp-2 text-[12px] leading-[1.5] text-[var(--muted)]">
+                      {video.description}
                     </div>
                   </div>
                 </div>
 
                 {selected ? (
                   <CheckCircle2
-                    size={
-                      16
-                    }
-                    className="shrink-0 text-[#507A65]"
+                    size={16}
+                    className="shrink-0 text-[var(--nominal)]"
                   />
                 ) : null}
               </div>
 
-              <div className="mt-3 flex gap-2">
+              <div className="mt-auto flex flex-wrap gap-2 pt-3">
                 <span
                   className={[
                     "rounded-[4px] border px-2 py-1",
@@ -1145,12 +1201,24 @@ function VideoSourceSelector({
                       sourceToneClass.simulation,
                   ].join(" ")}
                 >
-                  {
-                    video.category
-                  }
+                  {video.category}
                 </span>
 
-                <span className="rounded-[4px] border border-[#C8D0D7] bg-[#E4E9ED] px-2 py-1 text-[11px] uppercase text-[#67747F]">
+                <span
+                  className={[
+                    "rounded-[4px] border",
+
+                    "border-[var(--border)]",
+
+                    "bg-[var(--surface-3)]",
+
+                    "px-2 py-1",
+
+                    "text-[11px] font-medium uppercase",
+
+                    "text-[var(--muted-soft)]",
+                  ].join(" ")}
+                >
                   {video.src
                     ? "MP4"
                     : "Reserved"}
@@ -1169,7 +1237,6 @@ function VideoSourceSelector({
    Operator Safety
    ========================================================= */
 
-
 function OperatorSafetyPanel({
   selectedVideo,
 }: {
@@ -1177,7 +1244,7 @@ function OperatorSafetyPanel({
     CameraVideoSource;
 }) {
   return (
-    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+    <div className="grid items-stretch gap-3 md:grid-cols-2 xl:grid-cols-4">
       <SummaryCard
         icon={
           Sparkles
@@ -1230,7 +1297,6 @@ function OperatorSafetyPanel({
    Signal Bar
    ========================================================= */
 
-
 function SignalBar({
   label,
   value,
@@ -1265,21 +1331,27 @@ function SignalBar({
     );
 
   return (
-    <div className="rounded-[7px] border border-[#C9D1D7] bg-[#E4E9ED] p-3.5">
+    <div
+      className={[
+        "rounded-[7px]",
+
+        "border border-[var(--border-soft)]",
+
+        "bg-[var(--surface-3)]",
+
+        "p-3.5",
+      ].join(" ")}
+    >
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.04em] text-[#5D6A75]">
+        <div className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.04em] text-[var(--muted)]">
           <Icon
-            size={
-              14
-            }
+            size={14}
             className={
               style.text
             }
           />
 
-          {
-            label
-          }
+          {label}
         </div>
 
         <span
@@ -1289,14 +1361,11 @@ function SignalBar({
             style.text,
           ].join(" ")}
         >
-          {
-            safeValue
-          }
-          %
+          {safeValue}%
         </span>
       </div>
 
-      <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#CDD5DB]">
+      <div className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--input)]">
         <div
           className={[
             "h-full rounded-full",
@@ -1317,7 +1386,6 @@ function SignalBar({
 /* =========================================================
    Evidence Tile
    ========================================================= */
-
 
 function EvidenceTile({
   icon:
@@ -1342,7 +1410,8 @@ function EvidenceTile({
     Tone;
 }) {
   const style =
-    value > 0
+    value >
+    0
       ? toneClass[
           tone
         ]
@@ -1351,32 +1420,30 @@ function EvidenceTile({
   return (
     <div
       className={[
-        "rounded-[7px] border bg-[#F7F9FA] p-3",
+        "rounded-[7px] border",
+
+        "bg-[var(--surface-2)]",
+
+        "p-3",
 
         style.border,
       ].join(" ")}
     >
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <Icon
-          size={
-            14
-          }
+          size={14}
           className={
             style.text
           }
         />
 
-        <span className="font-mono text-[16px] font-semibold text-[#18232D]">
-          {
-            value
-          }
+        <span className="font-mono text-[16px] font-semibold text-[var(--foreground)]">
+          {value}
         </span>
       </div>
 
-      <div className="mt-2 text-[11px] font-semibold uppercase tracking-[0.04em] text-[#6D7A85]">
-        {
-          label
-        }
+      <div className="mt-2 truncate text-[11px] font-semibold uppercase tracking-[0.04em] text-[var(--muted-soft)]">
+        {label}
       </div>
     </div>
   );
@@ -1386,7 +1453,6 @@ function EvidenceTile({
 /* =========================================================
    Checklist
    ========================================================= */
-
 
 function ChecklistItem({
   complete,
@@ -1408,38 +1474,30 @@ function ChecklistItem({
         "rounded-[7px] border p-3.5",
 
         complete
-          ? "border-[rgba(80,122,101,0.24)] bg-[#DDEBE4]"
-          : "border-[rgba(165,122,59,0.25)] bg-[#F2E7D5]",
+          ? "border-[rgba(100,142,120,0.26)] bg-[rgba(100,142,120,0.10)]"
+          : "border-[rgba(199,155,89,0.26)] bg-[rgba(199,155,89,0.10)]",
       ].join(" ")}
     >
       <div className="flex items-start gap-2.5">
         {complete ? (
           <CheckCircle2
-            size={
-              16
-            }
-            className="mt-0.5 shrink-0 text-[#507A65]"
+            size={16}
+            className="mt-0.5 shrink-0 text-[var(--nominal)]"
           />
         ) : (
           <AlertTriangle
-            size={
-              16
-            }
-            className="mt-0.5 shrink-0 text-[#A57A3B]"
+            size={16}
+            className="mt-0.5 shrink-0 text-[var(--caution)]"
           />
         )}
 
         <div>
-          <div className="text-[13px] font-semibold text-[#24313B]">
-            {
-              label
-            }
+          <div className="text-[13px] font-semibold text-[var(--foreground)]">
+            {label}
           </div>
 
-          <p className="mt-1 text-[12px] leading-[1.55] text-[#63707B]">
-            {
-              helper
-            }
+          <p className="mt-1 text-[12px] leading-[1.55] text-[var(--muted)]">
+            {helper}
           </p>
         </div>
       </div>
@@ -1451,7 +1509,6 @@ function ChecklistItem({
 /* =========================================================
    Analysis Workbench
    ========================================================= */
-
 
 function AnalysisWorkbench({
   selectedVideo,
@@ -1575,7 +1632,7 @@ function AnalysisWorkbench({
 
   return (
     <div className="grid gap-5">
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid items-stretch gap-3 md:grid-cols-2 xl:grid-cols-4">
         <SummaryCard
           icon={
             Radar
@@ -1646,27 +1703,35 @@ function AnalysisWorkbench({
         />
       </div>
 
+      <div className="grid items-stretch gap-4 xl:grid-cols-2">
+        <div
+          className={[
+            "flex h-full flex-col",
 
-      <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-        <div className="rounded-[8px] border border-[#C9D1D7] bg-[#E4E9ED] p-4">
-          <div className="flex items-center justify-between">
+            "rounded-[8px]",
+
+            "border border-[var(--border-soft)]",
+
+            "bg-[var(--surface-3)]",
+
+            "p-4",
+          ].join(" ")}
+        >
+          <div className="flex items-center justify-between gap-3">
             <div>
-              <div className="text-[12px] font-semibold uppercase tracking-[0.055em] text-[#815E30]">
+              <div className="text-[12px] font-semibold uppercase tracking-[0.055em] text-[var(--primary)]">
                 Detection Evidence
               </div>
 
-              <div className="mt-1 text-[15px] font-semibold text-[#18232D]">
+              <div className="mt-1 text-[15px] font-semibold text-[var(--foreground)]">
                 Signal Breakdown
               </div>
             </div>
 
-            <span className="rounded-[4px] bg-[#DCE8EF] px-2 py-1 text-[11px] font-semibold uppercase text-[#3F6E8C]">
-              {
-                selectedVideo.category
-              }
+            <span className="rounded-[4px] border border-[rgba(93,135,163,0.24)] bg-[rgba(93,135,163,0.10)] px-2 py-1 text-[11px] font-semibold uppercase text-[var(--info)]">
+              {selectedVideo.category}
             </span>
           </div>
-
 
           <div className="mt-4 grid gap-3 md:grid-cols-2">
             <SignalBar
@@ -1733,7 +1798,6 @@ function AnalysisWorkbench({
               }
             />
           </div>
-
 
           <div className="mt-4 grid grid-cols-2 gap-2.5 md:grid-cols-3 xl:grid-cols-6">
             <EvidenceTile
@@ -1804,13 +1868,24 @@ function AnalysisWorkbench({
           </div>
         </div>
 
+        <div
+          className={[
+            "flex h-full flex-col",
 
-        <div className="rounded-[8px] border border-[#C9D1D7] bg-[#E4E9ED] p-4">
-          <div className="text-[12px] font-semibold uppercase tracking-[0.055em] text-[#815E30]">
+            "rounded-[8px]",
+
+            "border border-[var(--border-soft)]",
+
+            "bg-[var(--surface-3)]",
+
+            "p-4",
+          ].join(" ")}
+        >
+          <div className="text-[12px] font-semibold uppercase tracking-[0.055em] text-[var(--primary)]">
             Operator Checklist
           </div>
 
-          <div className="mt-3 grid gap-2.5">
+          <div className="mt-3 grid flex-1 auto-rows-fr gap-2.5">
             <ChecklistItem
               complete={
                 Boolean(
@@ -1874,7 +1949,6 @@ function AnalysisWorkbench({
         </div>
       </div>
 
-
       <div
         className={[
           "rounded-[7px] border p-3.5",
@@ -1892,9 +1966,7 @@ function AnalysisWorkbench({
         >
           Current analysis risk:{" "}
           <span className="uppercase">
-            {
-              risk
-            }
+            {risk}
           </span>
         </div>
       </div>
@@ -1907,7 +1979,6 @@ function AnalysisWorkbench({
    Main Page
    ========================================================= */
 
-
 export function CameraAI() {
   const {
     telemetry,
@@ -1916,7 +1987,6 @@ export function CameraAI() {
   } =
     useUnifiedTelemetry();
 
-
   const [
     selectedVideo,
     setSelectedVideo,
@@ -1924,7 +1994,6 @@ export function CameraAI() {
     useState<CameraVideoSource>(
       defaultVideoSource,
     );
-
 
   const [
     openCvAnalysis,
@@ -1936,7 +2005,6 @@ export function CameraAI() {
       null,
     );
 
-
   const [
     annotatedVideoUrl,
     setAnnotatedVideoUrl,
@@ -1947,7 +2015,6 @@ export function CameraAI() {
       null,
     );
 
-
   const [
     isAnnotatingVideo,
     setIsAnnotatingVideo,
@@ -1955,7 +2022,6 @@ export function CameraAI() {
     useState(
       false,
     );
-
 
   const [
     annotatorError,
@@ -1967,7 +2033,6 @@ export function CameraAI() {
       null,
     );
 
-
   const [
     videoPanelKey,
     setVideoPanelKey,
@@ -1975,7 +2040,6 @@ export function CameraAI() {
     useState(
       0,
     );
-
 
   const [
     dashboardAlert,
@@ -1992,12 +2056,10 @@ export function CameraAI() {
      Derived State
      ======================================================= */
 
-
   const risk =
     telemetry?.risk ??
     openCvAnalysis?.risk ??
     "low";
-
 
   const confidence =
     Math.round(
@@ -2014,7 +2076,6 @@ export function CameraAI() {
         100,
     );
 
-
   const cameraSource =
     sources.find(
       (
@@ -2024,25 +2085,21 @@ export function CameraAI() {
         "camera_ml",
     );
 
-
   const cameraOnline =
     Boolean(
       cameraSource?.connected,
     );
-
 
   const isAnnotatedPlayback =
     Boolean(
       annotatedVideoUrl,
     );
 
-
   const detectionCount =
     openCvAnalysis
       ?.metrics
       .detection_count ??
     0;
-
 
   const pipelineOnline =
     !error;
@@ -2051,7 +2108,6 @@ export function CameraAI() {
   /* =======================================================
      Metrics
      ======================================================= */
-
 
   const visionMetrics:
     VisionMetric[] = [
@@ -2154,6 +2210,10 @@ export function CameraAI() {
     ];
 
 
+  /* =======================================================
+     Video Helpers
+     ======================================================= */
+
   function resetVideoPanel() {
     setVideoPanelKey(
       (
@@ -2229,6 +2289,10 @@ export function CameraAI() {
   }
 
 
+  /* =======================================================
+     Analysis Completion
+     ======================================================= */
+
   function handleAnalysisComplete(
     analysis:
       CameraOpenCvAnalysis,
@@ -2236,7 +2300,6 @@ export function CameraAI() {
     setOpenCvAnalysis(
       analysis,
     );
-
 
     const fireDetected =
       Boolean(
@@ -2256,7 +2319,6 @@ export function CameraAI() {
       ) >
         0;
 
-
     const smokeDetected =
       Boolean(
         analysis
@@ -2270,13 +2332,11 @@ export function CameraAI() {
       ) >
         0;
 
-
     const elevatedRisk =
       analysis.risk ===
         "high" ||
       analysis.risk ===
         "critical";
-
 
     if (
       fireDetected ||
@@ -2290,7 +2350,6 @@ export function CameraAI() {
             ? "Smoke / haze signature"
             : "Elevated visual risk";
 
-
       const severity:
         DashboardAlert["severity"] =
         analysis.risk ===
@@ -2298,7 +2357,6 @@ export function CameraAI() {
         fireDetected
           ? "critical"
           : "high";
-
 
       setDashboardAlert({
         title:
@@ -2316,11 +2374,14 @@ export function CameraAI() {
           new Date().toLocaleTimeString(),
       });
 
-
       playDashboardAlertSound();
     }
   }
 
+
+  /* =======================================================
+     Annotated Video
+     ======================================================= */
 
   async function generateAnnotatedVideo() {
     if (
@@ -2332,7 +2393,6 @@ export function CameraAI() {
 
       return;
     }
-
 
     setIsAnnotatingVideo(
       true,
@@ -2347,7 +2407,6 @@ export function CameraAI() {
     );
 
     resetVideoPanel();
-
 
     try {
       const response =
@@ -2381,7 +2440,6 @@ export function CameraAI() {
           },
         );
 
-
       if (
         !response.ok
       ) {
@@ -2393,7 +2451,6 @@ export function CameraAI() {
             "Video annotation failed.",
         );
       }
-
 
       const result:
         {
@@ -2408,7 +2465,6 @@ export function CameraAI() {
         } =
         await response.json();
 
-
       if (
         result.ok ===
           false ||
@@ -2420,7 +2476,6 @@ export function CameraAI() {
         );
       }
 
-
       const separator =
         result.annotated_video_url.includes(
           "?",
@@ -2428,11 +2483,9 @@ export function CameraAI() {
           ? "&"
           : "?";
 
-
       setAnnotatedVideoUrl(
         `${BACKEND_URL}${result.annotated_video_url}${separator}t=${Date.now()}`,
       );
-
 
       resetVideoPanel();
     } catch (
@@ -2452,8 +2505,12 @@ export function CameraAI() {
   }
 
 
+  /* =======================================================
+     Render
+     ======================================================= */
+
   return (
-    <div className="min-h-full bg-transparent text-[#18232D]">
+    <div className="min-h-[calc(100vh-70px)] bg-transparent px-5 py-6 text-[var(--foreground)] sm:px-6 lg:px-8">
       {dashboardAlert ? (
         <EmergencyAlertToast
           alert={
@@ -2467,40 +2524,58 @@ export function CameraAI() {
         />
       ) : null}
 
+      <div
+        className={[
+          "mx-auto flex w-full max-w-[1680px] flex-col",
 
-      {/* ===================================================
-          Primary Workspace
-          =================================================== */}
+          "gap-6",
+        ].join(" ")}
+      >
+        {/* =================================================
+            Page Header
+            ================================================= */}
 
-      <section>
-        <div className="mx-auto w-full max-w-[1460px] px-5 pb-8 pt-7 sm:px-6 lg:px-8 xl:px-10">
-          {/* Header */}
+        <section
+          className={[
+            "rounded-[10px]",
 
-          <header className="mb-6 flex min-w-0 items-end justify-between gap-5">
+            "border border-[var(--border)]",
+
+            "bg-[var(--surface-1)]",
+
+            "p-5",
+
+            "shadow-[0_14px_36px_rgba(0,0,0,0.18)]",
+          ].join(" ")}
+        >
+          <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
             <div>
-              <div className="mb-2 text-[12px] font-semibold uppercase tracking-[0.075em] text-[#815E30]">
-                Visual Operations
-              </div>
+              <p className="text-[12px] font-semibold uppercase tracking-[0.085em] text-[var(--primary)]">
+                Visual Operations · AI Intelligence
+              </p>
 
-              <h1 className="text-[28px] font-semibold tracking-[-0.035em] text-[#18232D]">
+              <h1 className="mt-2 text-[28px] font-semibold tracking-[-0.035em] text-[var(--foreground)]">
                 Vision Intelligence
               </h1>
 
-              <p className="mt-1.5 text-[14px] text-[#5E6B76]">
-                Aerial video · detection · tracking · disaster intelligence
+              <p className="mt-2 max-w-5xl text-[13px] leading-[1.65] text-[var(--muted)]">
+                Aerial video, assisted detection, OpenCV analysis,
+                disaster intelligence and operator-supervised
+                visual mission review.
               </p>
             </div>
 
-
             <div
               className={[
-                "flex h-[40px] items-center gap-2 rounded-[7px] border px-3.5",
+                "inline-flex h-10 w-fit items-center gap-2",
+
+                "rounded-[7px] border px-3.5",
 
                 "text-[12px] font-semibold uppercase tracking-[0.045em]",
 
                 pipelineOnline
-                  ? "border-[rgba(80,122,101,0.25)] bg-[#DDEBE4] text-[#507A65]"
-                  : "border-[rgba(172,92,100,0.26)] bg-[#F2DFE2] text-[#AC5C64]",
+                  ? "border-[rgba(100,142,120,0.30)] bg-[rgba(100,142,120,0.11)] text-[var(--nominal)]"
+                  : "border-[rgba(201,105,114,0.30)] bg-[rgba(201,105,114,0.11)] text-[var(--critical)]",
               ].join(" ")}
             >
               <span
@@ -2508,255 +2583,377 @@ export function CameraAI() {
                   "h-2 w-2 rounded-full",
 
                   pipelineOnline
-                    ? "bg-[#507A65]"
-                    : "bg-[#AC5C64]",
+                    ? "bg-[var(--nominal)]"
+                    : "bg-[var(--critical)]",
                 ].join(" ")}
               />
 
               {pipelineOnline
-                ? "Vision Pipeline"
+                ? "Vision Pipeline Online"
                 : "Pipeline Offline"}
             </div>
-          </header>
+          </div>
+        </section>
 
 
-          {/* Metrics */}
+        {/* =================================================
+            Metrics
+            ================================================= */}
 
-          <section className="mb-5 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
-            {visionMetrics.map(
-              (
-                metric,
-              ) => (
-                <VisionMetricCell
-                  key={
-                    metric.label
-                  }
-                  metric={
-                    metric
-                  }
-                />
-              ),
-            )}
-          </section>
-
-
-          {/* Main Workspace */}
-
-          <section className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_420px]">
-            {/* Video */}
-
-            <div className="overflow-hidden rounded-[10px] border border-[#BFC8D0] bg-[#EEF2F5] shadow-[0_10px_30px_rgba(34,48,60,0.08)]">
-              <div className="flex min-h-[56px] items-center justify-between gap-4 border-b border-[#CBD3DA] bg-[#E4E9ED] px-4">
-                <div className="flex min-w-0 items-center gap-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-[6px] bg-[#DCE8EF] text-[#3F6E8C]">
-                    <Eye
-                      size={
-                        16
-                      }
-                    />
-                  </div>
-
-                  <span className="hidden text-[14px] font-semibold text-[#26323C] sm:block">
-                    Live AI Video
-                  </span>
+        <section className="grid items-stretch gap-4 md:grid-cols-2 xl:grid-cols-6">
+          {visionMetrics.map(
+            (
+              metric,
+            ) => (
+              <VisionMetricCell
+                key={
+                  metric.label
+                }
+                metric={
+                  metric
+                }
+              />
+            ),
+          )}
+        </section>
 
 
-                  <select
-                    value={
-                      selectedVideo.id
-                    }
-                    onChange={(
-                      event,
-                    ) =>
-                      selectVideoById(
-                        event.target.value,
-                      )
-                    }
-                    className="h-[36px] min-w-0 max-w-[290px] rounded-[6px] border border-[#BCC6CE] bg-[#F7F9FA] px-3 text-[13px] font-medium text-[#43515D] outline-none focus:border-[#A37B43]"
-                  >
-                    {videoSources.map(
-                      (
-                        video,
-                      ) => (
-                        <option
-                          key={
-                            video.id
-                          }
-                          value={
-                            video.id
-                          }
-                        >
-                          {
-                            video.title
-                          }
-                        </option>
-                      ),
-                    )}
-                  </select>
+        {/* =================================================
+            Primary Visual Workspace
+
+            SAME HEIGHT:
+            Video panel and intelligence rail both stretch.
+            ================================================= */}
+
+        <section
+          className={[
+            "grid items-stretch gap-6",
+
+            "xl:grid-cols-[minmax(0,2fr)_minmax(390px,0.92fr)]",
+          ].join(" ")}
+        >
+          {/* ===============================================
+              Video Card
+              =============================================== */}
+
+          <div
+            className={[
+              "flex h-full min-w-0 flex-col",
+
+              "overflow-hidden rounded-[10px]",
+
+              "border border-[var(--border)]",
+
+              "bg-[var(--surface-1)]",
+
+              "shadow-[0_14px_36px_rgba(0,0,0,0.20)]",
+            ].join(" ")}
+          >
+            <div
+              className={[
+                "flex min-h-[66px] shrink-0 items-center justify-between gap-4",
+
+                "border-b border-[var(--border-soft)]",
+
+                "bg-[var(--surface-2)]",
+
+                "px-4",
+              ].join(" ")}
+            >
+              <div className="flex min-w-0 items-center gap-3">
+                <div
+                  className={[
+                    "flex h-9 w-9 shrink-0 items-center justify-center",
+
+                    "rounded-[7px] border",
+
+                    "border-[rgba(93,135,163,0.28)]",
+
+                    "bg-[rgba(93,135,163,0.10)]",
+
+                    "text-[var(--info)]",
+                  ].join(" ")}
+                >
+                  <Eye
+                    size={16}
+                    strokeWidth={1.7}
+                  />
                 </div>
 
+                <span className="hidden shrink-0 text-[14px] font-semibold text-[var(--foreground)] sm:inline">
+                  Live AI Video
+                </span>
 
-                <div className="flex items-center gap-2">
-                  {isAnnotatedPlayback ? (
-                    <button
-                      type="button"
-                      onClick={
-                        showRawFeed
-                      }
-                      className="h-[36px] rounded-[6px] border border-[#BEC7CF] bg-[#F7F9FA] px-3 text-[12px] font-semibold text-[#596672] hover:bg-[#E8EDF0]"
-                    >
-                      Raw Feed
-                    </button>
-                  ) : null}
+                <select
+                  value={
+                    selectedVideo.id
+                  }
+                  onChange={(
+                    event,
+                  ) =>
+                    selectVideoById(
+                      event.target.value,
+                    )
+                  }
+                  className={[
+                    "h-[38px] min-w-0 max-w-[300px]",
 
+                    "rounded-[6px]",
 
-                  <button
-                    type="button"
-                    onClick={() =>
-                      void generateAnnotatedVideo()
-                    }
-                    disabled={
-                      isAnnotatingVideo ||
-                      !selectedVideo.src
-                    }
-                    className="flex h-[36px] items-center gap-2 rounded-[6px] border border-[rgba(163,123,67,0.32)] bg-[#EEE3D3] px-3 text-[12px] font-semibold text-[#815E30] hover:bg-[#E8DAC6] disabled:opacity-40"
-                  >
-                    {isAnnotatingVideo ? (
-                      <Loader2
-                        size={
-                          14
+                    "border border-[var(--border)]",
+
+                    "bg-[var(--input)]",
+
+                    "px-3",
+
+                    "text-[13px] font-medium",
+
+                    "text-[var(--foreground-soft)]",
+
+                    "outline-none",
+
+                    "focus:border-[var(--primary)]",
+                  ].join(" ")}
+                >
+                  {videoSources.map(
+                    (
+                      video,
+                    ) => (
+                      <option
+                        key={
+                          video.id
                         }
-                        className="animate-spin"
-                      />
-                    ) : (
-                      <ScanSearch
-                        size={
-                          14
+                        value={
+                          video.id
                         }
-                      />
-                    )}
-
-                    {isAnnotatingVideo
-                      ? "Starting"
-                      : "Live YOLO"}
-                  </button>
-                </div>
+                      >
+                        {video.title}
+                      </option>
+                    ),
+                  )}
+                </select>
               </div>
 
-
-              {/* Intentional Black Video Canvas */}
-
-              <div className="relative min-h-[640px] overflow-hidden bg-black xl:h-[720px]">
-                <AiVideoPanel
-                  key={`${selectedVideo.id}-${videoPanelKey}-${annotatedVideoUrl ?? "raw"}`}
-                  videoSrc={
-                    annotatedVideoUrl ??
-                    selectedVideo.src
-                  }
-                  videoTitle={
-                    isAnnotatedPlayback
-                      ? `${selectedVideo.title} · YOLO`
-                      : selectedVideo.title
-                  }
-                  videoSourceName={
-                    selectedVideo.sourceName
-                  }
-                  openCvAnalysis={
-                    openCvAnalysis
-                  }
-                  isAnnotatedPlayback={
-                    isAnnotatedPlayback
-                  }
-                />
-
-
-                {annotatorError ? (
-                  <div className="absolute bottom-4 left-1/2 z-[700] max-w-[82%] -translate-x-1/2 rounded-[7px] border border-[rgba(172,92,100,0.28)] bg-[#F7F9FA] px-3.5 py-2.5 text-[12px] font-medium text-[#AC5C64] shadow-lg">
-                    {
-                      annotatorError
+              <div className="flex shrink-0 items-center gap-2">
+                {isAnnotatedPlayback ? (
+                  <button
+                    type="button"
+                    onClick={
+                      showRawFeed
                     }
-                  </div>
+                    className={[
+                      "h-[38px] rounded-[6px] border px-3",
+
+                      "border-[var(--border)]",
+
+                      "bg-[var(--surface-3)]",
+
+                      "text-[12px] font-semibold",
+
+                      "text-[var(--muted)]",
+
+                      "hover:border-[var(--border-strong)]",
+
+                      "hover:bg-[var(--surface-hover)]",
+
+                      "hover:text-[var(--foreground)]",
+                    ].join(" ")}
+                  >
+                    Raw Feed
+                  </button>
                 ) : null}
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    void generateAnnotatedVideo()
+                  }
+                  disabled={
+                    isAnnotatingVideo ||
+                    !selectedVideo.src
+                  }
+                  className={[
+                    "flex h-[38px] items-center gap-2",
+
+                    "rounded-[6px] border px-3",
+
+                    "border-[rgba(176,138,88,0.34)]",
+
+                    "bg-[rgba(176,138,88,0.12)]",
+
+                    "text-[12px] font-semibold",
+
+                    "text-[var(--primary)]",
+
+                    "hover:bg-[rgba(176,138,88,0.18)]",
+
+                    "disabled:cursor-not-allowed",
+
+                    "disabled:opacity-40",
+                  ].join(" ")}
+                >
+                  {isAnnotatingVideo ? (
+                    <Loader2
+                      size={14}
+                      className="animate-spin"
+                    />
+                  ) : (
+                    <ScanSearch
+                      size={14}
+                    />
+                  )}
+
+                  {isAnnotatingVideo
+                    ? "Starting"
+                    : "Live YOLO"}
+                </button>
               </div>
             </div>
 
+            {/* Actual media surface intentionally remains black */}
 
-            {/* Intelligence Rail */}
+            <div className="relative min-h-[700px] flex-1 overflow-hidden bg-black">
+              <AiVideoPanel
+                key={`${selectedVideo.id}-${videoPanelKey}-${annotatedVideoUrl ?? "raw"}`}
+                videoSrc={
+                  annotatedVideoUrl ??
+                  selectedVideo.src
+                }
+                videoTitle={
+                  isAnnotatedPlayback
+                    ? `${selectedVideo.title} · YOLO`
+                    : selectedVideo.title
+                }
+                videoSourceName={
+                  selectedVideo.sourceName
+                }
+                openCvAnalysis={
+                  openCvAnalysis
+                }
+                isAnnotatedPlayback={
+                  isAnnotatedPlayback
+                }
+              />
 
-            <aside className="overflow-hidden rounded-[10px] border border-[#BFC8D0] bg-[#EEF2F5] shadow-[0_10px_30px_rgba(34,48,60,0.075)]">
-              <div className="flex min-h-[66px] items-center justify-between gap-3 border-b border-[#CAD2D9] bg-[#E4E9ED] px-4">
-                <div>
-                  <div className="text-[14px] font-semibold uppercase tracking-[0.045em] text-[#815E30]">
-                    Live Intelligence
-                  </div>
+              {annotatorError ? (
+                <div
+                  className={[
+                    "absolute bottom-4 left-1/2 z-[700]",
 
-                  <div className="mt-1 text-[12px] text-[#67747F]">
-                    Detection · analysis · camera
-                  </div>
+                    "max-w-[82%] -translate-x-1/2",
+
+                    "rounded-[7px] border",
+
+                    "border-[rgba(201,105,114,0.30)]",
+
+                    "bg-[var(--surface-2)]",
+
+                    "px-3.5 py-2.5",
+
+                    "text-[12px] font-medium",
+
+                    "text-[var(--critical)]",
+
+                    "shadow-[0_12px_34px_rgba(0,0,0,0.35)]",
+                  ].join(" ")}
+                >
+                  {annotatorError}
+                </div>
+              ) : null}
+            </div>
+          </div>
+
+
+          {/* ===============================================
+              Intelligence Rail
+              =============================================== */}
+
+          <aside
+            className={[
+              "flex h-full min-w-0 flex-col",
+
+              "overflow-hidden rounded-[10px]",
+
+              "border border-[var(--border)]",
+
+              "bg-[var(--surface-1)]",
+
+              "shadow-[0_14px_36px_rgba(0,0,0,0.20)]",
+            ].join(" ")}
+          >
+            <div
+              className={[
+                "flex min-h-[66px] shrink-0 items-center justify-between gap-3",
+
+                "border-b border-[var(--border-soft)]",
+
+                "bg-[var(--surface-2)]",
+
+                "px-4",
+              ].join(" ")}
+            >
+              <div>
+                <div className="text-[14px] font-semibold uppercase tracking-[0.045em] text-[var(--primary)]">
+                  Live Intelligence
                 </div>
 
-
-                <div className="text-right">
-                  <div
-                    className={[
-                      "text-[13px] font-semibold uppercase",
-
-                      toneClass[
-                        getRiskTone(
-                          risk,
-                        )
-                      ].text,
-                    ].join(" ")}
-                  >
-                    {
-                      risk
-                    }
-                  </div>
-
-                  <div className="mt-1 font-mono text-[12px] text-[#77838E]">
-                    {
-                      detectionCount
-                    }{" "}
-                    detections
-                  </div>
+                <div className="mt-1 text-[12px] text-[var(--muted-soft)]">
+                  Detection · analysis · camera
                 </div>
               </div>
 
+              <div className="text-right">
+                <div
+                  className={[
+                    "text-[13px] font-semibold uppercase",
 
-              <div className="border-b border-[#CCD4DA] bg-[#F2F5F7]">
+                    toneClass[
+                      getRiskTone(
+                        risk,
+                      )
+                    ].text,
+                  ].join(" ")}
+                >
+                  {risk}
+                </div>
+
+                <div className="mt-1 font-mono text-[12px] text-[var(--muted-soft)]">
+                  {detectionCount} detections
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-1 flex-col">
+              <div className="flex-1 border-b border-[var(--border-soft)] bg-[var(--surface-1)]">
                 <RailHeader
                   eyebrow="AI"
                   title="Detection Summary"
                   right={
-                    <span className="font-mono text-[13px] font-semibold text-[#3F6E8C]">
-                      {
-                        confidence
-                      }
-                      %
+                    <span className="font-mono text-[13px] font-semibold text-[var(--info)]">
+                      {confidence}%
                     </span>
                   }
                 />
 
-                <div className="p-3.5">
+                <div className="p-4">
                   <AiAnalyticsPanel
                     embedded
                   />
                 </div>
               </div>
 
-
-              <div className="border-b border-[#CCD4DA] bg-[#E9EEF1]">
+              <div className="flex-1 border-b border-[var(--border-soft)] bg-[var(--surface-1)]">
                 <RailHeader
                   eyebrow="CV"
                   title="Frame Analysis"
                   right={
-                    <span className="text-[11px] uppercase text-[#71808B]">
+                    <span className="text-[11px] font-medium uppercase text-[var(--muted-soft)]">
                       0.25 threshold
                     </span>
                   }
                 />
 
-                <div className="p-3.5">
+                <div className="p-4">
                   <OpenCvAnalysisPanel
                     selectedVideo={
                       selectedVideo
@@ -2772,58 +2969,60 @@ export function CameraAI() {
                 </div>
               </div>
 
-
-              <div className="bg-[#F2F5F7]">
+              <div className="flex-1 bg-[var(--surface-1)]">
                 <RailHeader
                   eyebrow="Camera"
                   title="Operator Controls"
                   right={
-                    <span className="rounded-[4px] bg-[#DDEBE4] px-2 py-1 text-[11px] font-semibold uppercase text-[#507A65]">
+                    <span className="rounded-[4px] border border-[rgba(100,142,120,0.24)] bg-[rgba(100,142,120,0.10)] px-2 py-1 text-[11px] font-semibold uppercase text-[var(--nominal)]">
                       Assisted
                     </span>
                   }
                 />
 
-                <div className="p-3.5">
+                <div className="p-4">
                   <CameraControls
                     embedded
                     compact
                   />
                 </div>
               </div>
-            </aside>
-          </section>
-        </div>
-      </section>
+            </div>
+          </aside>
+        </section>
 
 
-      {/* ===================================================
-          Secondary Intelligence
-          =================================================== */}
+        {/* =================================================
+            Video Source Library
+            ================================================= */}
 
-      <section className="border-t border-[#BDC7CF] bg-[rgba(205,214,221,0.42)]">
-        <div className="mx-auto flex w-full max-w-[1460px] flex-col gap-5 px-5 py-8 sm:px-6 lg:px-8 xl:px-10">
-          <SectionShell
-            eyebrow="Video Sources"
-            title="Camera Source Library"
-            action={`${videoSources.length} Sources`}
-            compact
-          >
-            <VideoSourceSelector
-              videos={
-                videoSources
-              }
-              selectedVideo={
-                selectedVideo
-              }
-              onSelectVideo={
-                selectVideo
-              }
-            />
-          </SectionShell>
+        <SectionShell
+          eyebrow="Video Sources"
+          title="Camera Source Library"
+          action={`${videoSources.length} Sources`}
+        >
+          <VideoSourceSelector
+            videos={
+              videoSources
+            }
+            selectedVideo={
+              selectedVideo
+            }
+            onSelectVideo={
+              selectVideo
+            }
+          />
+        </SectionShell>
 
 
-          <div className="grid gap-5 xl:grid-cols-2">
+        {/* =================================================
+            ROW 1
+
+            Same 50 / 50 divider.
+            ================================================= */}
+
+        <VisionSplitRow
+          left={
             <SectionShell
               eyebrow="Detailed Analysis"
               title="YOLO + OpenCV Results"
@@ -2832,7 +3031,6 @@ export function CameraAI() {
                   ? "Analysis Available"
                   : "Awaiting Analysis"
               }
-              compact
             >
               <OpenCvAnalysisPanel
                 selectedVideo={
@@ -2847,13 +3045,12 @@ export function CameraAI() {
                 mode="details"
               />
             </SectionShell>
-
-
+          }
+          right={
             <SectionShell
               eyebrow="Disaster Intelligence"
               title="Feature Matrix"
               action="Correlated Cues"
-              compact
             >
               <DisasterFeatureMatrixPanel
                 analysis={
@@ -2861,47 +3058,61 @@ export function CameraAI() {
                 }
               />
             </SectionShell>
-          </div>
+          }
+        />
 
 
-          <SectionShell
-            eyebrow="Event Intelligence"
-            title="Detection Event Ledger"
-            action="Mission Review"
-            compact
-          >
-            <DetectionEventLedger />
-          </SectionShell>
+        {/* =================================================
+            Event Ledger
+            ================================================= */}
+
+        <SectionShell
+          eyebrow="Event Intelligence"
+          title="Detection Event Ledger"
+          action="Mission Review"
+        >
+          <DetectionEventLedger />
+        </SectionShell>
 
 
-          <SectionShell
-            eyebrow="Analysis Workbench"
-            title="Detection Triage & Response"
-            action="Operator Review"
-          >
-            <AnalysisWorkbench
-              selectedVideo={
-                selectedVideo
-              }
-              analysis={
-                openCvAnalysis
-              }
-              risk={
-                risk
-              }
-              confidence={
-                confidence
-              }
-            />
-          </SectionShell>
+        {/* =================================================
+            Analysis Workbench
+            ================================================= */}
+
+        <SectionShell
+          eyebrow="Analysis Workbench"
+          title="Detection Triage & Response"
+          action="Operator Review"
+        >
+          <AnalysisWorkbench
+            selectedVideo={
+              selectedVideo
+            }
+            analysis={
+              openCvAnalysis
+            }
+            risk={
+              risk
+            }
+            confidence={
+              confidence
+            }
+          />
+        </SectionShell>
 
 
-          <div className="grid gap-5 xl:grid-cols-2">
+        {/* =================================================
+            ROW 2
+
+            EXACT same divider as Detailed Analysis row.
+            ================================================= */}
+
+        <VisionSplitRow
+          left={
             <SectionShell
               eyebrow="Accuracy"
               title="Detection Accuracy"
               action="Threshold 0.30"
-              compact
             >
               <DetectionAccuracyMonitor
                 selectedVideo={
@@ -2912,55 +3123,63 @@ export function CameraAI() {
                 }
               />
             </SectionShell>
-
-
+          }
+          right={
             <SectionShell
               eyebrow="Risk"
               title="AI Risk Matrix"
               action="Live Score"
-              compact
             >
               <AiRiskMatrix />
             </SectionShell>
-          </div>
+          }
+        />
 
 
-          <SectionShell
-            eyebrow="Operator Safety"
-            title="Human Review State"
-            action="Human-in-loop"
-            compact
-          >
-            <OperatorSafetyPanel
-              selectedVideo={
-                selectedVideo
-              }
-            />
-          </SectionShell>
+        {/* =================================================
+            Operator Safety
+            ================================================= */}
+
+        <SectionShell
+          eyebrow="Operator Safety"
+          title="Human Review State"
+          action="Human-in-loop"
+        >
+          <OperatorSafetyPanel
+            selectedVideo={
+              selectedVideo
+            }
+          />
+        </SectionShell>
 
 
-          <div className="grid gap-5 xl:grid-cols-2">
+        {/* =================================================
+            ROW 3
+
+            Same divider again.
+            ================================================= */}
+
+        <VisionSplitRow
+          left={
             <SectionShell
               eyebrow="Performance"
               title="Model Performance"
               action="Inference"
-              compact
             >
               <ModelPerformancePanel />
             </SectionShell>
-
-
+          }
+          right={
             <SectionShell
               eyebrow="Model Flow"
               title="Detection Pipeline"
               action="Vision AI"
-              compact
             >
               <ModelPipeline />
             </SectionShell>
-          </div>
-        </div>
-      </section>
+          }
+        />
+      </div>
     </div>
   );
 }
