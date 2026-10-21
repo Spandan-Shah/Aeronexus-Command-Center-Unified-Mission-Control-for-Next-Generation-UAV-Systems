@@ -59,6 +59,11 @@ const platformLinks: FooterLink[] = [
   },
 
   {
+    id: "hardware-integration",
+    label: "Hardware Integration",
+  },
+
+  {
     id: "security",
     label: "Security",
   },
@@ -108,16 +113,20 @@ function FooterLinkButton({
         "transition-colors duration-150",
 
         active
-          ? "text-[#C6A36F]"
-          : "text-[#78838D] hover:text-[#F0F3F5]",
+          ? "text-[#79B8FF]"
+          : "text-[#778395] hover:text-[#F1F4F7]",
       ].join(" ")}
     >
       {item.label}
 
       {active ? (
         <ArrowUpRight
-          size={12}
-          strokeWidth={1.6}
+          size={
+            12
+          }
+          strokeWidth={
+            1.6
+          }
         />
       ) : null}
     </button>
@@ -137,16 +146,18 @@ export function MissionFooter({
       className={[
         "relative z-[2]",
 
-        "border-t border-[#252D35]",
+        "border-t border-[#151923]",
 
-        "bg-[#07090C]",
+        "bg-[#050608]",
 
-        "text-[#F0F3F5]",
+        "text-[#F1F4F7]",
       ].join(" ")}
     >
       <div className="mx-auto w-full max-w-[1680px] px-4 py-10 sm:px-6 lg:px-8 xl:px-10 2xl:px-14">
         <div className="grid gap-10 lg:grid-cols-[1.6fr_0.7fr_0.7fr_1fr]">
-          {/* Brand */}
+          {/* =================================================
+              Brand
+              ================================================= */}
 
           <div className="max-w-[570px]">
             <img
@@ -157,11 +168,11 @@ export function MissionFooter({
               className="h-auto w-[300px] object-contain object-left sm:w-[340px] lg:w-[390px]"
             />
 
-            <div className="mt-5 text-[18px] font-semibold tracking-[-0.025em] text-[#F0F3F5]">
+            <div className="mt-5 text-[18px] font-semibold tracking-[-0.025em] text-[#F1F4F7]">
               MissionNexus
             </div>
 
-            <p className="mt-2.5 max-w-[470px] text-[14px] leading-[1.7] text-[#78838D]">
+            <p className="mt-2.5 max-w-[470px] text-[14px] leading-[1.7] text-[#778395]">
               Unified mission operations,
               planning, telemetry,
               intelligence and autonomous
@@ -170,14 +181,20 @@ export function MissionFooter({
           </div>
 
 
-          {/* Operations */}
+          {/* =================================================
+              Operations
+              ================================================= */}
 
           <div>
-            <div className="mb-4 flex items-center gap-2 text-[14px] font-semibold text-[#D7DCE1]">
+            <div className="mb-4 flex items-center gap-2 text-[14px] font-semibold text-[#DDE3EA]">
               <Radar
-                size={15}
-                strokeWidth={1.6}
-                className="text-[#B08A58]"
+                size={
+                  15
+                }
+                strokeWidth={
+                  1.6
+                }
+                className="text-[#5AA9FF]"
               />
 
               Operations
@@ -185,7 +202,9 @@ export function MissionFooter({
 
             <div className="grid gap-3">
               {operationsLinks.map(
-                (item) => (
+                (
+                  item,
+                ) => (
                   <FooterLinkButton
                     key={
                       item.id
@@ -206,14 +225,20 @@ export function MissionFooter({
           </div>
 
 
-          {/* Platform */}
+          {/* =================================================
+              Platform
+              ================================================= */}
 
           <div>
-            <div className="mb-4 flex items-center gap-2 text-[14px] font-semibold text-[#D7DCE1]">
+            <div className="mb-4 flex items-center gap-2 text-[14px] font-semibold text-[#DDE3EA]">
               <Plane
-                size={15}
-                strokeWidth={1.6}
-                className="text-[#B08A58]"
+                size={
+                  15
+                }
+                strokeWidth={
+                  1.6
+                }
+                className="text-[#5AA9FF]"
               />
 
               Platform
@@ -221,7 +246,9 @@ export function MissionFooter({
 
             <div className="grid gap-3">
               {platformLinks.map(
-                (item) => (
+                (
+                  item,
+                ) => (
                   <FooterLinkButton
                     key={
                       item.id
@@ -242,14 +269,20 @@ export function MissionFooter({
           </div>
 
 
-          {/* System */}
+          {/* =================================================
+              System Status
+              ================================================= */}
 
           <div>
-            <div className="mb-4 flex items-center gap-2 text-[14px] font-semibold text-[#D7DCE1]">
+            <div className="mb-4 flex items-center gap-2 text-[14px] font-semibold text-[#DDE3EA]">
               <ShieldCheck
-                size={15}
-                strokeWidth={1.6}
-                className="text-[#B08A58]"
+                size={
+                  15
+                }
+                strokeWidth={
+                  1.6
+                }
+                className="text-[#5AA9FF]"
               />
 
               System
@@ -259,46 +292,50 @@ export function MissionFooter({
               className={[
                 "rounded-[8px]",
 
-                "border border-[#29323B]",
+                "border border-[#1D2533]",
 
-                "bg-[#11161C]",
+                "bg-[#070A10]",
 
                 "p-4",
 
-                "shadow-[0_10px_28px_rgba(0,0,0,0.18)]",
+                "shadow-[0_10px_28px_rgba(0,0,0,0.20)]",
               ].join(" ")}
             >
               <div className="flex items-center justify-between gap-4">
-                <span className="text-[13px] text-[#78838D]">
+                <span className="text-[13px] text-[#778395]">
                   Console
                 </span>
 
-                <span className="flex items-center gap-2 text-[13px] font-semibold text-[#7CA18D]">
-                  <span className="h-2 w-2 rounded-full bg-[#648E78] shadow-[0_0_10px_rgba(100,142,120,0.42)]" />
+                <span className="flex items-center gap-2 text-[13px] font-semibold text-[#49E58F]">
+                  <span className="h-2 w-2 rounded-full bg-[#49E58F]" />
 
                   Operational
                 </span>
               </div>
 
-              <div className="mt-3.5 flex items-center justify-between gap-4 border-t border-[#252D35] pt-3.5">
-                <span className="text-[13px] text-[#78838D]">
+              <div className="mt-3.5 flex items-center justify-between gap-4 border-t border-[#151923] pt-3.5">
+                <span className="text-[13px] text-[#778395]">
                   Platform
                 </span>
 
-                <span className="font-mono text-[13px] text-[#A7B0B8]">
+                <span className="font-mono text-[13px] text-[#AAB4C1]">
                   MissionNexus
                 </span>
               </div>
 
-              <div className="mt-3.5 flex items-center justify-between gap-4 border-t border-[#252D35] pt-3.5">
-                <span className="text-[13px] text-[#78838D]">
+              <div className="mt-3.5 flex items-center justify-between gap-4 border-t border-[#151923] pt-3.5">
+                <span className="text-[13px] text-[#778395]">
                   Mode
                 </span>
 
-                <span className="flex items-center gap-1.5 font-mono text-[13px] text-[#A7B0B8]">
+                <span className="flex items-center gap-1.5 font-mono text-[13px] text-[#AAB4C1]">
                   <Activity
-                    size={13}
-                    strokeWidth={1.6}
+                    size={
+                      13
+                    }
+                    strokeWidth={
+                      1.6
+                    }
                   />
 
                   Mission Ops
@@ -309,30 +346,40 @@ export function MissionFooter({
         </div>
 
 
-        {/* Bottom */}
+        {/* =================================================
+            Bottom
+            ================================================= */}
 
-        <div className="mt-10 flex flex-col gap-3 border-t border-[#252D35] pt-5 md:flex-row md:items-center md:justify-between">
-          <div className="text-[13px] text-[#68737D]">
+        <div className="mt-10 flex flex-col gap-3 border-t border-[#151923] pt-5 md:flex-row md:items-center md:justify-between">
+          <div className="text-[13px] text-[#677386]">
             © {year} Aeronexus Aerospace.
             MissionNexus mission systems.
           </div>
 
-          <div className="flex flex-wrap items-center gap-4 text-[13px] text-[#68737D]">
+          <div className="flex flex-wrap items-center gap-4 text-[13px] text-[#677386]">
             <span className="flex items-center gap-1.5">
               <Map
-                size={13}
-                strokeWidth={1.6}
+                size={
+                  13
+                }
+                strokeWidth={
+                  1.6
+                }
               />
 
               Mission Operations
             </span>
 
-            <span className="hidden h-3 w-px bg-[#29323B] sm:block" />
+            <span className="hidden h-3 w-px bg-[#1D2533] sm:block" />
 
             <span className="flex items-center gap-1.5">
               <ShieldCheck
-                size={13}
-                strokeWidth={1.6}
+                size={
+                  13
+                }
+                strokeWidth={
+                  1.6
+                }
               />
 
               Secure Systems
@@ -345,11 +392,15 @@ export function MissionFooter({
                   "settings",
                 )
               }
-              className="flex items-center gap-1.5 transition-colors hover:text-[#F0F3F5]"
+              className="flex items-center gap-1.5 transition-colors hover:text-[#F1F4F7]"
             >
               <Settings
-                size={13}
-                strokeWidth={1.6}
+                size={
+                  13
+                }
+                strokeWidth={
+                  1.6
+                }
               />
 
               Settings

@@ -16,6 +16,7 @@ import {
   Menu,
   Package,
   Plane,
+  PlugZap,
   Radar,
   Settings,
   ShieldCheck,
@@ -175,6 +176,14 @@ const navGroups: NavGroup[] = [
       },
 
       {
+        id: "hardware-integration",
+        label: "Hardware Integration",
+        description:
+          "Aircraft pairing, telemetry interfaces and hardware diagnostics",
+        icon: PlugZap,
+      },
+
+      {
         id: "maintenance",
         label: "Maintenance",
         description:
@@ -219,7 +228,8 @@ function isGroupActive(
 ) {
   return group.items.some(
     (item) =>
-      item.id === activePage,
+      item.id ===
+      activePage,
   );
 }
 
@@ -251,7 +261,9 @@ function DesktopNavGroup({
     <div className="group relative flex h-full items-center">
       <button
         type="button"
-        style={productFont}
+        style={
+          productFont
+        }
         className={[
           "relative flex h-full items-center gap-1.5 px-1",
 
@@ -260,17 +272,21 @@ function DesktopNavGroup({
           "transition-colors duration-150",
 
           active
-            ? "text-[#F0F3F5]"
-            : "text-[#929DA7] hover:text-[#F0F3F5]",
+            ? "text-[#F1F4F7]"
+            : "text-[#8B97A6] hover:text-[#F1F4F7]",
         ].join(" ")}
       >
         {group.label}
 
         <ChevronDown
-          size={14}
-          strokeWidth={1.7}
+          size={
+            14
+          }
+          strokeWidth={
+            1.7
+          }
           className={[
-            "text-[#66727D]",
+            "text-[#667386]",
 
             "transition-transform duration-150",
 
@@ -283,7 +299,7 @@ function DesktopNavGroup({
         {active ? (
           <span
             aria-hidden="true"
-            className="absolute inset-x-0 bottom-0 h-[2px] bg-[#B08A58]"
+            className="absolute inset-x-0 bottom-0 h-[2px] bg-[#5AA9FF]"
           />
         ) : null}
       </button>
@@ -302,15 +318,15 @@ function DesktopNavGroup({
 
           "rounded-[9px]",
 
-          "border border-[#313B45]",
+          "border border-[#1D2533]",
 
-          "bg-[#141A20]",
+          "bg-[#000000]",
 
           "p-2.5",
 
           "opacity-0",
 
-          "shadow-[0_26px_70px_rgba(0,0,0,0.52)]",
+          "shadow-[0_26px_70px_rgba(0,0,0,0.60)]",
 
           "transition-[opacity,visibility] duration-150",
 
@@ -329,22 +345,26 @@ function DesktopNavGroup({
       >
         <div className="px-3 pb-2.5 pt-1.5">
           <div
-            style={productFont}
-            className="text-[14px] font-semibold text-[#F0F3F5]"
+            style={
+              productFont
+            }
+            className="text-[14px] font-semibold text-[#F1F4F7]"
           >
             {group.label}
           </div>
 
-          <div className="mt-1 text-[12px] text-[#7E8993]">
+          <div className="mt-1 text-[12px] text-[#778395]">
             MissionNexus workspace
           </div>
         </div>
 
-        <div className="mb-2 h-px bg-[#29323B]" />
+        <div className="mb-2 h-px bg-[#151923]" />
 
         <div className="grid gap-1">
           {group.items.map(
-            (item) => {
+            (
+              item,
+            ) => {
               const Icon =
                 item.icon;
 
@@ -354,7 +374,9 @@ function DesktopNavGroup({
 
               return (
                 <button
-                  key={item.id}
+                  key={
+                    item.id
+                  }
                   type="button"
                   onClick={() =>
                     onPageChange(
@@ -376,8 +398,8 @@ function DesktopNavGroup({
                     "transition-[background-color,border-color] duration-150",
 
                     itemActive
-                      ? "border-[rgba(176,138,88,0.30)] bg-[rgba(176,138,88,0.10)]"
-                      : "border-transparent hover:border-[#313B45] hover:bg-[#1A2027]",
+                      ? "border-[#35527A] bg-[#07111F]"
+                      : "border-transparent hover:border-[#243047] hover:bg-[#070A10]",
                   ].join(" ")}
                 >
                   <span
@@ -387,13 +409,17 @@ function DesktopNavGroup({
                       "rounded-[6px] border",
 
                       itemActive
-                        ? "border-[rgba(176,138,88,0.35)] bg-[rgba(176,138,88,0.10)] text-[#C6A36F]"
-                        : "border-[#313B45] bg-[#1A2027] text-[#7E8993] group-hover/item:text-[#B9C2CA]",
+                        ? "border-[#35527A] bg-[#05080D] text-[#5AA9FF]"
+                        : "border-[#243047] bg-[#070A10] text-[#778395] group-hover/item:text-[#B7C0CB]",
                     ].join(" ")}
                   >
                     <Icon
-                      size={15}
-                      strokeWidth={1.6}
+                      size={
+                        15
+                      }
+                      strokeWidth={
+                        1.6
+                      }
                     />
                   </span>
 
@@ -403,15 +429,17 @@ function DesktopNavGroup({
                         "block text-[14px] font-semibold leading-[1.35]",
 
                         itemActive
-                          ? "text-[#C6A36F]"
-                          : "text-[#E7EBEE]",
+                          ? "text-[#79B8FF]"
+                          : "text-[#E7EBEF]",
                       ].join(" ")}
                     >
                       {item.label}
                     </span>
 
-                    <span className="mt-1 block text-[12px] leading-[1.5] text-[#7E8993]">
-                      {item.description}
+                    <span className="mt-1 block text-[12px] leading-[1.5] text-[#778395]">
+                      {
+                        item.description
+                      }
                     </span>
                   </span>
                 </button>
@@ -440,7 +468,8 @@ function MobileNavigation({
     page: PageId,
   ) => void;
 
-  onClose: () => void;
+  onClose:
+    () => void;
 }) {
   function changePage(
     page: PageId,
@@ -459,11 +488,11 @@ function MobileNavigation({
 
         "z-[5100]",
 
-        "border-b border-[#313B45]",
+        "border-b border-[#1D2533]",
 
-        "bg-[#0B0E12]",
+        "bg-[#050608]",
 
-        "shadow-[0_28px_70px_rgba(0,0,0,0.55)]",
+        "shadow-[0_28px_70px_rgba(0,0,0,0.60)]",
 
         "min-[1380px]:hidden",
       ].join(" ")}
@@ -471,7 +500,9 @@ function MobileNavigation({
       <div className="mx-auto max-h-[calc(100vh-70px)] max-w-[1680px] overflow-y-auto px-5 py-6 sm:px-6 lg:px-10">
         <div className="grid gap-7 md:grid-cols-3">
           {navGroups.map(
-            (group) => (
+            (
+              group,
+            ) => (
               <section
                 key={
                   group.label
@@ -479,18 +510,24 @@ function MobileNavigation({
               >
                 <div className="mb-3 flex items-center gap-2">
                   <span
-                    style={productFont}
-                    className="text-[15px] font-semibold text-[#F0F3F5]"
+                    style={
+                      productFont
+                    }
+                    className="text-[15px] font-semibold text-[#F1F4F7]"
                   >
-                    {group.label}
+                    {
+                      group.label
+                    }
                   </span>
 
-                  <span className="h-px flex-1 bg-[#29323B]" />
+                  <span className="h-px flex-1 bg-[#151923]" />
                 </div>
 
                 <div className="grid gap-1.5">
                   {group.items.map(
-                    (item) => {
+                    (
+                      item,
+                    ) => {
                       const Icon =
                         item.icon;
 
@@ -500,7 +537,9 @@ function MobileNavigation({
 
                       return (
                         <button
-                          key={item.id}
+                          key={
+                            item.id
+                          }
                           type="button"
                           onClick={() =>
                             changePage(
@@ -516,23 +555,31 @@ function MobileNavigation({
                             "flex items-start gap-3 rounded-[7px] border px-3 py-3 text-left",
 
                             active
-                              ? "border-[rgba(176,138,88,0.30)] bg-[rgba(176,138,88,0.10)] text-[#C6A36F]"
-                              : "border-transparent text-[#B9C2CA] hover:border-[#313B45] hover:bg-[#1A2027] hover:text-[#F0F3F5]",
+                              ? "border-[#35527A] bg-[#07111F] text-[#79B8FF]"
+                              : "border-transparent text-[#B7C0CB] hover:border-[#243047] hover:bg-[#070A10] hover:text-[#F1F4F7]",
                           ].join(" ")}
                         >
                           <Icon
-                            size={16}
-                            strokeWidth={1.6}
+                            size={
+                              16
+                            }
+                            strokeWidth={
+                              1.6
+                            }
                             className="mt-0.5 shrink-0"
                           />
 
                           <span className="min-w-0">
                             <span className="block text-[14px] font-semibold">
-                              {item.label}
+                              {
+                                item.label
+                              }
                             </span>
 
-                            <span className="mt-1 block text-[12px] leading-[1.5] text-[#7E8993]">
-                              {item.description}
+                            <span className="mt-1 block text-[12px] leading-[1.5] text-[#778395]">
+                              {
+                                item.description
+                              }
                             </span>
                           </span>
                         </button>
@@ -545,7 +592,7 @@ function MobileNavigation({
           )}
         </div>
 
-        <div className="mt-7 border-t border-[#29323B] pt-5">
+        <div className="mt-7 border-t border-[#151923] pt-5">
           <button
             type="button"
             onClick={() =>
@@ -553,11 +600,15 @@ function MobileNavigation({
                 "settings",
               )
             }
-            className="flex h-[44px] w-full items-center justify-center gap-2 rounded-[7px] border border-[#313B45] bg-[#1A2027] text-[14px] font-semibold text-[#B9C2CA] hover:bg-[#232B34] hover:text-[#F0F3F5]"
+            className="flex h-[44px] w-full items-center justify-center gap-2 rounded-[7px] border border-[#243047] bg-[#070A10] text-[14px] font-semibold text-[#B7C0CB] hover:border-[#35527A] hover:bg-[#07111F] hover:text-[#F1F4F7]"
           >
             <Settings
-              size={16}
-              strokeWidth={1.6}
+              size={
+                16
+              }
+              strokeWidth={
+                1.6
+              }
             />
 
             Settings
@@ -605,17 +656,19 @@ function MissionNexusHeader({
 
   return (
     <header
-      style={interfaceFont}
+      style={
+        interfaceFont
+      }
       className={[
         "fixed inset-x-0 top-0 z-[5000]",
 
         "h-[70px]",
 
-        "border-b border-[#252D35]",
+        "border-b border-[#151923]",
 
-        "bg-[#07090C]",
+        "bg-[#050608]",
 
-        "shadow-[0_10px_34px_rgba(0,0,0,0.38)]",
+        "shadow-[0_10px_34px_rgba(0,0,0,0.45)]",
       ].join(" ")}
     >
       <div className="mx-auto flex h-full w-full max-w-[1680px] items-center px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-14">
@@ -630,22 +683,26 @@ function MissionNexusHeader({
           className="flex min-w-0 shrink-0 items-center"
         >
           <img
-            src={aeronexusWordmark}
+            src={
+              aeronexusWordmark
+            }
             alt="Aeronexus"
             className="h-[36px] w-auto shrink-0 object-contain xl:h-[39px]"
           />
 
-          <span className="mx-3.5 h-7 w-px bg-[#303943]" />
+          <span className="mx-3.5 h-7 w-px bg-[#243047]" />
 
           <span className="min-w-0 text-left">
             <span
-              style={productFont}
-              className="block text-[16px] font-semibold tracking-[-0.02em] text-[#F0F3F5]"
+              style={
+                productFont
+              }
+              className="block text-[16px] font-semibold tracking-[-0.02em] text-[#F1F4F7]"
             >
               MissionNexus
             </span>
 
-            <span className="mt-0.5 hidden text-[12px] font-medium text-[#7E8993] xl:block">
+            <span className="mt-0.5 hidden text-[12px] font-medium text-[#778395] xl:block">
               Mission Operations Platform
             </span>
           </span>
@@ -656,7 +713,9 @@ function MissionNexusHeader({
           className="ml-auto hidden h-full items-center gap-8 min-[1380px]:flex"
         >
           {navGroups.map(
-            (group) => (
+            (
+              group,
+            ) => (
               <DesktopNavGroup
                 key={
                   group.label
@@ -676,10 +735,10 @@ function MissionNexusHeader({
         </nav>
 
         <div className="ml-auto flex items-center gap-2.5 min-[1380px]:ml-8">
-          <div className="hidden items-center gap-2 rounded-[6px] border border-[#29323B] bg-[#11161C] px-3 py-2 xl:flex">
-            <span className="h-2 w-2 rounded-full bg-[#648E78] shadow-[0_0_10px_rgba(100,142,120,0.45)]" />
+          <div className="hidden items-center gap-2 rounded-[6px] border border-[#1D2533] bg-[#070A10] px-3 py-2 xl:flex">
+            <span className="h-2 w-2 rounded-full bg-[#49E58F]" />
 
-            <span className="font-mono text-[12px] font-semibold tracking-[0.025em] text-[#8D98A2]">
+            <span className="font-mono text-[12px] font-semibold tracking-[0.025em] text-[#8B97A6]">
               MISSION CONSOLE
             </span>
           </div>
@@ -708,13 +767,17 @@ function MissionNexusHeader({
 
               activePage ===
               "settings"
-                ? "border-[rgba(176,138,88,0.34)] bg-[rgba(176,138,88,0.10)] text-[#C6A36F]"
-                : "border-[#29323B] bg-[#11161C] text-[#929DA7] hover:border-[#414C57] hover:bg-[#1A2027] hover:text-[#F0F3F5]",
+                ? "border-[#35527A] bg-[#07111F] text-[#79B8FF]"
+                : "border-[#1D2533] bg-[#070A10] text-[#8B97A6] hover:border-[#35527A] hover:bg-[#07111F] hover:text-[#F1F4F7]",
             ].join(" ")}
           >
             <Settings
-              size={15}
-              strokeWidth={1.6}
+              size={
+                15
+              }
+              strokeWidth={
+                1.6
+              }
             />
 
             Settings
@@ -724,7 +787,9 @@ function MissionNexusHeader({
             type="button"
             onClick={() =>
               setMobileOpen(
-                (current) =>
+                (
+                  current,
+                ) =>
                   !current,
               )
             }
@@ -736,17 +801,25 @@ function MissionNexusHeader({
             aria-expanded={
               mobileOpen
             }
-            className="flex h-[40px] w-[40px] items-center justify-center rounded-[6px] border border-[#29323B] bg-[#11161C] text-[#929DA7] hover:border-[#414C57] hover:bg-[#1A2027] hover:text-[#F0F3F5] min-[1380px]:hidden"
+            className="flex h-[40px] w-[40px] items-center justify-center rounded-[6px] border border-[#1D2533] bg-[#070A10] text-[#8B97A6] hover:border-[#35527A] hover:bg-[#07111F] hover:text-[#F1F4F7] min-[1380px]:hidden"
           >
             {mobileOpen ? (
               <X
-                size={18}
-                strokeWidth={1.6}
+                size={
+                  18
+                }
+                strokeWidth={
+                  1.6
+                }
               />
             ) : (
               <Menu
-                size={18}
-                strokeWidth={1.6}
+                size={
+                  18
+                }
+                strokeWidth={
+                  1.6
+                }
               />
             )}
           </button>
@@ -784,8 +857,10 @@ export function AppShell({
 }: AppShellProps) {
   return (
     <div
-      style={interfaceFont}
-      className="min-h-screen bg-[#11161C] text-[#F0F3F5]"
+      style={
+        interfaceFont
+      }
+      className="min-h-screen bg-[#09090B] text-[#F1F4F7]"
     >
       <MissionNexusHeader
         activePage={
@@ -803,6 +878,8 @@ export function AppShell({
           "relative z-0",
 
           "min-h-[calc(100vh-70px)]",
+
+          "bg-[#09090B]",
 
           "pt-[70px]",
         ].join(" ")}

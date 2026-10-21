@@ -39,6 +39,10 @@ import {
 } from "./pages/Fleet";
 
 import {
+  HardwareIntegration,
+} from "./pages/HardwareIntegration";
+
+import {
   Inventory,
 } from "./pages/Inventory";
 
@@ -66,14 +70,14 @@ import {
   Security,
 } from "./pages/Security";
 
+
 /* =========================================================
    MissionNexus
    Page Renderer
    ========================================================= */
 
 function renderPage(
-  activePage:
-    PageId,
+  activePage: PageId,
 ) {
   switch (
     activePage
@@ -111,6 +115,11 @@ function renderPage(
     case "battery":
       return (
         <BatteryPower />
+      );
+
+    case "hardware-integration":
+      return (
+        <HardwareIntegration />
       );
 
     case "camera-ai":
@@ -154,6 +163,7 @@ function renderPage(
       );
   }
 }
+
 
 /* =========================================================
    Application

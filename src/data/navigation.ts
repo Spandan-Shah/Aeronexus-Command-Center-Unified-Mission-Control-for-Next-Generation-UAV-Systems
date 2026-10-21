@@ -6,6 +6,7 @@ export type PageId =
   | "fleet"
   | "drone-health"
   | "battery"
+  | "hardware-integration"
   | "camera-ai"
   | "pre-flight"
   | "logs"
@@ -23,72 +24,91 @@ export const pageDetails: Record<
 > = {
   "live-ops": {
     title: "Live Ops",
-    subtitle: "Real-time drone monitoring and command dashboard",
+    subtitle:
+      "Real-time drone monitoring and command dashboard",
   },
 
   "mission-planner": {
     title: "Mission Planner",
-    subtitle: "Waypoint planning, geofence setup, and mission upload",
+    subtitle:
+      "Waypoint planning, geofence setup, and mission upload",
   },
 
   "drone-control": {
     title: "Drone Control",
-    subtitle: "Command console, safety actions, and telemetry control link",
+    subtitle:
+      "Command console, safety actions, and telemetry control link",
   },
 
   "autonomous-intercept": {
-    title: "Autonomous Intercept",
+    title: "Autonomy Lab",
     subtitle:
-      "Leader-follower AI guidance, trajectory prediction, rendezvous, and shadow simulation",
+      "Predictive guidance, trajectory analysis, formation and autonomous mission simulation",
   },
 
   fleet: {
     title: "Fleet",
-    subtitle: "Multi-drone status, assignment, and readiness",
+    subtitle:
+      "Multi-drone status, assignment, and readiness",
   },
 
   "drone-health": {
     title: "Drone Health",
-    subtitle: "Motors, sensors, GPS, IMU, compass, and vibration status",
+    subtitle:
+      "Motors, sensors, GPS, IMU, compass, and vibration status",
   },
 
   battery: {
     title: "Battery & Power",
-    subtitle: "Battery percentage, voltage, current draw, and flight time",
+    subtitle:
+      "Battery percentage, voltage, current draw, and flight time",
+  },
+
+  "hardware-integration": {
+    title: "Hardware Integration",
+    subtitle:
+      "Aircraft pairing, telemetry interfaces, diagnostics, and payload hardware",
   },
 
   "camera-ai": {
     title: "Vision Intelligence",
-    subtitle: "Video feed, detection events, and AI model pipeline",
+    subtitle:
+      "Video feed, detection events, and AI model pipeline",
   },
 
   "pre-flight": {
     title: "Pre-Flight Checklist",
-    subtitle: "Safety checks before takeoff",
+    subtitle:
+      "Safety checks before takeoff",
   },
 
   logs: {
     title: "Mission Debrief",
-    subtitle: "Flight timeline, alerts, evidence, and report export",
+    subtitle:
+      "Flight timeline, alerts, evidence, and report export",
   },
 
   maintenance: {
     title: "Maintenance",
-    subtitle: "Service reminders, part condition, and repair tracking",
+    subtitle:
+      "Service reminders, part condition, and repair tracking",
   },
 
   inventory: {
     title: "Parts Inventory",
-    subtitle: "Drone parts, cost, supplier, and installation status",
+    subtitle:
+      "Drone parts, cost, supplier, and installation status",
   },
 
   security: {
     title: "Security",
-    subtitle: "Command audit, roles, sessions, and secure logs",
+    subtitle:
+      "Command audit, roles, sessions, and secure logs",
   },
 
   settings: {
     title: "Settings",
-    subtitle: "Dashboard, simulator, map, and safety configuration",
+    subtitle:
+      "Dashboard, simulator, map, and safety configuration",
   },
 };
