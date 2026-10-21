@@ -4,17 +4,13 @@ import type {
 
 
 type PanelProps = {
-  title?:
-    string;
+  title?: string;
 
-  right?:
-    ReactNode;
+  right?: ReactNode;
 
-  children:
-    ReactNode;
+  children: ReactNode;
 
-  className?:
-    string;
+  className?: string;
 };
 
 
@@ -29,13 +25,15 @@ export function Panel({
       className={[
         "overflow-hidden",
 
-        "rounded-[8px]",
+        "rounded-[9px]",
 
         "border border-[var(--border)]",
 
-        "bg-white",
+        "bg-[var(--surface-1)]",
 
-        "shadow-[0_8px_24px_rgba(25,35,45,0.055)]",
+        "text-[var(--foreground)]",
+
+        "shadow-[0_12px_30px_rgba(0,0,0,0.18)]",
 
         className,
       ].join(" ")}
@@ -44,9 +42,11 @@ export function Panel({
       right ? (
         <div
           className={[
-            "flex min-h-[50px] items-center justify-between gap-4",
+            "flex min-h-[52px] items-center justify-between gap-4",
 
             "border-b border-[var(--border-soft)]",
+
+            "bg-[var(--surface-2)]",
 
             "px-4",
           ].join(" ")}

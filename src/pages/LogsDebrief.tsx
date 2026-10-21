@@ -23,8 +23,18 @@ import type {
   LucideIcon,
 } from "lucide-react";
 
+
+/* =========================================================
+   Backend
+   ========================================================= */
+
 const BACKEND_URL =
   "http://127.0.0.1:8000";
+
+
+/* =========================================================
+   Types
+   ========================================================= */
 
 type Tone =
   | "nominal"
@@ -33,54 +43,78 @@ type Tone =
   | "info"
   | "muted";
 
+
 type PythonSample = {
   time: string;
+
   altitude: number;
+
   speed: number;
+
   battery: number;
+
   link: number;
+
   risk: number;
+
   event: string;
 };
 
+
 type PilotAction = {
   time: string;
+
   actor: string;
+
   action: string;
+
   result: string;
+
   signature: string;
 };
+
 
 type PythonAnalytics = {
   mission_id: string;
 
   generated_by: string;
 
-  samples:
-    PythonSample[];
+  samples: PythonSample[];
 
-  pilot_actions:
-    PilotAction[];
+  pilot_actions: PilotAction[];
 
   summary: {
     samples: number;
+
     peak_altitude_m: number;
+
     average_speed_ms: number;
+
     battery_drop_percent: number;
+
     average_link_percent: number;
+
     peak_risk_score: number;
+
     warning_count: number;
+
     audit_actions: number;
   };
 };
 
+
 type SummaryMetric = {
   label: string;
+
   value: string;
+
   helper: string;
+
   icon: LucideIcon;
+
   tone: Tone;
 };
+
 
 /* =========================================================
    Fallback Analytics
@@ -88,477 +122,395 @@ type SummaryMetric = {
 
 const fallbackAnalytics:
   PythonAnalytics = {
-    mission_id:
-      "SURVEY-ALPHA",
+  mission_id:
+    "SURVEY-ALPHA",
 
-    generated_by:
-      "Frontend fallback while Python backend is offline",
+  generated_by:
+    "Frontend fallback while Python backend is offline",
 
-    samples: [
-      {
-        time:
-          "14:18",
+  samples: [
+    {
+      time:
+        "14:18",
 
-        altitude:
-          88,
+      altitude:
+        88,
 
-        speed:
-          8.4,
+      speed:
+        8.4,
 
-        battery:
-          81,
+      battery:
+        81,
 
-        link:
-          97,
+      link:
+        97,
 
-        risk:
-          8,
+      risk:
+        8,
 
-        event:
-          "Launch confirmed",
-      },
+      event:
+        "Launch confirmed",
+    },
 
-      {
-        time:
-          "14:20",
+    {
+      time:
+        "14:20",
 
-        altitude:
-          112,
+      altitude:
+        112,
 
-        speed:
-          12.8,
+      speed:
+        12.8,
 
-        battery:
-          79,
+      battery:
+        79,
 
-        link:
-          96,
+      link:
+        96,
 
-        risk:
-          12,
+      risk:
+        12,
 
-        event:
-          "Waypoint 01 reached",
-      },
+      event:
+        "Waypoint 01 reached",
+    },
 
-      {
-        time:
-          "14:22",
+    {
+      time:
+        "14:22",
 
-        altitude:
-          136,
+      altitude:
+        136,
 
-        speed:
-          16.2,
+      speed:
+        16.2,
 
-        battery:
-          76,
+      battery:
+        76,
 
-        link:
-          92,
+      link:
+        92,
 
-        risk:
-          38,
+      risk:
+        38,
 
-        event:
-          "Link quality warning",
-      },
+      event:
+        "Link quality warning",
+    },
 
-      {
-        time:
-          "14:24",
+    {
+      time:
+        "14:24",
 
-        altitude:
-          142,
-
-        speed:
-          18.4,
-
-        battery:
-          72,
-
-        link:
-          88,
-
-        risk:
-          44,
-
-        event:
-          "Geofence proximity alert",
-      },
-
-      {
-        time:
-          "14:26",
-
-        altitude:
-          130,
-
-        speed:
-          15.6,
-
-        battery:
-          69,
-
-        link:
-          91,
-
-        risk:
-          26,
-
-        event:
-          "Route correction",
-      },
-
-      {
-        time:
-          "14:28",
-
-        altitude:
-          118,
-
-        speed:
-          11.3,
-
-        battery:
-          66,
-
-        link:
-          94,
-
-        risk:
-          15,
-
-        event:
-          "Return path stable",
-      },
-
-      {
-        time:
-          "14:30",
-
-        altitude:
-          96,
-
-        speed:
-          7.9,
-
-        battery:
-          64,
-
-        link:
-          95,
-
-        risk:
-          10,
-
-        event:
-          "Landing sequence ready",
-      },
-    ],
-
-    pilot_actions: [
-      {
-        time:
-          "14:18:03",
-
-        actor:
-          "Pilot",
-
-        action:
-          "ARM",
-
-        result:
-          "Accepted",
-
-        signature:
-          "SIG-7FA2",
-      },
-
-      {
-        time:
-          "14:18:21",
-
-        actor:
-          "Pilot",
-
-        action:
-          "TAKEOFF",
-
-        result:
-          "Accepted",
-
-        signature:
-          "SIG-81C0",
-      },
-
-      {
-        time:
-          "14:21:08",
-
-        actor:
-          "System",
-
-        action:
-          "LINK-WATCH",
-
-        result:
-          "Warning",
-
-        signature:
-          "SYS-92DB",
-      },
-
-      {
-        time:
-          "14:22:41",
-
-        actor:
-          "Safety Engine",
-
-        action:
-          "GEOFENCE-WATCH",
-
-        result:
-          "Warning",
-
-        signature:
-          "SAFE-4D9C",
-      },
-
-      {
-        time:
-          "14:24:19",
-
-        actor:
-          "Mission Planner",
-
-        action:
-          "WAYPOINT-04",
-
-        result:
-          "Reached",
-
-        signature:
-          "NAV-0C19",
-      },
-
-      {
-        time:
-          "14:26:10",
-
-        actor:
-          "Gateway",
-
-        action:
-          "REKEY",
-
-        result:
-          "Completed",
-
-        signature:
-          "GW-2F90",
-      },
-    ],
-
-    summary: {
-      samples:
-        7,
-
-      peak_altitude_m:
+      altitude:
         142,
 
-      average_speed_ms:
-        12.9,
+      speed:
+        18.4,
 
-      battery_drop_percent:
-        17,
+      battery:
+        72,
 
-      average_link_percent:
-        93.3,
+      link:
+        88,
 
-      peak_risk_score:
+      risk:
         44,
 
-      warning_count:
-        2,
-
-      audit_actions:
-        6,
+      event:
+        "Geofence proximity alert",
     },
-  };
+
+    {
+      time:
+        "14:26",
+
+      altitude:
+        130,
+
+      speed:
+        15.6,
+
+      battery:
+        69,
+
+      link:
+        91,
+
+      risk:
+        26,
+
+      event:
+        "Route correction",
+    },
+
+    {
+      time:
+        "14:28",
+
+      altitude:
+        118,
+
+      speed:
+        11.3,
+
+      battery:
+        66,
+
+      link:
+        94,
+
+      risk:
+        15,
+
+      event:
+        "Return path stable",
+    },
+
+    {
+      time:
+        "14:30",
+
+      altitude:
+        96,
+
+      speed:
+        7.9,
+
+      battery:
+        64,
+
+      link:
+        95,
+
+      risk:
+        10,
+
+      event:
+        "Landing sequence ready",
+    },
+  ],
+
+  pilot_actions: [
+    {
+      time:
+        "14:18:03",
+
+      actor:
+        "Pilot",
+
+      action:
+        "ARM",
+
+      result:
+        "Accepted",
+
+      signature:
+        "SIG-7FA2",
+    },
+
+    {
+      time:
+        "14:18:21",
+
+      actor:
+        "Pilot",
+
+      action:
+        "TAKEOFF",
+
+      result:
+        "Accepted",
+
+      signature:
+        "SIG-81C0",
+    },
+
+    {
+      time:
+        "14:21:08",
+
+      actor:
+        "System",
+
+      action:
+        "LINK-WATCH",
+
+      result:
+        "Warning",
+
+      signature:
+        "SYS-92DB",
+    },
+
+    {
+      time:
+        "14:22:41",
+
+      actor:
+        "Safety Engine",
+
+      action:
+        "GEOFENCE-WATCH",
+
+      result:
+        "Warning",
+
+      signature:
+        "SAFE-4D9C",
+    },
+
+    {
+      time:
+        "14:24:19",
+
+      actor:
+        "Mission Planner",
+
+      action:
+        "WAYPOINT-04",
+
+      result:
+        "Reached",
+
+      signature:
+        "NAV-0C19",
+    },
+
+    {
+      time:
+        "14:26:10",
+
+      actor:
+        "Gateway",
+
+      action:
+        "REKEY",
+
+      result:
+        "Completed",
+
+      signature:
+        "GW-2F90",
+    },
+  ],
+
+  summary: {
+    samples:
+      7,
+
+    peak_altitude_m:
+      142,
+
+    average_speed_ms:
+      12.9,
+
+    battery_drop_percent:
+      17,
+
+    average_link_percent:
+      93.3,
+
+    peak_risk_score:
+      44,
+
+    warning_count:
+      2,
+
+    audit_actions:
+      6,
+  },
+};
+
 
 /* =========================================================
-   Tone System
+   Aerospace Graphite Tone System
    ========================================================= */
 
-const toneClass = {
+const toneClass:
+  Record<
+    Tone,
+    {
+      text: string;
+
+      border: string;
+
+      bg: string;
+
+      dot: string;
+    }
+  > = {
   nominal: {
     text:
-      "text-(--nominal)",
+      "text-[var(--nominal)]",
 
     border:
-      "border-[rgba(73,229,143,0.28)]",
+      "border-[rgba(100,142,120,0.30)]",
 
     bg:
-      "bg-[rgba(73,229,143,0.08)]",
+      "bg-[rgba(100,142,120,0.11)]",
 
     dot:
-      "bg-(--nominal)",
+      "bg-[var(--nominal)]",
   },
 
   caution: {
     text:
-      "text-(--primary)",
+      "text-[var(--caution)]",
 
     border:
-      "border-[rgba(246,178,60,0.32)]",
+      "border-[rgba(199,155,89,0.30)]",
 
     bg:
-      "bg-[rgba(246,178,60,0.08)]",
+      "bg-[rgba(199,155,89,0.11)]",
 
     dot:
-      "bg-(--primary)",
+      "bg-[var(--caution)]",
   },
 
   critical: {
     text:
-      "text-(--critical)",
+      "text-[var(--critical)]",
 
     border:
-      "border-[rgba(255,77,77,0.34)]",
+      "border-[rgba(201,105,114,0.32)]",
 
     bg:
-      "bg-[rgba(255,77,77,0.08)]",
+      "bg-[rgba(201,105,114,0.11)]",
 
     dot:
-      "bg-(--critical)",
+      "bg-[var(--critical)]",
   },
 
   info: {
     text:
-      "text-(--info)",
+      "text-[var(--info)]",
 
     border:
-      "border-[rgba(90,169,255,0.3)]",
+      "border-[rgba(93,135,163,0.30)]",
 
     bg:
-      "bg-[rgba(90,169,255,0.08)]",
+      "bg-[rgba(93,135,163,0.11)]",
 
     dot:
-      "bg-(--info)",
+      "bg-[var(--info)]",
   },
 
   muted: {
     text:
-      "text-(--muted)",
+      "text-[var(--muted-soft)]",
 
     border:
-      "border-[#1d2533]",
+      "border-[var(--border)]",
 
     bg:
-      "bg-[#070a10]",
+      "bg-[var(--surface-2)]",
 
     dot:
-      "bg-(--muted)",
+      "bg-[var(--muted-soft)]",
   },
 };
 
-/* =========================================================
-   Section Shell
-   ========================================================= */
-
-function SectionShell({
-  eyebrow,
-  title,
-  action,
-  children,
-}: {
-  eyebrow: string;
-  title: string;
-  action?: string;
-  children: ReactNode;
-}) {
-  return (
-    <section className="overflow-hidden rounded-xl border border-[#1d2533] bg-black shadow-[0_18px_50px_rgba(0,0,0,0.28)]">
-      <div className="border-b border-[#151923] px-5 py-4">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div>
-            <p className="font-mono text-[9px] font-bold uppercase tracking-[0.18em] text-(--primary)">
-              {eyebrow}
-            </p>
-
-            <h2 className="mt-1 text-[18px] font-semibold leading-tight text-(--foreground)">
-              {title}
-            </h2>
-          </div>
-
-          {action ? (
-            <span className="inline-flex w-fit rounded-full border border-[#243147] bg-[#07111f] px-3 py-1 font-mono text-[9px] font-bold uppercase tracking-[0.12em] text-(--info)">
-              {action}
-            </span>
-          ) : null}
-        </div>
-      </div>
-
-      <div className="p-5">
-        {children}
-      </div>
-    </section>
-  );
-}
-
-/* =========================================================
-   Summary Card
-   ========================================================= */
-
-function SummaryCard({
-  item,
-}: {
-  item:
-    SummaryMetric;
-}) {
-  const Icon =
-    item.icon;
-
-  const tone =
-    toneClass[
-      item.tone
-    ];
-
-  return (
-    <div
-      className={`rounded-xl border bg-[#070a10] p-4 ${tone.border}`}
-    >
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 font-mono text-[9px] font-bold uppercase tracking-[0.12em] text-(--muted)">
-          <Icon
-            size={14}
-            className={
-              tone.text
-            }
-          />
-
-          {item.label}
-        </div>
-
-        <span
-          className={`h-2.5 w-2.5 rounded-full ${tone.dot}`}
-        />
-      </div>
-
-      <div
-        className={`mt-4 font-mono text-[22px] font-bold uppercase ${tone.text}`}
-      >
-        {item.value}
-      </div>
-
-      <p className="mt-2 text-[13px] leading-relaxed text-(--muted)">
-        {item.helper}
-      </p>
-    </div>
-  );
-}
 
 /* =========================================================
    Helpers
@@ -581,6 +533,9 @@ function getActionTone(
   if (
     lowered.includes(
       "blocked",
+    ) ||
+    lowered.includes(
+      "failed",
     )
   ) {
     return "critical";
@@ -597,6 +552,439 @@ function getActionTone(
   return "nominal";
 }
 
+
+function getRiskTone(
+  risk: number,
+): Tone {
+  if (
+    risk >=
+    60
+  ) {
+    return "critical";
+  }
+
+  if (
+    risk >=
+    40
+  ) {
+    return "caution";
+  }
+
+  if (
+    risk >=
+    25
+  ) {
+    return "info";
+  }
+
+  return "nominal";
+}
+
+
+/* =========================================================
+   Shared Action Button
+   ========================================================= */
+
+function ActionButton({
+  children,
+  primary = false,
+  onClick,
+}: {
+  children:
+    ReactNode;
+
+  primary?:
+    boolean;
+
+  onClick?:
+    () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={
+        onClick
+      }
+      className={[
+        "inline-flex h-10 items-center justify-center gap-2",
+
+        "rounded-[7px] border px-3.5",
+
+        "text-[13px] font-semibold",
+
+        "transition-[background-color,border-color,color] duration-150",
+
+        primary
+          ? "border-[rgba(176,138,88,0.38)] bg-[rgba(176,138,88,0.14)] text-[var(--primary)] hover:bg-[rgba(176,138,88,0.21)]"
+          : "border-[var(--border)] bg-[var(--surface-2)] text-[var(--muted)] hover:border-[var(--border-strong)] hover:bg-[var(--surface-hover)] hover:text-[var(--foreground)]",
+      ].join(" ")}
+    >
+      {children}
+    </button>
+  );
+}
+
+
+/* =========================================================
+   Page Header
+   ========================================================= */
+
+function DebriefHeader({
+  backendOnline,
+  isLoading,
+  onRefresh,
+}: {
+  backendOnline:
+    boolean;
+
+  isLoading:
+    boolean;
+
+  onRefresh:
+    () => void;
+}) {
+  return (
+    <section
+      className={[
+        "rounded-[10px]",
+
+        "border border-[var(--border)]",
+
+        "bg-[var(--surface-1)]",
+
+        "p-5",
+
+        "shadow-[0_14px_36px_rgba(0,0,0,0.18)]",
+      ].join(" ")}
+    >
+      <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
+        <div>
+          <p className="text-[12px] font-semibold uppercase tracking-[0.085em] text-[var(--primary)]">
+            Mission Intelligence · Debrief
+          </p>
+
+          <h1 className="mt-2 text-[28px] font-semibold tracking-[-0.035em] text-[var(--foreground)]">
+            Logs & Debrief
+          </h1>
+
+          <p className="mt-2 max-w-5xl text-[13px] leading-[1.65] text-[var(--muted)]">
+            Mission telemetry samples, pilot actions,
+            performance analytics, backend-generated mission
+            graph and export-ready operational debrief data.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3">
+          <span
+            className={[
+              "inline-flex h-10 items-center gap-2",
+
+              "rounded-[7px] border px-3",
+
+              "text-[12px] font-semibold",
+
+              backendOnline
+                ? "border-[rgba(100,142,120,0.30)] bg-[rgba(100,142,120,0.11)] text-[var(--nominal)]"
+                : "border-[rgba(199,155,89,0.30)] bg-[rgba(199,155,89,0.11)] text-[var(--caution)]",
+            ].join(" ")}
+          >
+            {backendOnline ? (
+              <CheckCircle2
+                size={14}
+                strokeWidth={1.7}
+              />
+            ) : (
+              <AlertTriangle
+                size={14}
+                strokeWidth={1.7}
+              />
+            )}
+
+            {backendOnline
+              ? "Python Backend Online"
+              : "Fallback Mode"}
+          </span>
+
+          <ActionButton
+            onClick={
+              onRefresh
+            }
+          >
+            {isLoading ? (
+              <Loader2
+                size={14}
+                strokeWidth={1.7}
+                className="animate-spin"
+              />
+            ) : (
+              <TimerReset
+                size={14}
+                strokeWidth={1.7}
+              />
+            )}
+
+            Refresh Analytics
+          </ActionButton>
+
+          <ActionButton
+            primary
+          >
+            <Download
+              size={14}
+              strokeWidth={1.7}
+            />
+
+            Export Report
+          </ActionButton>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+
+/* =========================================================
+   Section Shell
+
+   h-full + flex-column ensures horizontal bottom edges
+   align whenever cards share a grid row.
+   ========================================================= */
+
+function SectionShell({
+  eyebrow,
+  title,
+  action,
+  children,
+}: {
+  eyebrow:
+    string;
+
+  title:
+    string;
+
+  action?:
+    string;
+
+  children:
+    ReactNode;
+}) {
+  return (
+    <section
+      className={[
+        "flex h-full min-w-0 flex-col",
+
+        "overflow-hidden rounded-[10px]",
+
+        "border border-[var(--border)]",
+
+        "bg-[var(--surface-1)]",
+
+        "shadow-[0_12px_30px_rgba(0,0,0,0.16)]",
+      ].join(" ")}
+    >
+      <div
+        className={[
+          "flex min-h-[76px] shrink-0 items-center",
+
+          "border-b border-[var(--border-soft)]",
+
+          "bg-[var(--surface-2)]",
+
+          "px-5 py-3.5",
+        ].join(" ")}
+      >
+        <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-[12px] font-semibold uppercase tracking-[0.075em] text-[var(--primary)]">
+              {eyebrow}
+            </p>
+
+            <h2 className="mt-1 text-[18px] font-semibold tracking-[-0.02em] text-[var(--foreground)]">
+              {title}
+            </h2>
+          </div>
+
+          {action ? (
+            <span
+              className={[
+                "inline-flex w-fit items-center",
+
+                "rounded-[6px] border",
+
+                "border-[rgba(93,135,163,0.28)]",
+
+                "bg-[rgba(93,135,163,0.10)]",
+
+                "px-2.5 py-1",
+
+                "text-[12px] font-semibold",
+
+                "text-[var(--info)]",
+              ].join(" ")}
+            >
+              {action}
+            </span>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="min-h-0 flex-1 p-5">
+        {children}
+      </div>
+    </section>
+  );
+}
+
+
+/* =========================================================
+   Consistent Major Two-Column Layout
+
+   BOTH paired rows use this exact template.
+   That means the vertical dividing line never moves.
+   ========================================================= */
+
+function DebriefSplitRow({
+  left,
+  right,
+}: {
+  left:
+    ReactNode;
+
+  right:
+    ReactNode;
+}) {
+  return (
+    <div
+      className={[
+        "grid items-stretch gap-6",
+
+        "xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]",
+      ].join(" ")}
+    >
+      <div className="min-w-0">
+        {left}
+      </div>
+
+      <div className="min-w-0">
+        {right}
+      </div>
+    </div>
+  );
+}
+
+
+/* =========================================================
+   Summary Card
+   ========================================================= */
+
+function SummaryCard({
+  item,
+}: {
+  item:
+    SummaryMetric;
+}) {
+  const Icon =
+    item.icon;
+
+  const tone =
+    toneClass[
+      item.tone
+    ];
+
+  return (
+    <div
+      className={[
+        "flex h-full min-h-[132px] flex-col",
+
+        "rounded-[9px] border",
+
+        "bg-[var(--surface-2)]",
+
+        "p-4",
+
+        "shadow-[0_8px_22px_rgba(0,0,0,0.14)]",
+
+        tone.border,
+      ].join(" ")}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.055em] text-[var(--muted)]">
+          <Icon
+            size={15}
+            strokeWidth={1.7}
+            className={
+              tone.text
+            }
+          />
+
+          {item.label}
+        </div>
+
+        <span
+          className={[
+            "h-2 w-2 rounded-full",
+
+            tone.dot,
+          ].join(" ")}
+        />
+      </div>
+
+      <div
+        className={[
+          "mt-4 font-mono text-[21px] font-semibold",
+
+          tone.text,
+        ].join(" ")}
+      >
+        {item.value}
+      </div>
+
+      <p className="mt-auto pt-2 text-[12px] leading-[1.55] text-[var(--muted)]">
+        {item.helper}
+      </p>
+    </div>
+  );
+}
+
+
+/* =========================================================
+   Timeline Field
+   ========================================================= */
+
+function TimelineField({
+  label,
+  value,
+}: {
+  label:
+    string;
+
+  value:
+    string;
+}) {
+  return (
+    <div
+      className={[
+        "rounded-[7px]",
+
+        "border border-[var(--border-soft)]",
+
+        "bg-[var(--input)]",
+
+        "px-3 py-2.5",
+      ].join(" ")}
+    >
+      <div className="font-mono text-[10px] font-semibold uppercase tracking-[0.095em] text-[var(--muted-soft)]">
+        {label}
+      </div>
+
+      <div className="mt-1.5 font-mono text-[13px] font-semibold text-[var(--foreground)]">
+        {value}
+      </div>
+    </div>
+  );
+}
+
+
 /* =========================================================
    Mission Timeline
    ========================================================= */
@@ -608,35 +996,49 @@ function MissionTimeline({
     PythonSample[];
 }) {
   return (
-    <div className="grid gap-3">
+    <div className="grid h-full gap-3">
       {samples.map(
         (
           sample,
           index,
         ) => {
-          const tone:
-            Tone =
-            sample.risk >=
-            40
-              ? "caution"
-              : sample.risk >=
-                  25
-                ? "info"
-                : "nominal";
-
-          const toneStyle =
+          const tone =
             toneClass[
-              tone
+              getRiskTone(
+                sample.risk,
+              )
             ];
 
           return (
-            <div
+            <article
               key={`${sample.time}-${sample.event}`}
-              className={`rounded-lg border bg-[#070a10] p-4 ${toneStyle.border}`}
+              className={[
+                "rounded-[9px] border",
+
+                "bg-[var(--surface-2)]",
+
+                "p-4",
+
+                "transition-[background-color,border-color] duration-150",
+
+                "hover:bg-[var(--surface-hover)]",
+
+                tone.border,
+              ].join(" ")}
             >
               <div className="flex items-start gap-4">
                 <div
-                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border font-mono text-[10px] font-bold ${toneStyle.border} ${toneStyle.bg} ${toneStyle.text}`}
+                  className={[
+                    "flex h-9 w-9 shrink-0 items-center justify-center",
+
+                    "rounded-full border",
+
+                    "font-mono text-[11px] font-semibold",
+
+                    tone.border,
+                    tone.bg,
+                    tone.text,
+                  ].join(" ")}
                 >
                   {String(
                     index +
@@ -648,32 +1050,36 @@ function MissionTimeline({
                 </div>
 
                 <div className="min-w-0 flex-1">
-                  <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                      <div className="font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-(--muted)">
-                        {
-                          sample.time
-                        }
+                      <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--muted-soft)]">
+                        {sample.time}
                       </div>
 
-                      <h3 className="mt-1 text-[14px] font-semibold text-(--foreground)">
-                        {
-                          sample.event
-                        }
+                      <h3 className="mt-1 text-[15px] font-semibold text-[var(--foreground)]">
+                        {sample.event}
                       </h3>
                     </div>
 
                     <span
-                      className={`w-fit rounded-full border px-2.5 py-1 font-mono text-[8px] font-bold uppercase tracking-[0.1em] ${toneStyle.border} ${toneStyle.bg} ${toneStyle.text}`}
+                      className={[
+                        "w-fit rounded-full border",
+
+                        "px-2.5 py-1",
+
+                        "font-mono text-[10px] font-semibold uppercase tracking-[0.07em]",
+
+                        tone.border,
+                        tone.bg,
+                        tone.text,
+                      ].join(" ")}
                     >
                       Risk{" "}
-                      {
-                        sample.risk
-                      }
+                      {sample.risk}
                     </span>
                   </div>
 
-                  <div className="mt-4 grid gap-3 sm:grid-cols-4">
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2 2xl:grid-cols-4">
                     <TimelineField
                       label="Altitude"
                       value={`${sample.altitude} m`}
@@ -696,7 +1102,7 @@ function MissionTimeline({
                   </div>
                 </div>
               </div>
-            </div>
+            </article>
           );
         },
       )}
@@ -704,25 +1110,6 @@ function MissionTimeline({
   );
 }
 
-function TimelineField({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) {
-  return (
-    <div className="rounded border border-[#1d2533] bg-black px-3 py-2">
-      <div className="font-mono text-[8px] font-bold uppercase tracking-[0.12em] text-(--muted)">
-        {label}
-      </div>
-
-      <div className="mt-1 font-mono text-[12px] font-bold text-(--foreground)">
-        {value}
-      </div>
-    </div>
-  );
-}
 
 /* =========================================================
    Audit Table
@@ -735,86 +1122,188 @@ function AuditTable({
     PilotAction[];
 }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-[#1d2533] bg-[#070a10]">
-      <div className="grid grid-cols-[110px_1fr_1fr_1fr_120px] border-b border-[#1d2533] bg-black px-4 py-3 font-mono text-[9px] font-bold uppercase tracking-[0.12em] text-(--muted)">
-        <span>
-          Time
-        </span>
+    <div
+      className={[
+        "flex h-full min-h-[520px] flex-col",
 
-        <span>
-          Actor
-        </span>
+        "overflow-hidden rounded-[9px]",
 
-        <span>
-          Action
-        </span>
+        "border border-[var(--border-soft)]",
 
-        <span>
-          Signature
-        </span>
+        "bg-[var(--surface-2)]",
+      ].join(" ")}
+    >
+      <div className="overflow-x-auto">
+        <div className="min-w-[650px]">
+          <div
+            className={[
+              "grid",
 
-        <span className="text-right">
-          Result
-        </span>
+              "grid-cols-[88px_1fr_1.15fr_0.95fr_92px]",
+
+              "border-b border-[var(--border)]",
+
+              "bg-[var(--input)]",
+
+              "px-4 py-3",
+
+              "font-mono text-[10px] font-semibold uppercase tracking-[0.075em]",
+
+              "text-[var(--muted-soft)]",
+            ].join(" ")}
+          >
+            <span>
+              Time
+            </span>
+
+            <span>
+              Actor
+            </span>
+
+            <span>
+              Action
+            </span>
+
+            <span>
+              Signature
+            </span>
+
+            <span className="text-right">
+              Result
+            </span>
+          </div>
+        </div>
       </div>
 
-      {actions.map(
-        (
-          action,
-        ) => {
-          const tone =
-            toneClass[
-              getActionTone(
-                action.result,
-              )
-            ];
+      <div className="flex-1 overflow-x-auto">
+        <div className="grid min-h-full min-w-[650px] auto-rows-fr">
+          {actions.map(
+            (
+              action,
+            ) => {
+              const tone =
+                toneClass[
+                  getActionTone(
+                    action.result,
+                  )
+                ];
 
-          return (
-            <div
-              key={`${action.time}-${action.action}`}
-              className="grid grid-cols-[110px_1fr_1fr_1fr_120px] border-b border-[#1d2533] px-4 py-4 text-[13px] last:border-b-0"
-            >
-              <span className="font-mono text-[11px] text-(--muted)">
-                {
-                  action.time
-                }
-              </span>
+              return (
+                <div
+                  key={`${action.time}-${action.action}`}
+                  className={[
+                    "grid",
 
-              <span className="text-(--foreground)">
-                {
-                  action.actor
-                }
-              </span>
+                    "grid-cols-[88px_1fr_1.15fr_0.95fr_92px]",
 
-              <span className="font-medium text-(--foreground)">
-                {
-                  action.action
-                }
-              </span>
+                    "items-center",
 
-              <span className="font-mono text-[11px] text-(--muted)">
-                {
-                  action.signature
-                }
-              </span>
+                    "border-b border-[var(--border-soft)]",
 
-              <span
-                className={`text-right font-mono text-[11px] ${tone.text}`}
-              >
-                {
-                  action.result
-                }
-              </span>
-            </div>
-          );
-        },
-      )}
+                    "px-4 py-4",
+
+                    "text-[12px]",
+
+                    "transition-colors",
+
+                    "last:border-b-0",
+
+                    "hover:bg-[var(--surface-hover)]",
+                  ].join(" ")}
+                >
+                  <span className="font-mono text-[11px] text-[var(--muted)]">
+                    {action.time}
+                  </span>
+
+                  <span className="text-[var(--muted)]">
+                    {action.actor}
+                  </span>
+
+                  <span className="font-medium text-[var(--foreground)]">
+                    {action.action}
+                  </span>
+
+                  <span className="font-mono text-[11px] text-[var(--muted)]">
+                    {action.signature}
+                  </span>
+
+                  <span
+                    className={[
+                      "text-right font-mono text-[11px] font-medium",
+
+                      tone.text,
+                    ].join(" ")}
+                  >
+                    {action.result}
+                  </span>
+                </div>
+              );
+            },
+          )}
+        </div>
+      </div>
     </div>
   );
 }
 
+
 /* =========================================================
-   Performance
+   Performance Metric
+   ========================================================= */
+
+function PerformanceMetric({
+  label,
+  value,
+  tone,
+}: {
+  label:
+    string;
+
+  value:
+    string;
+
+  tone:
+    Tone;
+}) {
+  const style =
+    toneClass[
+      tone
+    ];
+
+  return (
+    <div
+      className={[
+        "flex h-full min-h-[122px] flex-col",
+
+        "rounded-[9px] border",
+
+        "bg-[var(--surface-2)]",
+
+        "p-4",
+
+        style.border,
+      ].join(" ")}
+    >
+      <div className="text-[11px] font-semibold uppercase tracking-[0.065em] text-[var(--muted)]">
+        {label}
+      </div>
+
+      <div
+        className={[
+          "mt-auto pt-4 font-mono text-[21px] font-semibold",
+
+          style.text,
+        ].join(" ")}
+      >
+        {value}
+      </div>
+    </div>
+  );
+}
+
+
+/* =========================================================
+   Performance Panel
    ========================================================= */
 
 function PerformancePanel({
@@ -892,46 +1381,34 @@ function PerformancePanel({
   ];
 
   return (
-    <div className="grid gap-4 md:grid-cols-2">
+    <div className="grid h-full auto-rows-fr gap-4 sm:grid-cols-2">
       {rows.map(
         (
           row,
-        ) => {
-          const tone =
-            toneClass[
+        ) => (
+          <PerformanceMetric
+            key={
+              row.label
+            }
+            label={
+              row.label
+            }
+            value={
+              row.value
+            }
+            tone={
               row.tone
-            ];
-
-          return (
-            <div
-              key={
-                row.label
-              }
-              className={`rounded-lg border bg-[#070a10] p-4 ${tone.border}`}
-            >
-              <div className="font-mono text-[9px] font-bold uppercase tracking-[0.12em] text-(--muted)">
-                {
-                  row.label
-                }
-              </div>
-
-              <div
-                className={`mt-3 font-mono text-[20px] font-bold ${tone.text}`}
-              >
-                {
-                  row.value
-                }
-              </div>
-            </div>
-          );
-        },
+            }
+          />
+        ),
       )}
     </div>
   );
 }
 
+
 /* =========================================================
-   Python Graph
+   Python Graph Panel
    ========================================================= */
 
 function PythonGraphPanel({
@@ -945,24 +1422,45 @@ function PythonGraphPanel({
     number;
 }) {
   return (
-    <div className="rounded-xl border border-[#1d2533] bg-[#070a10] p-4">
-      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+    <div
+      className={[
+        "flex h-full min-h-[520px] flex-col",
+
+        "rounded-[9px]",
+
+        "border border-[var(--border-soft)]",
+
+        "bg-[var(--surface-2)]",
+
+        "p-4",
+      ].join(" ")}
+    >
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h3 className="text-[16px] font-semibold text-(--foreground)">
-            Python generated mission graph
+          <h3 className="text-[16px] font-semibold text-[var(--foreground)]">
+            Python-generated mission graph
           </h3>
 
-          <p className="mt-1 text-[13px] leading-relaxed text-(--muted)">
-            This graph is rendered by the FastAPI Python backend as SVG using mission altitude, battery, and risk samples.
+          <p className="mt-1 max-w-3xl text-[12px] leading-[1.6] text-[var(--muted)]">
+            FastAPI renders mission altitude, battery and risk
+            samples as an SVG debrief graph.
           </p>
         </div>
 
         <span
-          className={`w-fit rounded-full border px-3 py-1 font-mono text-[9px] font-bold uppercase tracking-[0.12em] ${
+          className={[
+            "inline-flex w-fit shrink-0 items-center",
+
+            "rounded-[6px] border",
+
+            "px-2.5 py-1",
+
+            "text-[11px] font-semibold",
+
             backendOnline
-              ? "border-[rgba(73,229,143,0.28)] bg-[rgba(73,229,143,0.08)] text-(--nominal)"
-              : "border-[rgba(246,178,60,0.32)] bg-[rgba(246,178,60,0.08)] text-(--primary)"
-          }`}
+              ? "border-[rgba(100,142,120,0.30)] bg-[rgba(100,142,120,0.11)] text-[var(--nominal)]"
+              : "border-[rgba(199,155,89,0.30)] bg-[rgba(199,155,89,0.11)] text-[var(--caution)]",
+          ].join(" ")}
         >
           {backendOnline
             ? "Python Online"
@@ -970,27 +1468,40 @@ function PythonGraphPanel({
         </span>
       </div>
 
-      <div className="mt-5 overflow-hidden rounded-xl border border-[#1d2533] bg-black">
+      <div
+        className={[
+          "mt-5 flex min-h-[390px] flex-1 items-center justify-center",
+
+          "overflow-hidden rounded-[8px]",
+
+          "border border-[var(--border-soft)]",
+
+          "bg-[var(--input)]",
+        ].join(" ")}
+      >
         {backendOnline ? (
           <img
             src={`${BACKEND_URL}/api/logs-debrief/python-graph.svg?v=${graphVersion}`}
             alt="Python generated mission debrief graph"
-            className="block w-full"
+            className="block h-auto max-h-full w-full object-contain"
           />
         ) : (
-          <div className="flex min-h-[360px] items-center justify-center p-6 text-center">
+          <div className="flex min-h-[390px] items-center justify-center p-6 text-center">
             <div>
               <AlertTriangle
                 size={32}
-                className="mx-auto text-(--primary)"
+                strokeWidth={1.6}
+                className="mx-auto text-[var(--caution)]"
               />
 
-              <h3 className="mt-4 text-[16px] font-semibold text-(--foreground)">
+              <h3 className="mt-4 text-[16px] font-semibold text-[var(--foreground)]">
                 Python graph backend is offline
               </h3>
 
-              <p className="mt-2 max-w-xl text-[13px] leading-relaxed text-(--muted)">
-                Start the FastAPI backend, then refresh analytics. The page is still showing fallback mission log data so the layout remains usable.
+              <p className="mt-2 max-w-xl text-[13px] leading-[1.6] text-[var(--muted)]">
+                Start the FastAPI backend and refresh analytics.
+                MissionNexus continues using fallback mission
+                data so the debrief workspace remains usable.
               </p>
             </div>
           </div>
@@ -1000,37 +1511,65 @@ function PythonGraphPanel({
   );
 }
 
+
 /* =========================================================
    Insight Card
    ========================================================= */
 
 function InsightCard({
-  icon: Icon,
+  icon:
+    Icon,
+
   label,
+
   value,
+
   helper,
+
   tone,
 }: {
-  icon: LucideIcon;
-  label: string;
-  value: string;
-  helper: string;
-  tone: Tone;
+  icon:
+    LucideIcon;
+
+  label:
+    string;
+
+  value:
+    string;
+
+  helper:
+    string;
+
+  tone:
+    Tone;
 }) {
-  const toneStyle =
+  const style =
     toneClass[
       tone
     ];
 
   return (
     <div
-      className={`rounded-xl border bg-black p-4 ${toneStyle.border}`}
+      className={[
+        "flex h-full min-h-[150px] flex-col",
+
+        "rounded-[9px] border",
+
+        "bg-[var(--surface-2)]",
+
+        "p-4",
+
+        "shadow-[0_8px_22px_rgba(0,0,0,0.13)]",
+
+        style.border,
+      ].join(" ")}
     >
-      <div className="flex items-center gap-2 font-mono text-[9px] font-bold uppercase tracking-[0.14em] text-(--muted)">
+      <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.065em] text-[var(--muted)]">
         <Icon
-          size={13}
+          size={14}
+          strokeWidth={1.7}
           className={
-            toneStyle.text
+            style.text
           }
         />
 
@@ -1038,17 +1577,22 @@ function InsightCard({
       </div>
 
       <div
-        className={`mt-3 font-mono text-[18px] font-bold uppercase ${toneStyle.text}`}
+        className={[
+          "mt-4 font-mono text-[18px] font-semibold",
+
+          style.text,
+        ].join(" ")}
       >
         {value}
       </div>
 
-      <p className="mt-2 text-[13px] leading-relaxed text-(--muted)">
+      <p className="mt-auto pt-2 text-[12px] leading-[1.6] text-[var(--muted)]">
         {helper}
       </p>
     </div>
   );
 }
+
 
 /* =========================================================
    Page
@@ -1063,17 +1607,24 @@ export function LogsDebrief() {
       fallbackAnalytics,
     );
 
+
   const [
     backendOnline,
     setBackendOnline,
   ] =
-    useState(false);
+    useState(
+      false,
+    );
+
 
   const [
     isLoading,
     setIsLoading,
   ] =
-    useState(true);
+    useState(
+      true,
+    );
+
 
   const [
     graphVersion,
@@ -1082,6 +1633,7 @@ export function LogsDebrief() {
     useState(
       Date.now(),
     );
+
 
   async function loadPythonAnalytics() {
     setIsLoading(
@@ -1131,9 +1683,14 @@ export function LogsDebrief() {
     }
   }
 
-  useEffect(() => {
-    void loadPythonAnalytics();
-  }, []);
+
+  useEffect(
+    () => {
+      void loadPythonAnalytics();
+    },
+    [],
+  );
+
 
   const summaryMetrics =
     useMemo<
@@ -1150,7 +1707,7 @@ export function LogsDebrief() {
           helper:
             backendOnline
               ? "Python analytics loaded"
-              : "Fallback data active",
+              : "Fallback analytics active",
 
           icon:
             FileText,
@@ -1236,92 +1793,38 @@ export function LogsDebrief() {
       ],
     );
 
+
   return (
-    <div className="min-h-screen bg-[#09090b] px-5 py-6">
-      <div className="mx-auto flex max-w-[1680px] flex-col gap-6">
+    <div className="min-h-[calc(100vh-70px)] bg-transparent px-5 py-6 sm:px-6 lg:px-8">
+      <div
+        className={[
+          "mx-auto flex w-full max-w-[1680px] flex-col",
+
+          "gap-6",
+        ].join(" ")}
+      >
         {/* =================================================
             Header
             ================================================= */}
 
-        <section className="rounded-xl border border-[#1d2533] bg-[#07111f] p-5 shadow-[0_18px_50px_rgba(0,0,0,0.28)]">
-          <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
-            <div>
-              <p className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-(--primary)">
-                Aerial Intelligence
-              </p>
+        <DebriefHeader
+          backendOnline={
+            backendOnline
+          }
+          isLoading={
+            isLoading
+          }
+          onRefresh={() =>
+            void loadPythonAnalytics()
+          }
+        />
 
-              <h1 className="mt-2 text-[28px] font-semibold tracking-tight text-(--foreground)">
-                Logs & Debrief
-              </h1>
-
-              <p className="mt-2 max-w-5xl text-[14px] leading-relaxed text-(--muted)">
-                Mission telemetry samples, pilot actions, alert history, Python-generated mission graph, performance metrics, and export-ready debrief reporting.
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3">
-              <span
-                className={`flex h-11 items-center gap-2 rounded border px-4 font-mono text-[10px] font-bold uppercase tracking-[0.12em] ${
-                  backendOnline
-                    ? "border-[rgba(73,229,143,0.28)] bg-[rgba(73,229,143,0.08)] text-(--nominal)"
-                    : "border-[rgba(246,178,60,0.32)] bg-[rgba(246,178,60,0.08)] text-(--primary)"
-                }`}
-              >
-                {backendOnline ? (
-                  <CheckCircle2
-                    size={14}
-                  />
-                ) : (
-                  <AlertTriangle
-                    size={14}
-                  />
-                )}
-
-                {backendOnline
-                  ? "Python Backend Online"
-                  : "Fallback Mode"}
-              </span>
-
-              <button
-                type="button"
-                onClick={
-                  loadPythonAnalytics
-                }
-                className="flex h-11 items-center gap-2 rounded border border-[#2a3547] bg-black px-4 font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-(--foreground) transition hover:border-(--primary) hover:text-(--primary)"
-              >
-                {isLoading ? (
-                  <Loader2
-                    size={14}
-                    className="animate-spin"
-                  />
-                ) : (
-                  <TimerReset
-                    size={14}
-                  />
-                )}
-
-                Refresh Analytics
-              </button>
-
-              <button
-                type="button"
-                className="flex h-11 items-center gap-2 rounded bg-(--primary) px-4 font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-black transition hover:opacity-90"
-              >
-                <Download
-                  size={14}
-                />
-
-                Export Report
-              </button>
-            </div>
-          </div>
-        </section>
 
         {/* =================================================
-            Summary
+            Summary Metrics
             ================================================= */}
 
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <section className="grid items-stretch gap-4 md:grid-cols-2 xl:grid-cols-4">
           {summaryMetrics.map(
             (
               item,
@@ -1338,12 +1841,16 @@ export function LogsDebrief() {
           )}
         </section>
 
+
         {/* =================================================
+            ROW 1
             Graph + Performance
+
+            Uses SAME 50/50 divider as Timeline/Audit.
             ================================================= */}
 
-        <div className="grid items-start gap-6 xl:grid-cols-12">
-          <div className="xl:col-span-8">
+        <DebriefSplitRow
+          left={
             <SectionShell
               eyebrow="Python Analytics"
               title="Mission Debrief Graph"
@@ -1358,9 +1865,8 @@ export function LogsDebrief() {
                 }
               />
             </SectionShell>
-          </div>
-
-          <div className="xl:col-span-4">
+          }
+          right={
             <SectionShell
               eyebrow="Performance"
               title="Mission Metrics"
@@ -1372,15 +1878,19 @@ export function LogsDebrief() {
                 }
               />
             </SectionShell>
-          </div>
-        </div>
+          }
+        />
+
 
         {/* =================================================
+            ROW 2
             Timeline + Audit
+
+            EXACT SAME VERTICAL DIVIDER as Row 1.
             ================================================= */}
 
-        <div className="grid items-start gap-6 xl:grid-cols-12">
-          <div className="xl:col-span-5">
+        <DebriefSplitRow
+          left={
             <SectionShell
               eyebrow="Chronology"
               title="Mission Timeline"
@@ -1392,9 +1902,8 @@ export function LogsDebrief() {
                 }
               />
             </SectionShell>
-          </div>
-
-          <div className="xl:col-span-7">
+          }
+          right={
             <SectionShell
               eyebrow="Command Audit"
               title="Pilot & System Action Log"
@@ -1406,14 +1915,15 @@ export function LogsDebrief() {
                 }
               />
             </SectionShell>
-          </div>
-        </div>
+          }
+        />
+
 
         {/* =================================================
             Final Insights
             ================================================= */}
 
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <section className="grid items-stretch gap-4 md:grid-cols-2 xl:grid-cols-4">
           <InsightCard
             icon={
               CheckCircle2
@@ -1438,7 +1948,7 @@ export function LogsDebrief() {
             icon={
               Radio
             }
-            label="Avg Link"
+            label="Average Link"
             value={`${analytics.summary.average_link_percent}%`}
             helper="Average communication link quality during the log window."
             tone="nominal"
@@ -1450,7 +1960,7 @@ export function LogsDebrief() {
             }
             label="Audit Completeness"
             value="Complete"
-            helper="Pilot commands and system events are available."
+            helper="Pilot commands and system events are available for review."
             tone="nominal"
           />
         </section>

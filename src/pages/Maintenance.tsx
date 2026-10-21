@@ -1,4 +1,7 @@
-import type { ReactNode } from "react";
+import type {
+  ReactNode,
+} from "react";
+
 import {
   AlertTriangle,
   CalendarClock,
@@ -10,114 +13,306 @@ import {
   TimerReset,
   Wrench,
 } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
 
-import { MaintenanceSchedule } from "../components/maintenance/MaintenanceSchedule";
-import { MaintenanceSummary } from "../components/maintenance/MaintenanceSummary";
-import { PartWearPanel } from "../components/maintenance/PartWearPanel";
-import { ServiceTicketsPanel } from "../components/maintenance/ServiceTicketsPanel";
+import type {
+  LucideIcon,
+} from "lucide-react";
 
-type Tone = "nominal" | "caution" | "critical" | "info";
+import {
+  MaintenanceSchedule,
+} from "../components/maintenance/MaintenanceSchedule";
+
+import {
+  MaintenanceSummary,
+} from "../components/maintenance/MaintenanceSummary";
+
+import {
+  PartWearPanel,
+} from "../components/maintenance/PartWearPanel";
+
+import {
+  ServiceTicketsPanel,
+} from "../components/maintenance/ServiceTicketsPanel";
+
+
+/* =========================================================
+   Types
+   ========================================================= */
+
+type Tone =
+  | "nominal"
+  | "caution"
+  | "critical"
+  | "info";
+
 
 type SummaryMetric = {
-  label: string;
-  value: string;
-  helper: string;
-  icon: LucideIcon;
-  tone: Tone;
+  label:
+    string;
+
+  value:
+    string;
+
+  helper:
+    string;
+
+  icon:
+    LucideIcon;
+
+  tone:
+    Tone;
 };
 
-const toneClass = {
+
+/* =========================================================
+   Aerospace Graphite Tone System
+   ========================================================= */
+
+const toneClass:
+  Record<
+    Tone,
+    {
+      text:
+        string;
+
+      border:
+        string;
+
+      bg:
+        string;
+
+      dot:
+        string;
+    }
+  > = {
   nominal: {
-    text: "text-(--nominal)",
-    border: "border-[rgba(73,229,143,0.28)]",
-    bg: "bg-[rgba(73,229,143,0.08)]",
-    dot: "bg-(--nominal)",
+    text:
+      "text-[var(--nominal)]",
+
+    border:
+      "border-[rgba(100,142,120,0.30)]",
+
+    bg:
+      "bg-[rgba(100,142,120,0.11)]",
+
+    dot:
+      "bg-[var(--nominal)]",
   },
+
   caution: {
-    text: "text-(--primary)",
-    border: "border-[rgba(246,178,60,0.32)]",
-    bg: "bg-[rgba(246,178,60,0.08)]",
-    dot: "bg-(--primary)",
+    text:
+      "text-[var(--caution)]",
+
+    border:
+      "border-[rgba(199,155,89,0.30)]",
+
+    bg:
+      "bg-[rgba(199,155,89,0.11)]",
+
+    dot:
+      "bg-[var(--caution)]",
   },
+
   critical: {
-    text: "text-(--critical)",
-    border: "border-[rgba(255,77,77,0.34)]",
-    bg: "bg-[rgba(255,77,77,0.08)]",
-    dot: "bg-(--critical)",
+    text:
+      "text-[var(--critical)]",
+
+    border:
+      "border-[rgba(201,105,114,0.32)]",
+
+    bg:
+      "bg-[rgba(201,105,114,0.11)]",
+
+    dot:
+      "bg-[var(--critical)]",
   },
+
   info: {
-    text: "text-(--info)",
-    border: "border-[rgba(90,169,255,0.3)]",
-    bg: "bg-[rgba(90,169,255,0.08)]",
-    dot: "bg-(--info)",
+    text:
+      "text-[var(--info)]",
+
+    border:
+      "border-[rgba(93,135,163,0.30)]",
+
+    bg:
+      "bg-[rgba(93,135,163,0.11)]",
+
+    dot:
+      "bg-[var(--info)]",
   },
 };
 
-const summaryMetrics: SummaryMetric[] = [
+
+/* =========================================================
+   Summary Metrics
+   ========================================================= */
+
+const summaryMetrics:
+  SummaryMetric[] = [
   {
-    label: "Readiness",
-    value: "94%",
-    helper: "Fleet service readiness",
-    icon: ShieldCheck,
-    tone: "nominal",
+    label:
+      "Readiness",
+
+    value:
+      "94%",
+
+    helper:
+      "Fleet service readiness",
+
+    icon:
+      ShieldCheck,
+
+    tone:
+      "nominal",
   },
+
   {
-    label: "Open Tickets",
-    value: "03",
-    helper: "Two routine, one review",
-    icon: ClipboardList,
-    tone: "caution",
+    label:
+      "Open Tickets",
+
+    value:
+      "03",
+
+    helper:
+      "Two routine, one review",
+
+    icon:
+      ClipboardList,
+
+    tone:
+      "caution",
   },
+
   {
-    label: "Next Service",
-    value: "36 h",
-    helper: "Scheduled inspection window",
-    icon: CalendarClock,
-    tone: "info",
+    label:
+      "Next Service",
+
+    value:
+      "36 h",
+
+    helper:
+      "Scheduled inspection window",
+
+    icon:
+      CalendarClock,
+
+    tone:
+      "info",
   },
+
   {
-    label: "Part Wear",
-    value: "Low",
-    helper: "No critical wear detected",
-    icon: Gauge,
-    tone: "nominal",
+    label:
+      "Part Wear",
+
+    value:
+      "Low",
+
+    helper:
+      "No critical wear detected",
+
+    icon:
+      Gauge,
+
+    tone:
+      "nominal",
   },
 ];
 
+
+/* =========================================================
+   Page Header
+   ========================================================= */
+
 function PageHeader() {
   return (
-    <section className="rounded-xl border border-[#1d2533] bg-[#07111f] p-5 shadow-[0_18px_50px_rgba(0,0,0,0.28)]">
+    <section
+      className={[
+        "rounded-[10px]",
+
+        "border border-[var(--border)]",
+
+        "bg-[var(--surface-1)]",
+
+        "p-5",
+
+        "shadow-[0_14px_36px_rgba(0,0,0,0.18)]",
+      ].join(" ")}
+    >
       <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
         <div>
-          <p className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-(--primary)">
-            Operational Systems
+          <p className="text-[12px] font-semibold uppercase tracking-[0.085em] text-[var(--primary)]">
+            Operational Systems · Fleet Service
           </p>
 
-          <h1 className="mt-2 text-[28px] font-semibold tracking-tight text-(--foreground)">
+          <h1 className="mt-2 text-[28px] font-semibold tracking-[-0.035em] text-[var(--foreground)]">
             Maintenance
           </h1>
 
-          <p className="mt-2 max-w-4xl text-[14px] leading-relaxed text-(--muted)">
-            Service schedules, open tickets, part wear, inspection status, and
-            maintenance readiness for the drone fleet.
+          <p className="mt-2 max-w-4xl text-[14px] leading-[1.65] text-[var(--muted)]">
+            Service schedules, open tickets, component wear,
+            inspection status and maintenance readiness across
+            the active UAV fleet.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
           <button
             type="button"
-            className="flex h-11 items-center gap-2 rounded border border-[#2a3547] bg-black px-4 font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-(--foreground) transition hover:border-(--primary) hover:text-(--primary)"
+            className={[
+              "flex h-10 items-center gap-2",
+
+              "rounded-[7px] border px-3.5",
+
+              "border-[var(--border)]",
+
+              "bg-[var(--surface-2)]",
+
+              "text-[13px] font-semibold",
+
+              "text-[var(--muted)]",
+
+              "transition-[background-color,border-color,color] duration-150",
+
+              "hover:border-[var(--border-strong)]",
+
+              "hover:bg-[var(--surface-hover)]",
+
+              "hover:text-[var(--foreground)]",
+            ].join(" ")}
           >
-            <ClipboardList size={14} />
+            <ClipboardList
+              size={15}
+              strokeWidth={1.7}
+            />
+
             Create Task
           </button>
 
           <button
             type="button"
-            className="flex h-11 items-center gap-2 rounded bg-(--primary) px-4 font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-black transition hover:opacity-90"
+            className={[
+              "flex h-10 items-center gap-2",
+
+              "rounded-[7px] border px-3.5",
+
+              "border-[rgba(176,138,88,0.38)]",
+
+              "bg-[rgba(176,138,88,0.14)]",
+
+              "text-[13px] font-semibold",
+
+              "text-[var(--primary)]",
+
+              "transition-colors duration-150",
+
+              "hover:bg-[rgba(176,138,88,0.21)]",
+            ].join(" ")}
           >
-            <Wrench size={14} />
+            <Wrench
+              size={15}
+              strokeWidth={1.7}
+            />
+
             Service Drone
           </button>
         </div>
@@ -126,114 +321,297 @@ function PageHeader() {
   );
 }
 
+
+/* =========================================================
+   Section Shell
+
+   IMPORTANT:
+   h-full + flex-col allows paired sections to share the
+   exact same top and bottom lines.
+   ========================================================= */
+
 function SectionShell({
   eyebrow,
   title,
   action,
   children,
 }: {
-  eyebrow: string;
-  title: string;
-  action?: string;
-  children: ReactNode;
+  eyebrow:
+    string;
+
+  title:
+    string;
+
+  action?:
+    string;
+
+  children:
+    ReactNode;
 }) {
   return (
-    <section className="overflow-hidden rounded-xl border border-[#1d2533] bg-black shadow-[0_18px_50px_rgba(0,0,0,0.28)]">
-      <div className="border-b border-[#151923] px-5 py-4">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+    <section
+      className={[
+        "flex h-full min-w-0 flex-col",
+
+        "overflow-hidden rounded-[10px]",
+
+        "border border-[var(--border)]",
+
+        "bg-[var(--surface-1)]",
+
+        "shadow-[0_12px_30px_rgba(0,0,0,0.16)]",
+      ].join(" ")}
+    >
+      <div
+        className={[
+          "flex min-h-[76px] shrink-0 items-center",
+
+          "border-b border-[var(--border-soft)]",
+
+          "bg-[var(--surface-2)]",
+
+          "px-5 py-3.5",
+        ].join(" ")}
+      >
+        <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="font-mono text-[9px] font-bold uppercase tracking-[0.18em] text-(--primary)">
+            <p className="text-[12px] font-semibold uppercase tracking-[0.075em] text-[var(--primary)]">
               {eyebrow}
             </p>
 
-            <h2 className="mt-1 text-[18px] font-semibold leading-tight text-(--foreground)">
+            <h2 className="mt-1 text-[18px] font-semibold tracking-[-0.02em] text-[var(--foreground)]">
               {title}
             </h2>
           </div>
 
-          {action && (
-            <span className="inline-flex w-fit rounded-full border border-[#243147] bg-[#07111f] px-3 py-1 font-mono text-[9px] font-bold uppercase tracking-[0.12em] text-(--info)">
+          {action ? (
+            <span
+              className={[
+                "inline-flex w-fit items-center",
+
+                "rounded-[6px] border",
+
+                "border-[rgba(93,135,163,0.28)]",
+
+                "bg-[rgba(93,135,163,0.10)]",
+
+                "px-2.5 py-1",
+
+                "text-[12px] font-semibold",
+
+                "text-[var(--info)]",
+              ].join(" ")}
+            >
               {action}
             </span>
-          )}
+          ) : null}
         </div>
       </div>
 
-      <div className="p-5">{children}</div>
+      <div className="min-h-0 flex-1 p-5">
+        {children}
+      </div>
     </section>
   );
 }
 
-function SummaryCard({ item }: { item: SummaryMetric }) {
-  const Icon = item.icon;
-  const tone = toneClass[item.tone];
+
+/* =========================================================
+   Summary Card
+   ========================================================= */
+
+function SummaryCard({
+  item,
+}: {
+  item:
+    SummaryMetric;
+}) {
+  const Icon =
+    item.icon;
+
+  const tone =
+    toneClass[
+      item.tone
+    ];
 
   return (
-    <div className={`rounded-xl border bg-[#070a10] p-4 ${tone.border}`}>
+    <div
+      className={[
+        "flex h-full min-h-[132px] flex-col",
+
+        "rounded-[9px] border",
+
+        "bg-[var(--surface-2)]",
+
+        "p-4",
+
+        "shadow-[0_8px_22px_rgba(0,0,0,0.14)]",
+
+        tone.border,
+      ].join(" ")}
+    >
       <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 font-mono text-[9px] font-bold uppercase tracking-[0.12em] text-(--muted)">
-          <Icon size={14} className={tone.text} />
+        <div className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.055em] text-[var(--muted)]">
+          <Icon
+            size={15}
+            strokeWidth={1.7}
+            className={
+              tone.text
+            }
+          />
+
           {item.label}
         </div>
 
-        <span className={`h-2.5 w-2.5 rounded-full ${tone.dot}`} />
+        <span
+          className={[
+            "h-2 w-2 rounded-full",
+
+            tone.dot,
+          ].join(" ")}
+        />
       </div>
 
-      <div className={`mt-4 font-mono text-[26px] font-bold uppercase ${tone.text}`}>
+      <div
+        className={[
+          "mt-4 font-mono text-[22px] font-semibold",
+
+          tone.text,
+        ].join(" ")}
+      >
         {item.value}
       </div>
 
-      <p className="mt-2 text-[13px] leading-relaxed text-(--muted)">
+      <p className="mt-auto pt-2 text-[13px] leading-[1.55] text-[var(--muted)]">
         {item.helper}
       </p>
     </div>
   );
 }
 
+
+/* =========================================================
+   Insight Card
+   ========================================================= */
+
 function InsightCard({
-  icon: Icon,
+  icon:
+    Icon,
+
   label,
+
   value,
+
   helper,
+
   tone,
 }: {
-  icon: LucideIcon;
-  label: string;
-  value: string;
-  helper: string;
-  tone: Tone;
+  icon:
+    LucideIcon;
+
+  label:
+    string;
+
+  value:
+    string;
+
+  helper:
+    string;
+
+  tone:
+    Tone;
 }) {
-  const toneStyle = toneClass[tone];
+  const style =
+    toneClass[
+      tone
+    ];
 
   return (
-    <div className={`rounded-xl border bg-black p-4 ${toneStyle.border}`}>
-      <div className="flex items-center gap-2 font-mono text-[9px] font-bold uppercase tracking-[0.14em] text-(--muted)">
-        <Icon size={13} className={toneStyle.text} />
+    <div
+      className={[
+        "flex h-full min-h-[150px] flex-col",
+
+        "rounded-[9px] border",
+
+        "bg-[var(--surface-2)]",
+
+        "p-4",
+
+        "shadow-[0_8px_22px_rgba(0,0,0,0.13)]",
+
+        style.border,
+      ].join(" ")}
+    >
+      <div className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.065em] text-[var(--muted)]">
+        <Icon
+          size={14}
+          strokeWidth={1.7}
+          className={
+            style.text
+          }
+        />
+
         {label}
       </div>
 
-      <div className={`mt-3 font-mono text-[18px] font-bold uppercase ${toneStyle.text}`}>
+      <div
+        className={[
+          "mt-4 font-mono text-[19px] font-semibold",
+
+          style.text,
+        ].join(" ")}
+      >
         {value}
       </div>
 
-      <p className="mt-2 text-[13px] leading-relaxed text-(--muted)">
+      <p className="mt-auto pt-2 text-[13px] leading-[1.6] text-[var(--muted)]">
         {helper}
       </p>
     </div>
   );
 }
 
+
+/* =========================================================
+   Maintenance Page
+   ========================================================= */
+
 export function Maintenance() {
   return (
-    <div className="min-h-screen bg-[#09090b] px-5 py-6">
-      <div className="mx-auto flex max-w-[1680px] flex-col gap-6">
+    <div className="min-h-[calc(100vh-70px)] bg-transparent px-5 py-6 sm:px-6 lg:px-8">
+      <div
+        className={[
+          "mx-auto flex w-full max-w-[1680px] flex-col",
+
+          "gap-6",
+        ].join(" ")}
+      >
+        {/* Header */}
+
         <PageHeader />
 
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {summaryMetrics.map((item) => (
-            <SummaryCard key={item.label} item={item} />
-          ))}
+
+        {/* Summary */}
+
+        <section className="grid items-stretch gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {summaryMetrics.map(
+            (
+              item,
+            ) => (
+              <SummaryCard
+                key={
+                  item.label
+                }
+                item={
+                  item
+                }
+              />
+            ),
+          )}
         </section>
+
+
+        {/* Fleet Summary */}
 
         <SectionShell
           eyebrow="Maintenance Overview"
@@ -243,8 +621,26 @@ export function Maintenance() {
           <MaintenanceSummary />
         </SectionShell>
 
-        <div className="grid items-start gap-6 xl:grid-cols-12">
-          <div className="xl:col-span-8">
+
+        {/* =================================================
+            SERVICE ROW
+
+            items-stretch:
+            both outer cards now have identical height.
+
+            left and right child wrappers are h-full.
+
+            2 / 1 divider remains consistent.
+            ================================================= */}
+
+        <div
+          className={[
+            "grid items-stretch gap-6",
+
+            "xl:grid-cols-[minmax(0,2fr)_minmax(380px,1fr)]",
+          ].join(" ")}
+        >
+          <div className="min-w-0">
             <SectionShell
               eyebrow="Service Planning"
               title="Maintenance Schedule"
@@ -254,7 +650,7 @@ export function Maintenance() {
             </SectionShell>
           </div>
 
-          <div className="xl:col-span-4">
+          <div className="min-w-0">
             <SectionShell
               eyebrow="Service Desk"
               title="Open Service Tickets"
@@ -265,6 +661,9 @@ export function Maintenance() {
           </div>
         </div>
 
+
+        {/* Component Wear */}
+
         <SectionShell
           eyebrow="Component Wear"
           title="Part Wear Intelligence"
@@ -273,9 +672,14 @@ export function Maintenance() {
           <PartWearPanel />
         </SectionShell>
 
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+
+        {/* Insights */}
+
+        <section className="grid items-stretch gap-4 md:grid-cols-2 xl:grid-cols-4">
           <InsightCard
-            icon={CheckCircle2}
+            icon={
+              CheckCircle2
+            }
             label="Frame Status"
             value="Good"
             helper="No frame stress marker is currently flagged."
@@ -283,7 +687,9 @@ export function Maintenance() {
           />
 
           <InsightCard
-            icon={TimerReset}
+            icon={
+              TimerReset
+            }
             label="Calibration"
             value="After 3 Flights"
             helper="Preventive calibration reminder is scheduled."
@@ -291,7 +697,9 @@ export function Maintenance() {
           />
 
           <InsightCard
-            icon={AlertTriangle}
+            icon={
+              AlertTriangle
+            }
             label="Review Area"
             value="ESC Heat"
             helper="One ESC channel is trending warmer than baseline."
@@ -299,7 +707,9 @@ export function Maintenance() {
           />
 
           <InsightCard
-            icon={History}
+            icon={
+              History
+            }
             label="Last Inspection"
             value="Today"
             helper="Latest inspection was recorded during the current session."

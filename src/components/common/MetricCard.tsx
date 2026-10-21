@@ -4,17 +4,14 @@ import type {
 
 
 type MetricCardProps = {
-  label:
-    string;
+  label: string;
 
   value:
     string | number;
 
-  unit?:
-    string;
+  unit?: string;
 
-  icon:
-    LucideIcon;
+  icon: LucideIcon;
 
   status?:
     | "nominal"
@@ -39,18 +36,18 @@ const statusClass = {
 };
 
 
-const iconBackground = {
+const statusBackground = {
   nominal:
-    "bg-[rgba(51,125,92,0.08)]",
+    "border-[rgba(100,142,120,0.24)] bg-[rgba(100,142,120,0.11)]",
 
   caution:
-    "bg-[rgba(169,115,36,0.08)]",
+    "border-[rgba(199,155,89,0.24)] bg-[rgba(199,155,89,0.11)]",
 
   critical:
-    "bg-[rgba(189,79,89,0.08)]",
+    "border-[rgba(201,105,114,0.24)] bg-[rgba(201,105,114,0.11)]",
 
   info:
-    "bg-[rgba(49,111,159,0.08)]",
+    "border-[rgba(93,135,163,0.24)] bg-[rgba(93,135,163,0.11)]",
 };
 
 
@@ -66,36 +63,44 @@ export function MetricCard({
       className={[
         "flex min-h-[116px] flex-col justify-between",
 
-        "rounded-[8px]",
+        "rounded-[9px]",
 
         "border border-[var(--border)]",
 
-        "bg-white",
+        "bg-[var(--surface-2)]",
 
         "p-4",
 
-        "shadow-[0_8px_22px_rgba(25,35,45,0.05)]",
+        "shadow-[0_10px_24px_rgba(0,0,0,0.16)]",
+
+        "transition-[background-color,border-color,transform] duration-150",
+
+        "hover:-translate-y-px",
+
+        "hover:border-[var(--border-strong)]",
+
+        "hover:bg-[var(--surface-hover)]",
       ].join(" ")}
     >
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2.5">
           <span
             className={[
-              "flex h-8 w-8 shrink-0 items-center justify-center",
+              "flex h-9 w-9 shrink-0 items-center justify-center",
 
-              "rounded-[6px]",
+              "rounded-[7px] border",
 
               statusClass[
                 status
               ],
 
-              iconBackground[
+              statusBackground[
                 status
               ],
             ].join(" ")}
           >
             <Icon
-              size={16}
+              size={17}
               strokeWidth={1.7}
             />
           </span>
@@ -122,7 +127,7 @@ export function MetricCard({
         </span>
 
         {unit ? (
-          <span className="pb-0.5 font-mono text-[13px] font-medium text-[var(--muted)]">
+          <span className="pb-0.5 font-mono text-[13px] font-medium text-[var(--muted-soft)]">
             {unit}
           </span>
         ) : null}

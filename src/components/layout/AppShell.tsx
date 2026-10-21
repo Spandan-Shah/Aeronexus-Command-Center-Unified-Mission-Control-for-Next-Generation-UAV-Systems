@@ -42,42 +42,26 @@ import {
    Types
    ========================================================= */
 
-
 type AppShellProps = {
-  children:
-    ReactNode;
+  children: ReactNode;
 
-  activePage:
-    PageId;
+  activePage: PageId;
 
   onPageChange: (
-    page:
-      PageId,
+    page: PageId,
   ) => void;
 };
 
-
 type NavItem = {
-  id:
-    PageId;
-
-  label:
-    string;
-
-  description:
-    string;
-
-  icon:
-    LucideIcon;
+  id: PageId;
+  label: string;
+  description: string;
+  icon: LucideIcon;
 };
 
-
 type NavGroup = {
-  label:
-    string;
-
-  items:
-    NavItem[];
+  label: string;
+  items: NavItem[];
 };
 
 
@@ -85,208 +69,125 @@ type NavGroup = {
    Navigation
    ========================================================= */
 
-
-const navGroups:
-  NavGroup[] = [
+const navGroups: NavGroup[] = [
   {
-    label:
-      "Operations",
+    label: "Operations",
 
     items: [
       {
-        id:
-          "live-ops",
-
-        label:
-          "Live Operations",
-
+        id: "live-ops",
+        label: "Live Operations",
         description:
           "Real-time mission awareness, telemetry and tactical mapping",
-
-        icon:
-          Radar,
+        icon: Radar,
       },
 
       {
-        id:
-          "mission-planner",
-
-        label:
-          "Mission Planner",
-
+        id: "mission-planner",
+        label: "Mission Planner",
         description:
           "Routes, waypoints, geofences and mission preparation",
-
-        icon:
-          Map,
+        icon: Map,
       },
 
       {
-        id:
-          "drone-control",
-
-        label:
-          "Drone Control",
-
+        id: "drone-control",
+        label: "Drone Control",
         description:
           "Aircraft commands, payload controls and flight interaction",
-
-        icon:
-          Gamepad2,
+        icon: Gamepad2,
       },
 
       {
-        id:
-          "autonomous-intercept",
-
-        label:
-          "Autonomy Lab",
-
+        id: "autonomous-intercept",
+        label: "Autonomy Lab",
         description:
           "Predictive guidance and multi-aircraft simulation",
-
-        icon:
-          Crosshair,
+        icon: Crosshair,
       },
 
       {
-        id:
-          "fleet",
-
-        label:
-          "Fleet",
-
+        id: "fleet",
+        label: "Fleet",
         description:
           "Aircraft assignment, availability and operational readiness",
-
-        icon:
-          Plane,
+        icon: Plane,
       },
 
       {
-        id:
-          "pre-flight",
-
-        label:
-          "Pre-Flight",
-
+        id: "pre-flight",
+        label: "Pre-Flight",
         description:
           "Launch readiness, validation and mission safety checks",
-
-        icon:
-          ClipboardCheck,
+        icon: ClipboardCheck,
       },
     ],
   },
 
   {
-    label:
-      "Intelligence",
+    label: "Intelligence",
 
     items: [
       {
-        id:
-          "camera-ai",
-
-        label:
-          "Vision Intelligence",
-
+        id: "camera-ai",
+        label: "Vision Intelligence",
         description:
           "Aerial computer vision, tracking and video intelligence",
-
-        icon:
-          Camera,
+        icon: Camera,
       },
 
       {
-        id:
-          "logs",
-
-        label:
-          "Mission Debrief",
-
+        id: "logs",
+        label: "Mission Debrief",
         description:
           "Mission logs, events, analytics and historical review",
-
-        icon:
-          FileText,
+        icon: FileText,
       },
 
       {
-        id:
-          "security",
-
-        label:
-          "Security",
-
+        id: "security",
+        label: "Security",
         description:
           "Secure sessions, telemetry integrity and communications",
-
-        icon:
-          ShieldCheck,
+        icon: ShieldCheck,
       },
     ],
   },
 
   {
-    label:
-      "Systems",
+    label: "Systems",
 
     items: [
       {
-        id:
-          "drone-health",
-
-        label:
-          "Drone Health",
-
+        id: "drone-health",
+        label: "Drone Health",
         description:
           "Aircraft diagnostics, component condition and system health",
-
-        icon:
-          Gauge,
+        icon: Gauge,
       },
 
       {
-        id:
-          "battery",
-
-        label:
-          "Battery & Power",
-
+        id: "battery",
+        label: "Battery & Power",
         description:
           "Energy state, thermal behavior and endurance monitoring",
-
-        icon:
-          Battery,
+        icon: Battery,
       },
 
       {
-        id:
-          "maintenance",
-
-        label:
-          "Maintenance",
-
+        id: "maintenance",
+        label: "Maintenance",
         description:
           "Aircraft servicing, maintenance records and scheduling",
-
-        icon:
-          Wrench,
+        icon: Wrench,
       },
 
       {
-        id:
-          "inventory",
-
-        label:
-          "Inventory",
-
+        id: "inventory",
+        label: "Inventory",
         description:
           "Parts, payloads, airframes and operational assets",
-
-        icon:
-          Package,
+        icon: Package,
       },
     ],
   },
@@ -297,12 +198,10 @@ const navGroups:
    Fonts
    ========================================================= */
 
-
 const productFont = {
   fontFamily:
     '"Manrope", "Inter", ui-sans-serif, system-ui, sans-serif',
 };
-
 
 const interfaceFont = {
   fontFamily:
@@ -311,23 +210,16 @@ const interfaceFont = {
 
 
 /* =========================================================
-   Helper
+   Helpers
    ========================================================= */
 
-
 function isGroupActive(
-  group:
-    NavGroup,
-
-  activePage:
-    PageId,
+  group: NavGroup,
+  activePage: PageId,
 ) {
   return group.items.some(
-    (
-      item,
-    ) =>
-      item.id ===
-      activePage,
+    (item) =>
+      item.id === activePage,
   );
 }
 
@@ -336,21 +228,17 @@ function isGroupActive(
    Desktop Navigation
    ========================================================= */
 
-
 function DesktopNavGroup({
   group,
   activePage,
   onPageChange,
 }: {
-  group:
-    NavGroup;
+  group: NavGroup;
 
-  activePage:
-    PageId;
+  activePage: PageId;
 
   onPageChange: (
-    page:
-      PageId,
+    page: PageId,
   ) => void;
 }) {
   const active =
@@ -363,9 +251,7 @@ function DesktopNavGroup({
     <div className="group relative flex h-full items-center">
       <button
         type="button"
-        style={
-          productFont
-        }
+        style={productFont}
         className={[
           "relative flex h-full items-center gap-1.5 px-1",
 
@@ -374,23 +260,17 @@ function DesktopNavGroup({
           "transition-colors duration-150",
 
           active
-            ? "text-white"
-            : "text-white/60 hover:text-white",
+            ? "text-[#F0F3F5]"
+            : "text-[#929DA7] hover:text-[#F0F3F5]",
         ].join(" ")}
       >
-        {
-          group.label
-        }
+        {group.label}
 
         <ChevronDown
-          size={
-            14
-          }
-          strokeWidth={
-            1.7
-          }
+          size={14}
+          strokeWidth={1.7}
           className={[
-            "text-white/38",
+            "text-[#66727D]",
 
             "transition-transform duration-150",
 
@@ -403,14 +283,12 @@ function DesktopNavGroup({
         {active ? (
           <span
             aria-hidden="true"
-            className="absolute inset-x-0 bottom-0 h-[2px] bg-[#A37B43]"
+            className="absolute inset-x-0 bottom-0 h-[2px] bg-[#B08A58]"
           />
         ) : null}
       </button>
 
-
-      <div className="pointer-events-none absolute left-1/2 top-full h-4 w-[370px] -translate-x-1/2" />
-
+      <div className="pointer-events-none absolute left-1/2 top-full h-4 w-[380px] -translate-x-1/2" />
 
       <div
         className={[
@@ -420,19 +298,19 @@ function DesktopNavGroup({
 
           "z-[5100]",
 
-          "w-[370px] -translate-x-1/2",
+          "w-[380px] -translate-x-1/2",
 
-          "rounded-[8px]",
+          "rounded-[9px]",
 
-          "border border-white/[0.09]",
+          "border border-[#313B45]",
 
-          "bg-[#0A0C0F]",
+          "bg-[#141A20]",
 
           "p-2.5",
 
           "opacity-0",
 
-          "shadow-[0_26px_70px_rgba(0,0,0,0.48)]",
+          "shadow-[0_26px_70px_rgba(0,0,0,0.52)]",
 
           "transition-[opacity,visibility] duration-150",
 
@@ -451,30 +329,22 @@ function DesktopNavGroup({
       >
         <div className="px-3 pb-2.5 pt-1.5">
           <div
-            style={
-              productFont
-            }
-            className="text-[14px] font-semibold text-white/90"
+            style={productFont}
+            className="text-[14px] font-semibold text-[#F0F3F5]"
           >
-            {
-              group.label
-            }
+            {group.label}
           </div>
 
-          <div className="mt-1 text-[13px] text-white/42">
+          <div className="mt-1 text-[12px] text-[#7E8993]">
             MissionNexus workspace
           </div>
         </div>
 
-
-        <div className="mb-2 h-px bg-white/[0.07]" />
-
+        <div className="mb-2 h-px bg-[#29323B]" />
 
         <div className="grid gap-1">
           {group.items.map(
-            (
-              item,
-            ) => {
+            (item) => {
               const Icon =
                 item.icon;
 
@@ -484,9 +354,7 @@ function DesktopNavGroup({
 
               return (
                 <button
-                  key={
-                    item.id
-                  }
+                  key={item.id}
                   type="button"
                   onClick={() =>
                     onPageChange(
@@ -501,15 +369,15 @@ function DesktopNavGroup({
                   className={[
                     "group/item flex w-full items-start gap-3",
 
-                    "rounded-[6px] border px-3 py-3",
+                    "rounded-[7px] border px-3 py-3",
 
                     "text-left",
 
                     "transition-[background-color,border-color] duration-150",
 
                     itemActive
-                      ? "border-[rgba(163,123,67,0.28)] bg-[rgba(163,123,67,0.11)]"
-                      : "border-transparent hover:border-white/[0.07] hover:bg-white/[0.04]",
+                      ? "border-[rgba(176,138,88,0.30)] bg-[rgba(176,138,88,0.10)]"
+                      : "border-transparent hover:border-[#313B45] hover:bg-[#1A2027]",
                   ].join(" ")}
                 >
                   <span
@@ -519,17 +387,13 @@ function DesktopNavGroup({
                       "rounded-[6px] border",
 
                       itemActive
-                        ? "border-[rgba(163,123,67,0.36)] bg-[rgba(163,123,67,0.12)] text-[#D1AD74]"
-                        : "border-white/[0.09] bg-white/[0.025] text-white/48 group-hover/item:text-white/72",
+                        ? "border-[rgba(176,138,88,0.35)] bg-[rgba(176,138,88,0.10)] text-[#C6A36F]"
+                        : "border-[#313B45] bg-[#1A2027] text-[#7E8993] group-hover/item:text-[#B9C2CA]",
                     ].join(" ")}
                   >
                     <Icon
-                      size={
-                        15
-                      }
-                      strokeWidth={
-                        1.6
-                      }
+                      size={15}
+                      strokeWidth={1.6}
                     />
                   </span>
 
@@ -539,19 +403,15 @@ function DesktopNavGroup({
                         "block text-[14px] font-semibold leading-[1.35]",
 
                         itemActive
-                          ? "text-[#D9B97E]"
-                          : "text-white/90",
+                          ? "text-[#C6A36F]"
+                          : "text-[#E7EBEE]",
                       ].join(" ")}
                     >
-                      {
-                        item.label
-                      }
+                      {item.label}
                     </span>
 
-                    <span className="mt-1 block text-[13px] leading-[1.45] text-white/44">
-                      {
-                        item.description
-                      }
+                    <span className="mt-1 block text-[12px] leading-[1.5] text-[#7E8993]">
+                      {item.description}
                     </span>
                   </span>
                 </button>
@@ -569,26 +429,21 @@ function DesktopNavGroup({
    Mobile Navigation
    ========================================================= */
 
-
 function MobileNavigation({
   activePage,
   onPageChange,
   onClose,
 }: {
-  activePage:
-    PageId;
+  activePage: PageId;
 
   onPageChange: (
-    page:
-      PageId,
+    page: PageId,
   ) => void;
 
-  onClose:
-    () => void;
+  onClose: () => void;
 }) {
   function changePage(
-    page:
-      PageId,
+    page: PageId,
   ) {
     onPageChange(
       page,
@@ -604,11 +459,11 @@ function MobileNavigation({
 
         "z-[5100]",
 
-        "border-b border-white/[0.09]",
+        "border-b border-[#313B45]",
 
-        "bg-[#050607]",
+        "bg-[#0B0E12]",
 
-        "shadow-[0_26px_70px_rgba(0,0,0,0.46)]",
+        "shadow-[0_28px_70px_rgba(0,0,0,0.55)]",
 
         "min-[1380px]:hidden",
       ].join(" ")}
@@ -616,9 +471,7 @@ function MobileNavigation({
       <div className="mx-auto max-h-[calc(100vh-70px)] max-w-[1680px] overflow-y-auto px-5 py-6 sm:px-6 lg:px-10">
         <div className="grid gap-7 md:grid-cols-3">
           {navGroups.map(
-            (
-              group,
-            ) => (
+            (group) => (
               <section
                 key={
                   group.label
@@ -626,24 +479,18 @@ function MobileNavigation({
               >
                 <div className="mb-3 flex items-center gap-2">
                   <span
-                    style={
-                      productFont
-                    }
-                    className="text-[15px] font-semibold text-white/90"
+                    style={productFont}
+                    className="text-[15px] font-semibold text-[#F0F3F5]"
                   >
-                    {
-                      group.label
-                    }
+                    {group.label}
                   </span>
 
-                  <span className="h-px flex-1 bg-white/[0.08]" />
+                  <span className="h-px flex-1 bg-[#29323B]" />
                 </div>
 
                 <div className="grid gap-1.5">
                   {group.items.map(
-                    (
-                      item,
-                    ) => {
+                    (item) => {
                       const Icon =
                         item.icon;
 
@@ -653,44 +500,39 @@ function MobileNavigation({
 
                       return (
                         <button
-                          key={
-                            item.id
-                          }
+                          key={item.id}
                           type="button"
                           onClick={() =>
                             changePage(
                               item.id,
                             )
                           }
+                          aria-current={
+                            active
+                              ? "page"
+                              : undefined
+                          }
                           className={[
-                            "flex items-start gap-3 rounded-[6px] border px-3 py-3 text-left",
+                            "flex items-start gap-3 rounded-[7px] border px-3 py-3 text-left",
 
                             active
-                              ? "border-[rgba(163,123,67,0.28)] bg-[rgba(163,123,67,0.10)] text-[#D9B97E]"
-                              : "border-transparent text-white/70 hover:border-white/[0.08] hover:bg-white/[0.04] hover:text-white",
+                              ? "border-[rgba(176,138,88,0.30)] bg-[rgba(176,138,88,0.10)] text-[#C6A36F]"
+                              : "border-transparent text-[#B9C2CA] hover:border-[#313B45] hover:bg-[#1A2027] hover:text-[#F0F3F5]",
                           ].join(" ")}
                         >
                           <Icon
-                            size={
-                              16
-                            }
-                            strokeWidth={
-                              1.6
-                            }
+                            size={16}
+                            strokeWidth={1.6}
                             className="mt-0.5 shrink-0"
                           />
 
-                          <span>
+                          <span className="min-w-0">
                             <span className="block text-[14px] font-semibold">
-                              {
-                                item.label
-                              }
+                              {item.label}
                             </span>
 
-                            <span className="mt-1 block text-[13px] leading-[1.45] text-white/42">
-                              {
-                                item.description
-                              }
+                            <span className="mt-1 block text-[12px] leading-[1.5] text-[#7E8993]">
+                              {item.description}
                             </span>
                           </span>
                         </button>
@@ -703,8 +545,7 @@ function MobileNavigation({
           )}
         </div>
 
-
-        <div className="mt-7 border-t border-white/[0.08] pt-5">
+        <div className="mt-7 border-t border-[#29323B] pt-5">
           <button
             type="button"
             onClick={() =>
@@ -712,12 +553,11 @@ function MobileNavigation({
                 "settings",
               )
             }
-            className="flex h-[44px] w-full items-center justify-center gap-2 rounded-[6px] border border-white/[0.10] bg-white/[0.03] text-[14px] font-semibold text-white/78"
+            className="flex h-[44px] w-full items-center justify-center gap-2 rounded-[7px] border border-[#313B45] bg-[#1A2027] text-[14px] font-semibold text-[#B9C2CA] hover:bg-[#232B34] hover:text-[#F0F3F5]"
           >
             <Settings
-              size={
-                16
-              }
+              size={16}
+              strokeWidth={1.6}
             />
 
             Settings
@@ -733,17 +573,14 @@ function MobileNavigation({
    Header
    ========================================================= */
 
-
 function MissionNexusHeader({
   activePage,
   onPageChange,
 }: {
-  activePage:
-    PageId;
+  activePage: PageId;
 
   onPageChange: (
-    page:
-      PageId,
+    page: PageId,
   ) => void;
 }) {
   const [
@@ -754,10 +591,8 @@ function MissionNexusHeader({
       false,
     );
 
-
   function changePage(
-    page:
-      PageId,
+    page: PageId,
   ) {
     onPageChange(
       page,
@@ -768,27 +603,22 @@ function MissionNexusHeader({
     );
   }
 
-
   return (
     <header
-      style={
-        interfaceFont
-      }
+      style={interfaceFont}
       className={[
         "fixed inset-x-0 top-0 z-[5000]",
 
         "h-[70px]",
 
-        "border-b border-white/[0.09]",
+        "border-b border-[#252D35]",
 
-        "bg-[#050607]",
+        "bg-[#07090C]",
 
-        "shadow-[0_8px_30px_rgba(0,0,0,0.26)]",
+        "shadow-[0_10px_34px_rgba(0,0,0,0.38)]",
       ].join(" ")}
     >
       <div className="mx-auto flex h-full w-full max-w-[1680px] items-center px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-14">
-        {/* Brand */}
-
         <button
           type="button"
           onClick={() =>
@@ -796,46 +626,37 @@ function MissionNexusHeader({
               "live-ops",
             )
           }
-          className="flex min-w-0 shrink-0 items-center"
           aria-label="MissionNexus home"
+          className="flex min-w-0 shrink-0 items-center"
         >
           <img
-            src={
-              aeronexusWordmark
-            }
+            src={aeronexusWordmark}
             alt="Aeronexus"
             className="h-[36px] w-auto shrink-0 object-contain xl:h-[39px]"
           />
 
-          <span className="mx-3.5 h-7 w-px bg-white/[0.14]" />
+          <span className="mx-3.5 h-7 w-px bg-[#303943]" />
 
           <span className="min-w-0 text-left">
             <span
-              style={
-                productFont
-              }
-              className="block text-[16px] font-semibold tracking-[-0.02em] text-white"
+              style={productFont}
+              className="block text-[16px] font-semibold tracking-[-0.02em] text-[#F0F3F5]"
             >
               MissionNexus
             </span>
 
-            <span className="mt-0.5 hidden text-[12px] font-medium text-white/42 xl:block">
+            <span className="mt-0.5 hidden text-[12px] font-medium text-[#7E8993] xl:block">
               Mission Operations Platform
             </span>
           </span>
         </button>
-
-
-        {/* Desktop Nav */}
 
         <nav
           aria-label="MissionNexus primary navigation"
           className="ml-auto hidden h-full items-center gap-8 min-[1380px]:flex"
         >
           {navGroups.map(
-            (
-              group,
-            ) => (
+            (group) => (
               <DesktopNavGroup
                 key={
                   group.label
@@ -854,18 +675,14 @@ function MissionNexusHeader({
           )}
         </nav>
 
-
-        {/* Header Controls */}
-
         <div className="ml-auto flex items-center gap-2.5 min-[1380px]:ml-8">
-          <div className="hidden items-center gap-2 rounded-[6px] border border-white/[0.09] bg-white/[0.025] px-3 py-2 xl:flex">
-            <span className="h-2 w-2 rounded-full bg-[#6FB28D]" />
+          <div className="hidden items-center gap-2 rounded-[6px] border border-[#29323B] bg-[#11161C] px-3 py-2 xl:flex">
+            <span className="h-2 w-2 rounded-full bg-[#648E78] shadow-[0_0_10px_rgba(100,142,120,0.45)]" />
 
-            <span className="font-mono text-[13px] font-semibold tracking-[0.02em] text-white/56">
+            <span className="font-mono text-[12px] font-semibold tracking-[0.025em] text-[#8D98A2]">
               MISSION CONSOLE
             </span>
           </div>
-
 
           <button
             type="button"
@@ -874,63 +691,67 @@ function MissionNexusHeader({
                 "settings",
               )
             }
+            aria-current={
+              activePage ===
+              "settings"
+                ? "page"
+                : undefined
+            }
             className={[
               "hidden h-[40px] items-center gap-2 rounded-[6px] border px-3.5",
 
               "text-[13px] font-semibold",
 
+              "transition-[background-color,border-color,color] duration-150",
+
               "sm:flex",
 
               activePage ===
               "settings"
-                ? "border-white/[0.18] bg-white/[0.08] text-white"
-                : "border-white/[0.09] bg-white/[0.025] text-white/68 hover:border-white/[0.16] hover:bg-white/[0.05] hover:text-white",
+                ? "border-[rgba(176,138,88,0.34)] bg-[rgba(176,138,88,0.10)] text-[#C6A36F]"
+                : "border-[#29323B] bg-[#11161C] text-[#929DA7] hover:border-[#414C57] hover:bg-[#1A2027] hover:text-[#F0F3F5]",
             ].join(" ")}
           >
             <Settings
-              size={
-                15
-              }
+              size={15}
+              strokeWidth={1.6}
             />
 
             Settings
           </button>
 
-
           <button
             type="button"
             onClick={() =>
               setMobileOpen(
-                (
-                  current,
-                ) =>
+                (current) =>
                   !current,
               )
             }
-            className="flex h-[40px] w-[40px] items-center justify-center rounded-[6px] border border-white/[0.10] bg-white/[0.025] text-white/70 min-[1380px]:hidden"
             aria-label={
               mobileOpen
                 ? "Close navigation"
                 : "Open navigation"
             }
+            aria-expanded={
+              mobileOpen
+            }
+            className="flex h-[40px] w-[40px] items-center justify-center rounded-[6px] border border-[#29323B] bg-[#11161C] text-[#929DA7] hover:border-[#414C57] hover:bg-[#1A2027] hover:text-[#F0F3F5] min-[1380px]:hidden"
           >
             {mobileOpen ? (
               <X
-                size={
-                  18
-                }
+                size={18}
+                strokeWidth={1.6}
               />
             ) : (
               <Menu
-                size={
-                  18
-                }
+                size={18}
+                strokeWidth={1.6}
               />
             )}
           </button>
         </div>
       </div>
-
 
       {mobileOpen ? (
         <MobileNavigation
@@ -953,9 +774,8 @@ function MissionNexusHeader({
 
 
 /* =========================================================
-   App Shell
+   Application Shell
    ========================================================= */
-
 
 export function AppShell({
   children,
@@ -964,10 +784,8 @@ export function AppShell({
 }: AppShellProps) {
   return (
     <div
-      style={
-        interfaceFont
-      }
-      className="min-h-screen bg-[#DDE3E8] text-[#18232D]"
+      style={interfaceFont}
+      className="min-h-screen bg-[#11161C] text-[#F0F3F5]"
     >
       <MissionNexusHeader
         activePage={
@@ -978,21 +796,19 @@ export function AppShell({
         }
       />
 
-
       <main
         className={[
+          "mn-workspace",
+
           "relative z-0",
 
           "min-h-[calc(100vh-70px)]",
 
           "pt-[70px]",
-
-          "bg-[linear-gradient(180deg,#E7EBEF_0%,#DDE3E8_42%,#D7DEE4_100%)]",
         ].join(" ")}
       >
         {children}
       </main>
-
 
       <MissionFooter
         activePage={

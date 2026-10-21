@@ -16,93 +16,61 @@ import type {
 
 
 type MissionFooterProps = {
-  activePage:
-    PageId;
+  activePage: PageId;
 
   onPageChange: (
-    page:
-      PageId,
+    page: PageId,
   ) => void;
 };
 
-
 type FooterLink = {
-  id:
-    PageId;
-
-  label:
-    string;
+  id: PageId;
+  label: string;
 };
 
 
-const operationsLinks:
-  FooterLink[] = [
+const operationsLinks: FooterLink[] = [
   {
-    id:
-      "live-ops",
-
-    label:
-      "Live Operations",
+    id: "live-ops",
+    label: "Live Operations",
   },
 
   {
-    id:
-      "mission-planner",
-
-    label:
-      "Mission Planner",
+    id: "mission-planner",
+    label: "Mission Planner",
   },
 
   {
-    id:
-      "fleet",
-
-    label:
-      "Fleet",
+    id: "fleet",
+    label: "Fleet",
   },
 
   {
-    id:
-      "drone-control",
-
-    label:
-      "Drone Control",
+    id: "drone-control",
+    label: "Drone Control",
   },
 ];
 
 
-const platformLinks:
-  FooterLink[] = [
+const platformLinks: FooterLink[] = [
   {
-    id:
-      "camera-ai",
-
-    label:
-      "Vision Intelligence",
+    id: "camera-ai",
+    label: "Vision Intelligence",
   },
 
   {
-    id:
-      "security",
-
-    label:
-      "Security",
+    id: "security",
+    label: "Security",
   },
 
   {
-    id:
-      "drone-health",
-
-    label:
-      "Drone Health",
+    id: "drone-health",
+    label: "Drone Health",
   },
 
   {
-    id:
-      "settings",
-
-    label:
-      "Settings",
+    id: "settings",
+    label: "Settings",
   },
 ];
 
@@ -112,15 +80,12 @@ function FooterLinkButton({
   activePage,
   onPageChange,
 }: {
-  item:
-    FooterLink;
+  item: FooterLink;
 
-  activePage:
-    PageId;
+  activePage: PageId;
 
   onPageChange: (
-    page:
-      PageId,
+    page: PageId,
   ) => void;
 }) {
   const active =
@@ -143,19 +108,16 @@ function FooterLinkButton({
         "transition-colors duration-150",
 
         active
-          ? "text-[#D1AD74]"
-          : "text-white/54 hover:text-white",
+          ? "text-[#C6A36F]"
+          : "text-[#78838D] hover:text-[#F0F3F5]",
       ].join(" ")}
     >
-      {
-        item.label
-      }
+      {item.label}
 
       {active ? (
         <ArrowUpRight
-          size={
-            12
-          }
+          size={12}
+          strokeWidth={1.6}
         />
       ) : null}
     </button>
@@ -171,25 +133,35 @@ export function MissionFooter({
     new Date().getFullYear();
 
   return (
-    <footer className="relative z-[2] border-t border-white/[0.09] bg-[#050607] text-white">
+    <footer
+      className={[
+        "relative z-[2]",
+
+        "border-t border-[#252D35]",
+
+        "bg-[#07090C]",
+
+        "text-[#F0F3F5]",
+      ].join(" ")}
+    >
       <div className="mx-auto w-full max-w-[1680px] px-4 py-10 sm:px-6 lg:px-8 xl:px-10 2xl:px-14">
         <div className="grid gap-10 lg:grid-cols-[1.6fr_0.7fr_0.7fr_1fr]">
           {/* Brand */}
 
-          <div className="max-w-[560px]">
+          <div className="max-w-[570px]">
             <img
               src={
                 aeronexusFooterLogo
               }
               alt="Aeronexus Aerospace"
-              className="h-auto w-[300px] object-contain object-left sm:w-[340px] lg:w-[380px]"
+              className="h-auto w-[300px] object-contain object-left sm:w-[340px] lg:w-[390px]"
             />
 
-            <div className="mt-5 text-[18px] font-semibold tracking-[-0.025em] text-white">
+            <div className="mt-5 text-[18px] font-semibold tracking-[-0.025em] text-[#F0F3F5]">
               MissionNexus
             </div>
 
-            <p className="mt-2.5 max-w-[460px] text-[14px] leading-[1.7] text-white/48">
+            <p className="mt-2.5 max-w-[470px] text-[14px] leading-[1.7] text-[#78838D]">
               Unified mission operations,
               planning, telemetry,
               intelligence and autonomous
@@ -201,12 +173,11 @@ export function MissionFooter({
           {/* Operations */}
 
           <div>
-            <div className="mb-4 flex items-center gap-2 text-[14px] font-semibold text-white/84">
+            <div className="mb-4 flex items-center gap-2 text-[14px] font-semibold text-[#D7DCE1]">
               <Radar
-                size={
-                  15
-                }
-                className="text-[#C8A66F]"
+                size={15}
+                strokeWidth={1.6}
+                className="text-[#B08A58]"
               />
 
               Operations
@@ -214,9 +185,7 @@ export function MissionFooter({
 
             <div className="grid gap-3">
               {operationsLinks.map(
-                (
-                  item,
-                ) => (
+                (item) => (
                   <FooterLinkButton
                     key={
                       item.id
@@ -240,12 +209,11 @@ export function MissionFooter({
           {/* Platform */}
 
           <div>
-            <div className="mb-4 flex items-center gap-2 text-[14px] font-semibold text-white/84">
+            <div className="mb-4 flex items-center gap-2 text-[14px] font-semibold text-[#D7DCE1]">
               <Plane
-                size={
-                  15
-                }
-                className="text-[#C8A66F]"
+                size={15}
+                strokeWidth={1.6}
+                className="text-[#B08A58]"
               />
 
               Platform
@@ -253,9 +221,7 @@ export function MissionFooter({
 
             <div className="grid gap-3">
               {platformLinks.map(
-                (
-                  item,
-                ) => (
+                (item) => (
                   <FooterLinkButton
                     key={
                       item.id
@@ -279,50 +245,60 @@ export function MissionFooter({
           {/* System */}
 
           <div>
-            <div className="mb-4 flex items-center gap-2 text-[14px] font-semibold text-white/84">
+            <div className="mb-4 flex items-center gap-2 text-[14px] font-semibold text-[#D7DCE1]">
               <ShieldCheck
-                size={
-                  15
-                }
-                className="text-[#C8A66F]"
+                size={15}
+                strokeWidth={1.6}
+                className="text-[#B08A58]"
               />
 
               System
             </div>
 
-            <div className="rounded-[7px] border border-white/[0.09] bg-white/[0.025] p-4">
+            <div
+              className={[
+                "rounded-[8px]",
+
+                "border border-[#29323B]",
+
+                "bg-[#11161C]",
+
+                "p-4",
+
+                "shadow-[0_10px_28px_rgba(0,0,0,0.18)]",
+              ].join(" ")}
+            >
               <div className="flex items-center justify-between gap-4">
-                <span className="text-[13px] text-white/48">
+                <span className="text-[13px] text-[#78838D]">
                   Console
                 </span>
 
-                <span className="flex items-center gap-2 text-[13px] font-semibold text-[#79BC98]">
-                  <span className="h-2 w-2 rounded-full bg-[#6FB28D]" />
+                <span className="flex items-center gap-2 text-[13px] font-semibold text-[#7CA18D]">
+                  <span className="h-2 w-2 rounded-full bg-[#648E78] shadow-[0_0_10px_rgba(100,142,120,0.42)]" />
 
                   Operational
                 </span>
               </div>
 
-              <div className="mt-3.5 flex items-center justify-between gap-4 border-t border-white/[0.07] pt-3.5">
-                <span className="text-[13px] text-white/48">
+              <div className="mt-3.5 flex items-center justify-between gap-4 border-t border-[#252D35] pt-3.5">
+                <span className="text-[13px] text-[#78838D]">
                   Platform
                 </span>
 
-                <span className="font-mono text-[13px] text-white/70">
+                <span className="font-mono text-[13px] text-[#A7B0B8]">
                   MissionNexus
                 </span>
               </div>
 
-              <div className="mt-3.5 flex items-center justify-between gap-4 border-t border-white/[0.07] pt-3.5">
-                <span className="text-[13px] text-white/48">
+              <div className="mt-3.5 flex items-center justify-between gap-4 border-t border-[#252D35] pt-3.5">
+                <span className="text-[13px] text-[#78838D]">
                   Mode
                 </span>
 
-                <span className="flex items-center gap-1.5 font-mono text-[13px] text-white/70">
+                <span className="flex items-center gap-1.5 font-mono text-[13px] text-[#A7B0B8]">
                   <Activity
-                    size={
-                      13
-                    }
+                    size={13}
+                    strokeWidth={1.6}
                   />
 
                   Mission Ops
@@ -333,30 +309,30 @@ export function MissionFooter({
         </div>
 
 
-        <div className="mt-10 flex flex-col gap-3 border-t border-white/[0.08] pt-5 md:flex-row md:items-center md:justify-between">
-          <div className="text-[13px] text-white/38">
+        {/* Bottom */}
+
+        <div className="mt-10 flex flex-col gap-3 border-t border-[#252D35] pt-5 md:flex-row md:items-center md:justify-between">
+          <div className="text-[13px] text-[#68737D]">
             © {year} Aeronexus Aerospace.
             MissionNexus mission systems.
           </div>
 
-          <div className="flex flex-wrap items-center gap-4 text-[13px] text-white/40">
+          <div className="flex flex-wrap items-center gap-4 text-[13px] text-[#68737D]">
             <span className="flex items-center gap-1.5">
               <Map
-                size={
-                  13
-                }
+                size={13}
+                strokeWidth={1.6}
               />
 
               Mission Operations
             </span>
 
-            <span className="hidden h-3 w-px bg-white/[0.12] sm:block" />
+            <span className="hidden h-3 w-px bg-[#29323B] sm:block" />
 
             <span className="flex items-center gap-1.5">
               <ShieldCheck
-                size={
-                  13
-                }
+                size={13}
+                strokeWidth={1.6}
               />
 
               Secure Systems
@@ -369,12 +345,11 @@ export function MissionFooter({
                   "settings",
                 )
               }
-              className="flex items-center gap-1.5 transition-colors hover:text-white"
+              className="flex items-center gap-1.5 transition-colors hover:text-[#F0F3F5]"
             >
               <Settings
-                size={
-                  13
-                }
+                size={13}
+                strokeWidth={1.6}
               />
 
               Settings

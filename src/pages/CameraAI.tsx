@@ -333,7 +333,7 @@ type VisionMetric = {
 
 
 /* =========================================================
-   Aerospace Graphite Tone System
+   Tone System
    ========================================================= */
 
 const toneClass:
@@ -631,6 +631,81 @@ function playDashboardAlertSound() {
 
 
 /* =========================================================
+   Vision Intelligence Typography Guard
+
+   Scoped only to this page.
+
+   It also catches typography from imported camera
+   components so meaningful explanatory text is never
+   rendered at 9px / 10px / 11px.
+   ========================================================= */
+
+function VisionTypographyGuard() {
+  return (
+    <style>
+      {`
+        .vision-intelligence-page [class*="text-[9px]"] {
+          font-size: 11px !important;
+          line-height: 1.5 !important;
+        }
+
+        .vision-intelligence-page [class*="text-[10px]"] {
+          font-size: 12px !important;
+          line-height: 1.5 !important;
+        }
+
+        .vision-intelligence-page [class*="text-[11px]"] {
+          font-size: 13px !important;
+          line-height: 1.55 !important;
+        }
+
+        .vision-intelligence-page [class*="text-[12px]"] {
+          font-size: 13px !important;
+          line-height: 1.55 !important;
+        }
+
+        .vision-intelligence-page [class*="text-[13px]"] {
+          font-size: 14px !important;
+          line-height: 1.6 !important;
+        }
+
+        .vision-intelligence-page .text-xs {
+          font-size: 13px !important;
+          line-height: 1.55 !important;
+        }
+
+        .vision-intelligence-page .text-sm {
+          font-size: 14px !important;
+          line-height: 1.6 !important;
+        }
+
+        .vision-intelligence-page p {
+          font-size: 14px;
+          line-height: 1.65;
+        }
+
+        .vision-intelligence-page select,
+        .vision-intelligence-page input,
+        .vision-intelligence-page textarea {
+          font-size: 14px !important;
+        }
+
+        .vision-intelligence-page table th {
+          font-size: 12px !important;
+          line-height: 1.5 !important;
+        }
+
+        .vision-intelligence-page table td {
+          font-size: 13px !important;
+          line-height: 1.55 !important;
+        }
+      `}
+    </style>
+  );
+}
+
+
+/* =========================================================
    Metric Card
    ========================================================= */
 
@@ -651,7 +726,7 @@ function VisionMetricCell({
   return (
     <div
       className={[
-        "flex min-h-[102px] min-w-0 items-center justify-between gap-3",
+        "flex min-h-[112px] min-w-0 items-center justify-between gap-3",
 
         "rounded-[9px] border",
 
@@ -665,11 +740,11 @@ function VisionMetricCell({
       ].join(" ")}
     >
       <div className="min-w-0">
-        <div className="truncate text-[12px] font-semibold uppercase tracking-[0.055em] text-[var(--muted-soft)]">
+        <div className="truncate text-[13px] font-semibold uppercase tracking-[0.055em] text-[var(--muted-soft)]">
           {metric.label}
         </div>
 
-        <div className="mt-2 truncate font-mono text-[17px] font-semibold leading-none text-[var(--foreground)]">
+        <div className="mt-2 truncate font-mono text-[18px] font-semibold leading-none text-[var(--foreground)]">
           {metric.value}
         </div>
       </div>
@@ -716,7 +791,7 @@ function RailHeader({
   return (
     <div
       className={[
-        "flex min-h-[54px] items-center justify-between gap-3",
+        "flex min-h-[60px] items-center justify-between gap-3",
 
         "border-b border-[var(--border-soft)]",
 
@@ -726,11 +801,11 @@ function RailHeader({
       ].join(" ")}
     >
       <div className="min-w-0">
-        <span className="text-[12px] font-semibold uppercase tracking-[0.055em] text-[var(--primary)]">
+        <span className="text-[13px] font-semibold uppercase tracking-[0.055em] text-[var(--primary)]">
           {eyebrow}
         </span>
 
-        <span className="ml-2 text-[14px] font-semibold text-[var(--foreground)]">
+        <span className="ml-2 text-[15px] font-semibold text-[var(--foreground)]">
           {title}
         </span>
       </div>
@@ -743,10 +818,6 @@ function RailHeader({
 
 /* =========================================================
    Section Shell
-
-   IMPORTANT:
-   h-full + flex-col means every paired card reaches the
-   same bottom line.
    ========================================================= */
 
 function SectionShell({
@@ -783,7 +854,7 @@ function SectionShell({
     >
       <div
         className={[
-          "flex min-h-[76px] shrink-0 items-center",
+          "flex min-h-[82px] shrink-0 items-center",
 
           "border-b border-[var(--border-soft)]",
 
@@ -794,7 +865,7 @@ function SectionShell({
       >
         <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-[12px] font-semibold uppercase tracking-[0.075em] text-[var(--primary)]">
+            <p className="text-[13px] font-semibold uppercase tracking-[0.075em] text-[var(--primary)]">
               {eyebrow}
             </p>
 
@@ -816,7 +887,7 @@ function SectionShell({
 
                 "px-2.5 py-1",
 
-                "text-[12px] font-semibold",
+                "text-[13px] font-semibold",
 
                 "text-[var(--info)]",
               ].join(" ")}
@@ -837,9 +908,6 @@ function SectionShell({
 
 /* =========================================================
    Consistent Vision Split Row
-
-   Every paired secondary section uses this exact grid.
-   Therefore vertical divider positions remain aligned.
    ========================================================= */
 
 function VisionSplitRow({
@@ -923,33 +991,33 @@ function EmergencyAlertToast({
 
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[12px] font-semibold uppercase tracking-[0.055em] text-[var(--critical)]">
+            <span className="text-[13px] font-semibold uppercase tracking-[0.055em] text-[var(--critical)]">
               Visual Alert
             </span>
 
-            <span className="font-mono text-[12px] text-[var(--muted-soft)]">
+            <span className="font-mono text-[13px] text-[var(--muted-soft)]">
               {alert.time}
             </span>
           </div>
 
-          <div className="mt-1.5 text-[14px] font-semibold text-[var(--foreground)]">
+          <div className="mt-1.5 text-[15px] font-semibold text-[var(--foreground)]">
             {alert.title}
           </div>
 
-          <p className="mt-1.5 text-[13px] leading-[1.55] text-[var(--muted)]">
+          <p className="mt-1.5 text-[14px] leading-[1.55] text-[var(--muted)]">
             {alert.message}
           </p>
 
           <div className="mt-3 flex flex-wrap items-center gap-2">
-            <span className="rounded-[4px] bg-[var(--surface-3)] px-2 py-1 text-[12px] text-[var(--muted)]">
+            <span className="rounded-[4px] bg-[var(--surface-3)] px-2 py-1 text-[13px] text-[var(--muted)]">
               {alert.source}
             </span>
 
-            <span className="rounded-[4px] bg-[rgba(201,105,114,0.11)] px-2 py-1 text-[12px] font-semibold uppercase text-[var(--critical)]">
+            <span className="rounded-[4px] bg-[rgba(201,105,114,0.11)] px-2 py-1 text-[13px] font-semibold uppercase text-[var(--critical)]">
               {alert.severity}
             </span>
 
-            <span className="flex items-center gap-1 rounded-[4px] bg-[rgba(176,138,88,0.11)] px-2 py-1 text-[12px] text-[var(--primary)]">
+            <span className="flex items-center gap-1 rounded-[4px] bg-[rgba(176,138,88,0.11)] px-2 py-1 text-[13px] text-[var(--primary)]">
               <Volume2
                 size={12}
               />
@@ -1032,7 +1100,7 @@ function SummaryCard({
   return (
     <div
       className={[
-        "flex h-full min-h-[144px] flex-col",
+        "flex h-full min-h-[156px] flex-col",
 
         "rounded-[8px] border",
 
@@ -1064,7 +1132,7 @@ function SummaryCard({
             />
           </div>
 
-          <span className="text-[12px] font-semibold uppercase tracking-[0.045em] text-[var(--muted-soft)]">
+          <span className="text-[13px] font-semibold uppercase tracking-[0.045em] text-[var(--muted-soft)]">
             {label}
           </span>
         </div>
@@ -1078,11 +1146,11 @@ function SummaryCard({
         />
       </div>
 
-      <div className="mt-3 text-[16px] font-semibold capitalize text-[var(--foreground)]">
+      <div className="mt-3 text-[17px] font-semibold capitalize text-[var(--foreground)]">
         {value}
       </div>
 
-      <p className="mt-auto pt-2 text-[13px] leading-[1.5] text-[var(--muted)]">
+      <p className="mt-auto pt-2 text-[14px] leading-[1.5] text-[var(--muted)]">
         {helper}
       </p>
     </div>
@@ -1132,7 +1200,7 @@ function VideoSourceSelector({
                 )
               }
               className={[
-                "flex min-h-[128px] flex-col",
+                "flex min-h-[142px] flex-col",
 
                 "rounded-[8px] border",
 
@@ -1170,11 +1238,11 @@ function VideoSourceSelector({
                   </div>
 
                   <div className="min-w-0">
-                    <div className="truncate text-[14px] font-semibold text-[var(--foreground)]">
+                    <div className="truncate text-[15px] font-semibold text-[var(--foreground)]">
                       {video.title}
                     </div>
 
-                    <div className="mt-1 line-clamp-2 text-[12px] leading-[1.5] text-[var(--muted)]">
+                    <div className="mt-1 line-clamp-2 text-[13px] leading-[1.5] text-[var(--muted)]">
                       {video.description}
                     </div>
                   </div>
@@ -1193,7 +1261,7 @@ function VideoSourceSelector({
                   className={[
                     "rounded-[4px] border px-2 py-1",
 
-                    "text-[11px] font-semibold uppercase",
+                    "text-[12px] font-semibold uppercase",
 
                     sourceToneClass[
                       video.category
@@ -1214,7 +1282,7 @@ function VideoSourceSelector({
 
                     "px-2 py-1",
 
-                    "text-[11px] font-medium uppercase",
+                    "text-[12px] font-medium uppercase",
 
                     "text-[var(--muted-soft)]",
                   ].join(" ")}
@@ -1343,7 +1411,7 @@ function SignalBar({
       ].join(" ")}
     >
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.04em] text-[var(--muted)]">
+        <div className="flex items-center gap-2 text-[13px] font-semibold uppercase tracking-[0.04em] text-[var(--muted)]">
           <Icon
             size={14}
             className={
@@ -1356,7 +1424,7 @@ function SignalBar({
 
         <span
           className={[
-            "font-mono text-[13px] font-semibold",
+            "font-mono text-[14px] font-semibold",
 
             style.text,
           ].join(" ")}
@@ -1437,12 +1505,12 @@ function EvidenceTile({
           }
         />
 
-        <span className="font-mono text-[16px] font-semibold text-[var(--foreground)]">
+        <span className="font-mono text-[17px] font-semibold text-[var(--foreground)]">
           {value}
         </span>
       </div>
 
-      <div className="mt-2 truncate text-[11px] font-semibold uppercase tracking-[0.04em] text-[var(--muted-soft)]">
+      <div className="mt-2 truncate text-[12px] font-semibold uppercase tracking-[0.04em] text-[var(--muted-soft)]">
         {label}
       </div>
     </div>
@@ -1492,11 +1560,11 @@ function ChecklistItem({
         )}
 
         <div>
-          <div className="text-[13px] font-semibold text-[var(--foreground)]">
+          <div className="text-[14px] font-semibold text-[var(--foreground)]">
             {label}
           </div>
 
-          <p className="mt-1 text-[12px] leading-[1.55] text-[var(--muted)]">
+          <p className="mt-1 text-[13px] leading-[1.55] text-[var(--muted)]">
             {helper}
           </p>
         </div>
@@ -1719,16 +1787,16 @@ function AnalysisWorkbench({
         >
           <div className="flex items-center justify-between gap-3">
             <div>
-              <div className="text-[12px] font-semibold uppercase tracking-[0.055em] text-[var(--primary)]">
+              <div className="text-[13px] font-semibold uppercase tracking-[0.055em] text-[var(--primary)]">
                 Detection Evidence
               </div>
 
-              <div className="mt-1 text-[15px] font-semibold text-[var(--foreground)]">
+              <div className="mt-1 text-[16px] font-semibold text-[var(--foreground)]">
                 Signal Breakdown
               </div>
             </div>
 
-            <span className="rounded-[4px] border border-[rgba(93,135,163,0.24)] bg-[rgba(93,135,163,0.10)] px-2 py-1 text-[11px] font-semibold uppercase text-[var(--info)]">
+            <span className="rounded-[4px] border border-[rgba(93,135,163,0.24)] bg-[rgba(93,135,163,0.10)] px-2 py-1 text-[12px] font-semibold uppercase text-[var(--info)]">
               {selectedVideo.category}
             </span>
           </div>
@@ -1881,7 +1949,7 @@ function AnalysisWorkbench({
             "p-4",
           ].join(" ")}
         >
-          <div className="text-[12px] font-semibold uppercase tracking-[0.055em] text-[var(--primary)]">
+          <div className="text-[13px] font-semibold uppercase tracking-[0.055em] text-[var(--primary)]">
             Operator Checklist
           </div>
 
@@ -1959,7 +2027,7 @@ function AnalysisWorkbench({
       >
         <div
           className={[
-            "text-[13px] font-semibold",
+            "text-[14px] font-semibold",
 
             riskStyle.text,
           ].join(" ")}
@@ -2510,7 +2578,9 @@ export function CameraAI() {
      ======================================================= */
 
   return (
-    <div className="min-h-[calc(100vh-70px)] bg-transparent px-5 py-6 text-[var(--foreground)] sm:px-6 lg:px-8">
+    <div className="vision-intelligence-page min-h-[calc(100vh-70px)] bg-transparent px-5 py-6 text-[var(--foreground)] sm:px-6 lg:px-8">
+      <VisionTypographyGuard />
+
       {dashboardAlert ? (
         <EmergencyAlertToast
           alert={
@@ -2550,7 +2620,7 @@ export function CameraAI() {
         >
           <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
             <div>
-              <p className="text-[12px] font-semibold uppercase tracking-[0.085em] text-[var(--primary)]">
+              <p className="text-[13px] font-semibold uppercase tracking-[0.085em] text-[var(--primary)]">
                 Visual Operations · AI Intelligence
               </p>
 
@@ -2558,7 +2628,7 @@ export function CameraAI() {
                 Vision Intelligence
               </h1>
 
-              <p className="mt-2 max-w-5xl text-[13px] leading-[1.65] text-[var(--muted)]">
+              <p className="mt-2 max-w-5xl text-[14px] leading-[1.65] text-[var(--muted)]">
                 Aerial video, assisted detection, OpenCV analysis,
                 disaster intelligence and operator-supervised
                 visual mission review.
@@ -2571,7 +2641,7 @@ export function CameraAI() {
 
                 "rounded-[7px] border px-3.5",
 
-                "text-[12px] font-semibold uppercase tracking-[0.045em]",
+                "text-[13px] font-semibold uppercase tracking-[0.045em]",
 
                 pipelineOnline
                   ? "border-[rgba(100,142,120,0.30)] bg-[rgba(100,142,120,0.11)] text-[var(--nominal)]"
@@ -2620,9 +2690,6 @@ export function CameraAI() {
 
         {/* =================================================
             Primary Visual Workspace
-
-            SAME HEIGHT:
-            Video panel and intelligence rail both stretch.
             ================================================= */}
 
         <section
@@ -2632,9 +2699,7 @@ export function CameraAI() {
             "xl:grid-cols-[minmax(0,2fr)_minmax(390px,0.92fr)]",
           ].join(" ")}
         >
-          {/* ===============================================
-              Video Card
-              =============================================== */}
+          {/* Video Card */}
 
           <div
             className={[
@@ -2651,7 +2716,7 @@ export function CameraAI() {
           >
             <div
               className={[
-                "flex min-h-[66px] shrink-0 items-center justify-between gap-4",
+                "flex min-h-[72px] shrink-0 items-center justify-between gap-4",
 
                 "border-b border-[var(--border-soft)]",
 
@@ -2680,7 +2745,7 @@ export function CameraAI() {
                   />
                 </div>
 
-                <span className="hidden shrink-0 text-[14px] font-semibold text-[var(--foreground)] sm:inline">
+                <span className="hidden shrink-0 text-[15px] font-semibold text-[var(--foreground)] sm:inline">
                   Live AI Video
                 </span>
 
@@ -2696,7 +2761,7 @@ export function CameraAI() {
                     )
                   }
                   className={[
-                    "h-[38px] min-w-0 max-w-[300px]",
+                    "h-[40px] min-w-0 max-w-[300px]",
 
                     "rounded-[6px]",
 
@@ -2706,7 +2771,7 @@ export function CameraAI() {
 
                     "px-3",
 
-                    "text-[13px] font-medium",
+                    "text-[14px] font-medium",
 
                     "text-[var(--foreground-soft)]",
 
@@ -2742,13 +2807,13 @@ export function CameraAI() {
                       showRawFeed
                     }
                     className={[
-                      "h-[38px] rounded-[6px] border px-3",
+                      "h-[40px] rounded-[6px] border px-3",
 
                       "border-[var(--border)]",
 
                       "bg-[var(--surface-3)]",
 
-                      "text-[12px] font-semibold",
+                      "text-[13px] font-semibold",
 
                       "text-[var(--muted)]",
 
@@ -2773,7 +2838,7 @@ export function CameraAI() {
                     !selectedVideo.src
                   }
                   className={[
-                    "flex h-[38px] items-center gap-2",
+                    "flex h-[40px] items-center gap-2",
 
                     "rounded-[6px] border px-3",
 
@@ -2781,7 +2846,7 @@ export function CameraAI() {
 
                     "bg-[rgba(176,138,88,0.12)]",
 
-                    "text-[12px] font-semibold",
+                    "text-[13px] font-semibold",
 
                     "text-[var(--primary)]",
 
@@ -2809,8 +2874,6 @@ export function CameraAI() {
                 </button>
               </div>
             </div>
-
-            {/* Actual media surface intentionally remains black */}
 
             <div className="relative min-h-[700px] flex-1 overflow-hidden bg-black">
               <AiVideoPanel
@@ -2850,7 +2913,7 @@ export function CameraAI() {
 
                     "px-3.5 py-2.5",
 
-                    "text-[12px] font-medium",
+                    "text-[13px] font-medium",
 
                     "text-[var(--critical)]",
 
@@ -2864,9 +2927,7 @@ export function CameraAI() {
           </div>
 
 
-          {/* ===============================================
-              Intelligence Rail
-              =============================================== */}
+          {/* Intelligence Rail */}
 
           <aside
             className={[
@@ -2883,7 +2944,7 @@ export function CameraAI() {
           >
             <div
               className={[
-                "flex min-h-[66px] shrink-0 items-center justify-between gap-3",
+                "flex min-h-[72px] shrink-0 items-center justify-between gap-3",
 
                 "border-b border-[var(--border-soft)]",
 
@@ -2893,11 +2954,11 @@ export function CameraAI() {
               ].join(" ")}
             >
               <div>
-                <div className="text-[14px] font-semibold uppercase tracking-[0.045em] text-[var(--primary)]">
+                <div className="text-[15px] font-semibold uppercase tracking-[0.045em] text-[var(--primary)]">
                   Live Intelligence
                 </div>
 
-                <div className="mt-1 text-[12px] text-[var(--muted-soft)]">
+                <div className="mt-1 text-[13px] text-[var(--muted-soft)]">
                   Detection · analysis · camera
                 </div>
               </div>
@@ -2905,7 +2966,7 @@ export function CameraAI() {
               <div className="text-right">
                 <div
                   className={[
-                    "text-[13px] font-semibold uppercase",
+                    "text-[14px] font-semibold uppercase",
 
                     toneClass[
                       getRiskTone(
@@ -2917,7 +2978,7 @@ export function CameraAI() {
                   {risk}
                 </div>
 
-                <div className="mt-1 font-mono text-[12px] text-[var(--muted-soft)]">
+                <div className="mt-1 font-mono text-[13px] text-[var(--muted-soft)]">
                   {detectionCount} detections
                 </div>
               </div>
@@ -2929,7 +2990,7 @@ export function CameraAI() {
                   eyebrow="AI"
                   title="Detection Summary"
                   right={
-                    <span className="font-mono text-[13px] font-semibold text-[var(--info)]">
+                    <span className="font-mono text-[14px] font-semibold text-[var(--info)]">
                       {confidence}%
                     </span>
                   }
@@ -2947,7 +3008,7 @@ export function CameraAI() {
                   eyebrow="CV"
                   title="Frame Analysis"
                   right={
-                    <span className="text-[11px] font-medium uppercase text-[var(--muted-soft)]">
+                    <span className="text-[12px] font-medium uppercase text-[var(--muted-soft)]">
                       0.25 threshold
                     </span>
                   }
@@ -2974,7 +3035,7 @@ export function CameraAI() {
                   eyebrow="Camera"
                   title="Operator Controls"
                   right={
-                    <span className="rounded-[4px] border border-[rgba(100,142,120,0.24)] bg-[rgba(100,142,120,0.10)] px-2 py-1 text-[11px] font-semibold uppercase text-[var(--nominal)]">
+                    <span className="rounded-[4px] border border-[rgba(100,142,120,0.24)] bg-[rgba(100,142,120,0.10)] px-2 py-1 text-[12px] font-semibold uppercase text-[var(--nominal)]">
                       Assisted
                     </span>
                   }
@@ -3016,9 +3077,7 @@ export function CameraAI() {
 
 
         {/* =================================================
-            ROW 1
-
-            Same 50 / 50 divider.
+            Detailed Analysis + Feature Matrix
             ================================================= */}
 
         <VisionSplitRow
@@ -3102,9 +3161,7 @@ export function CameraAI() {
 
 
         {/* =================================================
-            ROW 2
-
-            EXACT same divider as Detailed Analysis row.
+            Accuracy + Risk
             ================================================= */}
 
         <VisionSplitRow
@@ -3154,9 +3211,7 @@ export function CameraAI() {
 
 
         {/* =================================================
-            ROW 3
-
-            Same divider again.
+            Performance + Model Flow
             ================================================= */}
 
         <VisionSplitRow
