@@ -79,6 +79,10 @@ from aeronexus_core.event_router import (
     websocket_router as aeronexus_event_websocket_router,
 )
 
+from aeronexus_core.vehicle_bridge import (
+    vehicle_data_fabric_bridge,
+)
+
 
 # ============================================================
 # FastAPI Application
@@ -86,7 +90,7 @@ from aeronexus_core.event_router import (
 
 app = FastAPI(
     title="AeroNexus Backend",
-    version="3.3.0",
+    version="3.4.0",
 )
 
 
@@ -210,31 +214,34 @@ def startup():
 
 
 # ============================================================
-# MissionNexus Hardware Startup
+# MissionNexus + Aeronexus Core Startup
 # ============================================================
 
 @app.on_event(
     "startup"
 )
-async def startup_missionnexus_hardware():
+async def startup_missionnexus_platform():
     """
-    Start the MissionNexus Hardware Integration layer.
+    Start MissionNexus hardware and the Aeronexus Data Fabric
+    vehicle bridge.
 
-    The Device Manager currently auto-connects MN-001-SIM
-    through SimulatorDeviceAdapter.
+    Startup order:
 
-    Later the same manager will support:
-
-        MAVLink Serial
-        MAVLink UDP
-        MAVLink TCP
-        GoblinWisp
-        Companion Computer
-        Payload / Sensor adapters
+        Device Manager
+            ↓
+        Simulator / future real hardware
+            ↓
+        VehicleRegistry
+            ↓
+        Aeronexus Vehicle Data Fabric Bridge
     """
 
     await (
         device_manager.startup()
+    )
+
+    await (
+        vehicle_data_fabric_bridge.start()
     )
 
     insert_event(
@@ -246,18 +253,32 @@ async def startup_missionnexus_hardware():
         ),
     )
 
+    insert_event(
+        now_time(),
+        "AERONEXUS_CORE",
+        (
+            "Aeronexus vehicle telemetry bridge "
+            "started"
+        ),
+    )
+
 
 # ============================================================
-# MissionNexus Hardware Shutdown
+# MissionNexus + Aeronexus Core Shutdown
 # ============================================================
 
 @app.on_event(
     "shutdown"
 )
-async def shutdown_missionnexus_hardware():
+async def shutdown_missionnexus_platform():
     """
-    Cleanly stop connected MissionNexus device adapters.
+    Stop the Data Fabric bridge before disconnecting
+    vehicle hardware sources.
     """
+
+    await (
+        vehicle_data_fabric_bridge.stop()
+    )
 
     await (
         device_manager.shutdown()
@@ -283,7 +304,7 @@ def root():
             "integrated-platform",
 
         "version":
-            "3.3.0",
+            "3.4.0",
 
         "services": {
             "camera_ai":
@@ -311,6 +332,9 @@ def root():
                 "enabled",
 
             "aeronexus_data_fabric":
+                "enabled",
+
+            "aeronexus_vehicle_bridge":
                 "enabled",
 
             "missionnexus_default_device":
