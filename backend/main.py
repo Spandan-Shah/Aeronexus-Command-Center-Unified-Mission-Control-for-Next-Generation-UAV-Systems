@@ -83,6 +83,15 @@ from aeronexus_core.vehicle_bridge import (
     vehicle_data_fabric_bridge,
 )
 
+from goblinwisp.manager import (
+    goblinwisp_manager,
+)
+
+from goblinwisp.router import (
+    router as goblinwisp_router,
+    websocket_router as goblinwisp_websocket_router,
+)
+
 
 # ============================================================
 # FastAPI Application
@@ -90,7 +99,7 @@ from aeronexus_core.vehicle_bridge import (
 
 app = FastAPI(
     title="AeroNexus Backend",
-    version="3.4.0",
+    version="3.5.0",
 )
 
 
@@ -170,6 +179,19 @@ app.include_router(
 
 
 # ============================================================
+# GoblinWisp Secure Link
+# ============================================================
+
+app.include_router(
+    goblinwisp_router
+)
+
+app.include_router(
+    goblinwisp_websocket_router
+)
+
+
+# ============================================================
 # Existing MAVLink Adapter
 # ============================================================
 
@@ -214,35 +236,80 @@ def startup():
 
 
 # ============================================================
-# MissionNexus + Aeronexus Core Startup
+# Integrated Platform Startup
 # ============================================================
 
 @app.on_event(
     "startup"
 )
-async def startup_missionnexus_platform():
+async def startup_integrated_platform():
     """
-    Start MissionNexus hardware and the Aeronexus Data Fabric
-    vehicle bridge.
+    Start the current Aeronexus integrated platform stack.
 
     Startup order:
 
-        Device Manager
-            ↓
-        Simulator / future real hardware
-            ↓
-        VehicleRegistry
-            ↓
-        Aeronexus Vehicle Data Fabric Bridge
+        1. MissionNexus Device Manager
+        2. Vehicle source / VehicleRegistry
+        3. Aeronexus Vehicle Data Fabric Bridge
+        4. GoblinWisp Runtime Manager
+
+    Current development configuration:
+
+        Vehicle:
+            MN-001-SIM
+
+        GoblinWisp profile:
+            GW-ESP32-ESPNOW-001
+
+        Ground node:
+            GW-GROUND-001
+            ESP32-S3
+
+        Aircraft node:
+            GW-MN001
+            ESP32-S3
+
+        Transport profile:
+            ESP-NOW
+
+    Important:
+
+    GoblinWisp manager startup does NOT establish a secure
+    cryptographic session automatically.
+
+    Actual identity verification, authenticated key
+    establishment, encryption, replay validation and
+    directional cryptographic processing will be implemented
+    by dedicated GoblinWisp security modules.
     """
+
+    # --------------------------------------------------------
+    # MissionNexus Hardware
+    # --------------------------------------------------------
 
     await (
         device_manager.startup()
     )
 
+    # --------------------------------------------------------
+    # Aeronexus Data Fabric Vehicle Bridge
+    # --------------------------------------------------------
+
     await (
         vehicle_data_fabric_bridge.start()
     )
+
+    # --------------------------------------------------------
+    # GoblinWisp Runtime
+    # --------------------------------------------------------
+
+    await (
+        goblinwisp_manager.startup()
+    )
+
+    # --------------------------------------------------------
+    # Existing Database Events
+    # --------------------------------------------------------
 
     insert_event(
         now_time(),
@@ -262,23 +329,53 @@ async def startup_missionnexus_platform():
         ),
     )
 
+    insert_event(
+        now_time(),
+        "GOBLINWISP",
+        (
+            "GoblinWisp runtime manager started "
+            "with ESP32-S3 / ESP-NOW development profile"
+        ),
+    )
+
 
 # ============================================================
-# MissionNexus + Aeronexus Core Shutdown
+# Integrated Platform Shutdown
 # ============================================================
 
 @app.on_event(
     "shutdown"
 )
-async def shutdown_missionnexus_platform():
+async def shutdown_integrated_platform():
     """
-    Stop the Data Fabric bridge before disconnecting
-    vehicle hardware sources.
+    Shut down platform services in reverse dependency order.
+
+    GoblinWisp is stopped first so its session/runtime state
+    can be invalidated before telemetry sources disappear.
+
+    The vehicle bridge is then stopped before hardware/device
+    adapters are disconnected.
     """
+
+    # --------------------------------------------------------
+    # GoblinWisp
+    # --------------------------------------------------------
+
+    await (
+        goblinwisp_manager.shutdown()
+    )
+
+    # --------------------------------------------------------
+    # Aeronexus Data Fabric Vehicle Bridge
+    # --------------------------------------------------------
 
     await (
         vehicle_data_fabric_bridge.stop()
     )
+
+    # --------------------------------------------------------
+    # MissionNexus Hardware
+    # --------------------------------------------------------
 
     await (
         device_manager.shutdown()
@@ -304,7 +401,21 @@ def root():
             "integrated-platform",
 
         "version":
-            "3.4.0",
+            "3.5.0",
+
+        "platform": {
+            "missionnexus":
+                "enabled",
+
+            "goblinwisp":
+                "enabled",
+
+            "geofusion":
+                "planned-integration",
+
+            "aeronexus_data_fabric":
+                "enabled",
+        },
 
         "services": {
             "camera_ai":
@@ -337,11 +448,26 @@ def root():
             "aeronexus_vehicle_bridge":
                 "enabled",
 
+            "goblinwisp_runtime":
+                "enabled",
+
+            "goblinwisp_api":
+                "enabled",
+
             "missionnexus_default_device":
                 "MN-001-SIM-ADAPTER",
 
             "missionnexus_vehicle_source":
                 "MN-001-SIM",
+
+            "goblinwisp_default_profile":
+                "GW-ESP32-ESPNOW-001",
+
+            "goblinwisp_current_transport":
+                "ESP-NOW",
+
+            "goblinwisp_current_platform":
+                "ESP32-S3",
         },
     }
 
@@ -436,6 +562,16 @@ async def receive_esp32_wifi_telemetry(
     payload:
         dict,
 ):
+    """
+    Existing ESP32 Wi-Fi telemetry ingestion endpoint.
+
+    This remains operational for legacy/current telemetry.
+
+    GoblinWisp-secured ESP32-S3 ingestion will later use a
+    dedicated GoblinWisp adapter and publish normalized sensor
+    events into the Aeronexus Data Fabric.
+    """
+
     telemetry = (
         ingest_telemetry(
             payload,
