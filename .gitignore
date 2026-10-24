@@ -1,46 +1,188 @@
+# ============================================================
+# AeroNexus / MissionNexus / GoblinWisp
+# Git Ignore Rules
+# ============================================================
+
+
+# ------------------------------------------------------------
 # Logs
-logs
+# ------------------------------------------------------------
+
+logs/
 *.log
+
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
+
+# ------------------------------------------------------------
+# Node / Frontend Build Artifacts
+# ------------------------------------------------------------
+
+node_modules/
+dist/
+dist-ssr/
 *.local
 
-# Editor directories and files
+
+# ------------------------------------------------------------
+# Editor / IDE Files
+# ------------------------------------------------------------
+
 .vscode/*
 !.vscode/extensions.json
-.idea
-.DS_Store
+
+.idea/
+
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+*.code-workspace
 
-# Allow AeroNexus Logs & Debrief React components
+
+# ------------------------------------------------------------
+# Operating System Files
+# ------------------------------------------------------------
+
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+
+# ------------------------------------------------------------
+# Allow AeroNexus Logs & Debrief React Components
+# ------------------------------------------------------------
+
 !src/components/logs/
 !src/components/logs/**
 
+
+# ------------------------------------------------------------
+# Python Cache / Compiled Files
+# ------------------------------------------------------------
+
+__pycache__/
+**/__pycache__/
+
+*.pyc
+*.pyo
+*.pyd
+
+
+# ------------------------------------------------------------
+# Python Virtual Environments
+# ------------------------------------------------------------
+
+venv/
+.venv/
+env/
+ENV/
+
+
+# ------------------------------------------------------------
+# Python Tooling / Test Cache
+# ------------------------------------------------------------
+
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+
+# ------------------------------------------------------------
+# PlatformIO Generated Files
+# ------------------------------------------------------------
+
+**/.pio/
+**/compile_commands.json
+
+.pio/
+compile_commands.json
+
+
+# ------------------------------------------------------------
+# PlatformIO / Embedded Temporary Files
+# ------------------------------------------------------------
+
+*.elf
+*.bin
+*.hex
+*.map
+
+
+# ------------------------------------------------------------
+# AeroNexus Dataset Generated / Training Data
+# ------------------------------------------------------------
 
 datasets/aeronexus_disaster/raw_frames/
 datasets/aeronexus_disaster/train/
 datasets/aeronexus_disaster/val/
 datasets/aeronexus_disaster/valid/
+
+
+# ------------------------------------------------------------
+# Machine Learning Outputs
+# ------------------------------------------------------------
+
 runs/
-*.ptpublic/videos/drone-forest-patrol.mp4
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-__pycache__/
-*.pyc
-*.pyo
+
 *.pt
+*.pth
+*.onnx
+
+
+# ------------------------------------------------------------
+# Local Databases
+# ------------------------------------------------------------
+
 *.db
+*.sqlite
+*.sqlite3
+
+
+# ------------------------------------------------------------
+# Generated / Local Video Files
+# ------------------------------------------------------------
+
 *.mp4
+
+# Explicit project video
+public/videos/drone-forest-patrol.mp4
+
+
+# ------------------------------------------------------------
+# Temporary / Backup Files
+# ------------------------------------------------------------
+
+*.tmp
+*.temp
+*.bak
+*.old
+*.orig
+*~
+
+
+# ------------------------------------------------------------
+# Environment / Secret Files
+# ------------------------------------------------------------
+
+.env
+.env.*
+!.env.example
+
+
+# ------------------------------------------------------------
+# Build / Cache Directories
+# ------------------------------------------------------------
+
+build/
+.cache/
+tmp/
+temp/

@@ -92,6 +92,15 @@ from goblinwisp.router import (
     websocket_router as goblinwisp_websocket_router,
 )
 
+from goblinwisp.transport_manager import (
+    goblinwisp_transport_manager,
+)
+
+from goblinwisp.transport_router import (
+    router as goblinwisp_transport_router,
+    websocket_router as goblinwisp_transport_websocket_router,
+)
+
 
 # ============================================================
 # FastAPI Application
@@ -99,7 +108,7 @@ from goblinwisp.router import (
 
 app = FastAPI(
     title="AeroNexus Backend",
-    version="3.5.0",
+    version="3.6.0",
 )
 
 
@@ -179,7 +188,7 @@ app.include_router(
 
 
 # ============================================================
-# GoblinWisp Secure Link
+# GoblinWisp Secure Session API
 # ============================================================
 
 app.include_router(
@@ -188,6 +197,19 @@ app.include_router(
 
 app.include_router(
     goblinwisp_websocket_router
+)
+
+
+# ============================================================
+# GoblinWisp Physical Transport API
+# ============================================================
+
+app.include_router(
+    goblinwisp_transport_router
+)
+
+app.include_router(
+    goblinwisp_transport_websocket_router
 )
 
 
@@ -204,6 +226,7 @@ mavlink = (
 # Request Models
 # ============================================================
 
+
 class CommandRequest(
     BaseModel
 ):
@@ -214,12 +237,13 @@ class CommandRequest(
 # Existing AeroNexus Startup
 # ============================================================
 
+
 @app.on_event(
     "startup"
 )
 def startup():
     """
-    Start existing AeroNexus services.
+    Start existing AeroNexus database and legacy services.
     """
 
     init_database()
@@ -239,52 +263,52 @@ def startup():
 # Integrated Platform Startup
 # ============================================================
 
+
 @app.on_event(
     "startup"
 )
 async def startup_integrated_platform():
     """
-    Start the current Aeronexus integrated platform stack.
+    Start the Aeronexus integrated runtime.
 
     Startup order:
 
         1. MissionNexus Device Manager
-        2. Vehicle source / VehicleRegistry
-        3. Aeronexus Vehicle Data Fabric Bridge
-        4. GoblinWisp Runtime Manager
+        2. Aeronexus Vehicle Data Fabric Bridge
+        3. GoblinWisp Secure Session Manager
+        4. GoblinWisp Transport Manager
 
-    Current development configuration:
+    Current development architecture:
 
-        Vehicle:
-            MN-001-SIM
-
-        GoblinWisp profile:
-            GW-ESP32-ESPNOW-001
-
-        Ground node:
-            GW-GROUND-001
-            ESP32-S3
-
-        Aircraft node:
-            GW-MN001
-            ESP32-S3
-
-        Transport profile:
-            ESP-NOW
+        MissionNexus Windows Host
+                │
+                │ USB Serial
+                ▼
+        Ground ESP32-S3
+                │
+                │ ESP-NOW
+                ▼
+        Aircraft ESP32-S3
+                │
+                ▼
+             MN-001
 
     Important:
 
-    GoblinWisp manager startup does NOT establish a secure
-    cryptographic session automatically.
+    Starting these managers does NOT automatically claim:
 
-    Actual identity verification, authenticated key
-    establishment, encryption, replay validation and
-    directional cryptographic processing will be implemented
-    by dedicated GoblinWisp security modules.
+        physical ESP32 hardware is connected
+        ESP-NOW peer link is active
+        trusted pairing exists
+        cryptographic authentication succeeded
+        GoblinWisp secure session is active
+
+    Those states are updated independently as the physical
+    system becomes available.
     """
 
     # --------------------------------------------------------
-    # MissionNexus Hardware
+    # MissionNexus Hardware Layer
     # --------------------------------------------------------
 
     await (
@@ -292,7 +316,7 @@ async def startup_integrated_platform():
     )
 
     # --------------------------------------------------------
-    # Aeronexus Data Fabric Vehicle Bridge
+    # Aeronexus Vehicle -> Data Fabric Bridge
     # --------------------------------------------------------
 
     await (
@@ -300,7 +324,7 @@ async def startup_integrated_platform():
     )
 
     # --------------------------------------------------------
-    # GoblinWisp Runtime
+    # GoblinWisp Secure Session Runtime
     # --------------------------------------------------------
 
     await (
@@ -308,7 +332,15 @@ async def startup_integrated_platform():
     )
 
     # --------------------------------------------------------
-    # Existing Database Events
+    # GoblinWisp Physical Transport Runtime
+    # --------------------------------------------------------
+
+    await (
+        goblinwisp_transport_manager.startup()
+    )
+
+    # --------------------------------------------------------
+    # Existing Local Database Events
     # --------------------------------------------------------
 
     insert_event(
@@ -324,8 +356,7 @@ async def startup_integrated_platform():
         now_time(),
         "AERONEXUS_CORE",
         (
-            "Aeronexus vehicle telemetry bridge "
-            "started"
+            "Aeronexus vehicle telemetry bridge started"
         ),
     )
 
@@ -333,8 +364,16 @@ async def startup_integrated_platform():
         now_time(),
         "GOBLINWISP",
         (
-            "GoblinWisp runtime manager started "
-            "with ESP32-S3 / ESP-NOW development profile"
+            "GoblinWisp runtime manager started with "
+            "ESP32-S3 / ESP-NOW development profile"
+        ),
+    )
+
+    insert_event(
+        now_time(),
+        "GOBLINWISP_TRANSPORT",
+        (
+            "GoblinWisp physical transport manager started"
         ),
     )
 
@@ -343,22 +382,38 @@ async def startup_integrated_platform():
 # Integrated Platform Shutdown
 # ============================================================
 
+
 @app.on_event(
     "shutdown"
 )
 async def shutdown_integrated_platform():
     """
-    Shut down platform services in reverse dependency order.
+    Shut down services in reverse operational dependency
+    order.
 
-    GoblinWisp is stopped first so its session/runtime state
-    can be invalidated before telemetry sources disappear.
+    Transport Manager is stopped BEFORE GoblinWisp Manager.
 
-    The vehicle bridge is then stopped before hardware/device
-    adapters are disconnected.
+    This allows physical link disconnection to propagate into
+    GoblinWisp session state while GoblinWisp Manager is still
+    available.
+
+    Then:
+
+        GoblinWisp Manager
+        Vehicle Data Fabric Bridge
+        MissionNexus Device Manager
     """
 
     # --------------------------------------------------------
-    # GoblinWisp
+    # GoblinWisp Physical Transport
+    # --------------------------------------------------------
+
+    await (
+        goblinwisp_transport_manager.shutdown()
+    )
+
+    # --------------------------------------------------------
+    # GoblinWisp Secure Session Runtime
     # --------------------------------------------------------
 
     await (
@@ -366,7 +421,7 @@ async def shutdown_integrated_platform():
     )
 
     # --------------------------------------------------------
-    # Aeronexus Data Fabric Vehicle Bridge
+    # Aeronexus Vehicle Data Fabric Bridge
     # --------------------------------------------------------
 
     await (
@@ -386,6 +441,7 @@ async def shutdown_integrated_platform():
 # Root
 # ============================================================
 
+
 @app.get(
     "/"
 )
@@ -401,7 +457,7 @@ def root():
             "integrated-platform",
 
         "version":
-            "3.5.0",
+            "3.6.0",
 
         "platform": {
             "missionnexus":
@@ -454,6 +510,12 @@ def root():
             "goblinwisp_api":
                 "enabled",
 
+            "goblinwisp_transport_manager":
+                "enabled",
+
+            "goblinwisp_transport_api":
+                "enabled",
+
             "missionnexus_default_device":
                 "MN-001-SIM-ADAPTER",
 
@@ -468,6 +530,13 @@ def root():
 
             "goblinwisp_current_platform":
                 "ESP32-S3",
+
+            "goblinwisp_bridge_architecture":
+                (
+                    "MissionNexus USB Serial -> "
+                    "Ground ESP32-S3 -> ESP-NOW -> "
+                    "Aircraft ESP32-S3"
+                ),
         },
     }
 
@@ -475,6 +544,7 @@ def root():
 # ============================================================
 # Existing Simulator API
 # ============================================================
+
 
 @app.get(
     "/api/state"
@@ -542,6 +612,7 @@ def command(
 # Legacy MAVLink API
 # ============================================================
 
+
 @app.get(
     "/api/mavlink/status"
 )
@@ -555,6 +626,7 @@ def mavlink_status():
 # ESP32 Telemetry
 # ============================================================
 
+
 @app.post(
     "/api/telemetry/esp32"
 )
@@ -567,9 +639,9 @@ async def receive_esp32_wifi_telemetry(
 
     This remains operational for legacy/current telemetry.
 
-    GoblinWisp-secured ESP32-S3 ingestion will later use a
-    dedicated GoblinWisp adapter and publish normalized sensor
-    events into the Aeronexus Data Fabric.
+    GoblinWisp-secured ESP32-S3 telemetry will later pass
+    through the GoblinWisp packet processor and Aeronexus
+    Data Fabric.
     """
 
     telemetry = (
@@ -603,6 +675,7 @@ async def receive_esp32_wifi_telemetry(
 # ============================================================
 # Camera ML Telemetry
 # ============================================================
+
 
 @app.post(
     "/api/telemetry/ml"
@@ -643,6 +716,7 @@ async def receive_camera_ml_telemetry(
 # Unified Telemetry Hub
 # ============================================================
 
+
 @app.get(
     "/api/telemetry/current"
 )
@@ -665,6 +739,7 @@ async def telemetry_sources():
 # ============================================================
 # Alert Contacts
 # ============================================================
+
 
 @app.get(
     "/api/alerts/contacts"
@@ -722,6 +797,7 @@ def add_alert_contact(
 # ============================================================
 # Alerts
 # ============================================================
+
 
 @app.get(
     "/api/alerts"
@@ -796,6 +872,7 @@ def emergency_alert_deliveries(
 # Existing Simulator WebSocket
 # ============================================================
 
+
 @app.websocket(
     "/ws/telemetry"
 )
@@ -828,7 +905,6 @@ async def telemetry_socket(
             now_time(),
             "WEBSOCKET",
             (
-                "Telemetry websocket "
-                "disconnected"
+                "Telemetry websocket disconnected"
             ),
         )
