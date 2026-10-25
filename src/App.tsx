@@ -26,6 +26,8 @@ import {
   DashboardSettings,
 } from "./pages/DashboardSettings";
 
+import DroneIntegrationPage from "./pages/DroneIntegrationPage";
+
 import {
   DroneControl,
 } from "./pages/DroneControl";
@@ -97,6 +99,11 @@ function renderPage(
         <DroneControl />
       );
 
+    case "drone-integration":
+      return (
+        <DroneIntegrationPage />
+      );
+
     case "autonomous-intercept":
       return (
         <AutonomousIntercept />
@@ -166,6 +173,7 @@ function renderPage(
 
 
 /* =========================================================
+   MissionNexus
    Application
    ========================================================= */
 
