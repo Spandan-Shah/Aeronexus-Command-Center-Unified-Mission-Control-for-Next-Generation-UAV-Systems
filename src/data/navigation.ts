@@ -2,6 +2,7 @@ export type PageId =
   | "live-ops"
   | "mission-planner"
   | "drone-control"
+  | "drone-integration"
   | "autonomous-intercept"
   | "fleet"
   | "drone-health"
@@ -14,6 +15,7 @@ export type PageId =
   | "inventory"
   | "security"
   | "settings";
+
 
 export const pageDetails: Record<
   PageId,
@@ -38,6 +40,12 @@ export const pageDetails: Record<
     title: "Drone Control",
     subtitle:
       "Command console, safety actions, and telemetry control link",
+  },
+
+  "drone-integration": {
+    title: "Drone Integration",
+    subtitle:
+      "Connect aircraft hardware, select communication transport, establish GoblinWisp secure sessions, and manage onboard systems",
   },
 
   "autonomous-intercept": {
