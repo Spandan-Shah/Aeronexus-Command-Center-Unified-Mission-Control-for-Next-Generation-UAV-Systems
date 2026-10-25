@@ -6,6 +6,9 @@ from fastapi import (
     WebSocketDisconnect,
 )
 
+from goblinwisp_wifi.router import router as goblinwisp_wifi_router
+
+
 from fastapi.middleware.cors import (
     CORSMiddleware,
 )
@@ -110,6 +113,8 @@ app = FastAPI(
     title="AeroNexus Backend",
     version="3.6.0",
 )
+
+app.include_router(goblinwisp_wifi_router)
 
 
 # ============================================================
